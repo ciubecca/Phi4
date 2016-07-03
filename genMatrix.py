@@ -10,14 +10,14 @@ import math
 import scipy
 
 def main(argv):
-    
+
     if len(argv) < 3:
         print "python genMatrix.py <L> <Emax>"
         sys.exit(-1)
-    
+
     L=float(argv[1])
     Emax=float(argv[2])
-    
+
     m = 1.
 
     a = phi1234.Phi1234()
@@ -28,7 +28,7 @@ def main(argv):
     print "K=1 basis size :", a.fullBasis[1].size
     print "K=-1 basis size :", a.fullBasis[-1].size
 
-    fstr = "Emax="+str(a.fullBasis[1].Emax)+"_L="+str(a.L)
+    fstr = "L="+str(a.L)+"_Emax="+str(a.fullBasis[1].Emax)
 
     a.buildMatrix()
     a.saveMatrix(fstr)

@@ -30,7 +30,7 @@ def comb(*x):
     return factorial(len(x))/scipy.prod(map(factorial,collections.Counter(x).values()))
 
 class Matrix():
-    """ Matrix with specified state bases for row and column indexes. 
+    """ Matrix with specified state bases for row and column indexes.
     This class is useful to easily extract submatrices """
     def __init__(self, basisI, basisJ, M=None):
         self.basisI = basisI
@@ -79,11 +79,11 @@ class Matrix():
             return Matrix(subBasisI, subBasisJ, self.M.tocsr()[scipy.array(rows)[:,scipy.newaxis],scipy.array(columns)])
 
         elif subBasisI != None and subBasisJ == None:
-            rows = [self.basisI.lookup(state)[1]  for state in subBasisI]        
+            rows = [self.basisI.lookup(state)[1]  for state in subBasisI]
             return Matrix(subBasisI, self.basisJ, self.M.tocsr()[scipy.array(rows),:])
 
         elif subBasisI == None and subBasisJ != None:
-            columns = [self.basisJ.lookup(state)[1]  for state in subBasisJ]        
+            columns = [self.basisJ.lookup(state)[1]  for state in subBasisJ]
             return Matrix(self.basisI, subBasisJ, self.M.tocsr()[:,scipy.array(columns)])
 
         else:
@@ -157,7 +157,7 @@ class Phi1234():
             offdiagOps = {0: None, 2:None, 4:None}
 
             diagOps[0] = [ NOO([],[],L,m) ]
-            
+
             offdiagOps[0] = []
 
             diagOps[2] = [ NOO([a],[a],L,m, extracoeff = 2.) for a in range(-nmax,nmax+1) ]
@@ -170,7 +170,7 @@ class Phi1234():
                     for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                     for c in range(-nmax,nmax+1) if
                     ( c<=a+b-c<=nmax
-                    and (a,b) == (c,a+b-c) 
+                    and (a,b) == (c,a+b-c)
                     and -Emax-tol <= omega(a,L,m)+omega(b,L,m) - omega(c,L,m)-omega(a+b-c,L,m) <=Emax+tol)]
 
             offdiagOps[4] = [ NOO([a,b,c,-a-b-c],[],L,m,extracoeff=comb(a,b,c,-a-b-c))
@@ -212,7 +212,7 @@ class Phi1234():
                         try:
 
                             (x,i) = op.apply(basis,j,lookupBasis)
-                            
+
                             if(i != None):
                                 newcolumn[i]+=x
                         except NotInBasis:
@@ -221,19 +221,19 @@ class Phi1234():
                     offdiag_V.addColumn(newcolumn)
 
                     for op in diagOps[n]:
-                        
+
                         (x,i) = op.apply(basis,j,lookupBasis)
                         # It should be j=i
-                        
+
                         if i!= None:
                             if i != j:
                                 raise RuntimeError('Non-diagonal operator')
-                            
+
                             diagonal[i]+=x
 
                 offdiag_V.finalize()
                 diag_V = scipy.sparse.spdiags(diagonal,0,basis.size,basis.size)
-                
+
                 self.potential[k][n] = (offdiag_V+offdiag_V.transpose()+Matrix(lookupBasis, basis, diag_V)).to('coo')*self.L
 
 
@@ -261,11 +261,11 @@ class Phi1234():
 
         Emax = {1:f['arr_2'].item(), -1:f['arr_4'].item()}
         nmax = {1:f['arr_3'].item(), -1:f['arr_5'].item()}
-                
+
         for i, k in enumerate((1,-1)):
             n = 12
             z = 6
-                
+
             self.buildFullBasis(L=self.L, Emax=Emax[k], m=self.m, k=k)
 
             basisI = self.fullBasis[k]
@@ -275,7 +275,7 @@ class Phi1234():
             self.potential[k][0] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+3+i*n))], (f['arr_'+(str(z+4+i*n))], f['arr_'+(str(z+5+i*n))])), shape=(basisI.size, basisJ.size)))
             self.potential[k][2] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+6+i*n))], (f['arr_'+(str(z+7+i*n))], f['arr_'+(str(z+8+i*n))])), shape=(basisI.size, basisJ.size)))
             self.potential[k][4] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+9+i*n))], (f['arr_'+(str(z+10+i*n))], f['arr_'+(str(z+11+i*n))])), shape=(basisI.size, basisJ.size)))
- 
+
     def setCouplings(self, g0, g2, g4):
         self.g0 = g0
         self.g2 = g2
@@ -285,7 +285,7 @@ class Phi1234():
 
     def renlocal(self,Er):
         self.g0r, self.g2r, self.g4r = renorm.renlocal(self.g0,self.g2,self.g4,self.Emax,m=self.m1,Er=Er)
-        self.Er = Er    
+        self.Er = Er
 
     def computeHamiltonian(self, k=1, ren = False):
         """ Computes the (renormalized) Hamiltonian to diagonalize
@@ -296,13 +296,13 @@ class Phi1234():
             self.H[k] = self.h0Sub[k] + self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         else:
             self.H[k] = self.h0Sub[k] + self.V[k][0]*self.g0r + self.V[k][2]*self.g2r + self.V[k][4]*self.g4r
-    
+
         self.compBasisSize[k]=self.H[k].shape[0]
 
 
     def computeEigval(self, k=1, sigma=0, n=10, ren=False, corr=False, cutoff=None):
         """ Sets the internal variables self.eigenvalues
-        k : K-parity quantum number 
+        k : K-parity quantum number
         n : number of eigenvalues to compute
         sigma : point around which we should look for the eigenvalues."""
 
@@ -313,7 +313,7 @@ class Phi1234():
             (self.eigsrenlocal[k], eigenvectorstranspose) = scipy.sparse.linalg.eigsh(self.H[k], k=n, sigma=sigma,
                             which='LM', return_eigenvectors=True)
         self.eigenvectors[k] = eigenvectorstranspose.T
-        
+
         if corr:
             #print "Adding subleading corrections to k=",k, " eigenvalues"
 
@@ -355,7 +355,7 @@ class Phi1234():
     def vacuumE(self, ren="raw"):
         if ren=="raw":
             return self.eigenvalues[1][0]
-        elif ren=="renlocal":    
+        elif ren=="renlocal":
             return self.eigsrenlocal[1][0]
         elif ren=="rensubl":
             return self.eigsrensubl[1][0]
@@ -366,13 +366,13 @@ class Phi1234():
     def spectrum(self, k, ren="raw"):
         if ren=="raw":
             eigs = self.eigenvalues
-        elif ren=="renlocal":    
+        elif ren=="renlocal":
             eigs = self.eigsrenlocal
         elif ren=="rensubl":
             eigs = self.eigsrensubl
         else:
             raise ValueError("")
-        
+
         if k==1:
             return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[k][1:]])
         elif k==-1:
