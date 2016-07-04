@@ -33,8 +33,13 @@ def main(argv):
 
     # Select only basis coefficients with 2 particles
     vacuumEigv = eigv[0]
-    basis= statefuncs.Basis(m=1, L=L, Emax=Emax, k=1)
+    basis = statefuncs.Basis(m=1, L=L, Emax=Emax, k=1)
     wf = [vacuumEigv[i]  for i in range(len(vacuumEigv)) if basis[i].occN()==2]
+
+    # Normalization: multiply 2 particles at rest by sqrt(2)
+    # Takes into account normalization of states and Bose symmetry
+    # XXX check the normalization
+    wf[0] = wf[0]*sqrt(2)
     print(wf)
 
 
@@ -50,6 +55,7 @@ def main(argv):
     # #plt.xlim(min(xList)-0.01, max(xList)+0.01)
     plt.title("L={:.1f}, Emax={:.1f}, g={:.1f}".format(L,Emax,g))
     plt.xlabel(r"$k$")
+    plt.ylim(min(wf)-0.01,max(wf)+0.01)
     # plt.ylabel(r"$\Lambda$")
     # plt.legend(loc='lower right', prop={'size':10})
     plt.savefig("wf_L={:.0f}_Emax={:.0f}_g={:.0f}.{:s}".format(L,Emax,g,output))
