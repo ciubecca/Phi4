@@ -12,7 +12,7 @@ import scipy
 def main(argv):
 
     if len(argv) < 3:
-        print "python genMatrix.py <L> <Emax>"
+        print("python genMatrix.py <L> <Emax>")
         sys.exit(-1)
 
     L=float(argv[1])
@@ -25,8 +25,8 @@ def main(argv):
     a.buildFullBasis(k=1,Emax=Emax,m=m,L=L)
     a.buildFullBasis(k=-1,Emax=Emax,m=m,L=L)
 
-    print "K=1 basis size :", a.fullBasis[1].size
-    print "K=-1 basis size :", a.fullBasis[-1].size
+    print("K=1 basis size :", a.fullBasis[1].size)
+    print("K=-1 basis size :", a.fullBasis[-1].size)
 
     fstr = "L="+str(a.L)+"_Emax="+str(a.fullBasis[1].Emax)
 

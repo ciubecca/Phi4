@@ -11,7 +11,7 @@ import database
 
 def main(argv):
     if len(argv) < 3:
-        print argv[0], " <Emax> <g> <fname>"
+        print(argv[0], " <Emax> <g> <fname>")
         return -1
 
     Emax = float(argv[1])
@@ -31,8 +31,8 @@ def main(argv):
     a.buildBasis(k=1, Emax=Emax)
     a.buildBasis(k=-1, Emax=Emax)
 
-    print 'K=1 basis size = ',  a.basis[1].size
-    print 'K=-1 basis size = ',  a.basis[-1].size
+    print('k=1 basis size = ',  a.basis[1].size)
+    print('k=-1 basis size = ',  a.basis[-1].size)
 
     db = database.Database()
 
@@ -45,7 +45,7 @@ def main(argv):
     g0, g2, g4 = b.directCouplings(g)
 
     a.setCouplings(g0=g0, g2=g2, g4=g4)
-    print "Computing raw eigenvalues for g0,g2,g4 = ", a.g0,a.g2,a.g4
+    print("Computing raw eigenvalues for g0,g2,g4 = ", a.g0,a.g2,a.g4)
 
     a.computeHamiltonian(k=1, ren=False)
     a.computeHamiltonian(k=-1, ren=False)
@@ -53,7 +53,7 @@ def main(argv):
     a.computeEigval(k=1, sigma=sigma, n=neigs, ren=False)
     a.computeEigval(k=-1, sigma=sigma, n=neigs, ren=False)
 
-    print "Raw vacuum: ", a.vacuumE(ren="raw")
+    print("Raw vacuum: ", a.vacuumE(ren="raw"))
 
     # a.renlocal(Er=a.vacuumE(ren="raw"))
 

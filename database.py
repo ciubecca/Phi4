@@ -18,8 +18,8 @@ class Database():
         t1 = [e for e in self.table.find(**exactQuery)]
         listRes = []
         for e in t1:
-            if all([abs(e[key]-value)<10.**(-12.) for key,value in approxQuery.iteritems()]) and \
-                all([value[0]<=e[key]<value[1] for key,value in boundQuery.iteritems()]):
+            if all([abs(e[key]-value)<10.**(-12.) for key,value in approxQuery.items()]) and \
+                all([value[0]<=e[key]<value[1] for key,value in boundQuery.items()]):
                 try:
                     listRes.append(json.loads(e[obj]))
                 except TypeError:

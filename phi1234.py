@@ -13,7 +13,6 @@ from statefuncs import Basis, NotInBasis, omega, State
 import oscillators
 from oscillators import NormalOrderedOperator as NOO
 import collections
-import sets
 import renorm
 import itertools
 import finiteVolH
@@ -27,7 +26,7 @@ tol = 0.0001
 
 def comb(*x):
     """ computes combinatorial factor for list of elements """
-    return factorial(len(x))/scipy.prod(map(factorial,collections.Counter(x).values()))
+    return factorial(len(x))/scipy.prod(list(map(factorial,collections.Counter(x).values())))
 
 class Matrix():
     """ Matrix with specified state bases for row and column indexes.
@@ -133,7 +132,7 @@ class Phi1234():
 
         self.basis[k] = Basis(m=self.m, L=self.L, Emax=Emax, K=k, nmax=self.fullBasis[k].nmax)
         # We use the vector length (nmax) of the full basis. In this way we can compare elements between the two bases
-        print 'nmax :', self.basis[k].nmax
+        # print('nmax :', self.basis[k].nmax)
         self.Emax = float(Emax)
 
         for nn in (0,2,4):
@@ -191,10 +190,10 @@ class Phi1234():
                     and -Emax-tol <= omega(a,L,m)+omega(b,L,m)- omega(c,L,m)-omega(a+b-c,L,m) <=Emax+tol)]
 
 
-            print "Number of operators:", sum([len(x) for x in offdiagOps.values()]+[len(x) for x in diagOps.values()])
+            #print "Number of operators:", sum([len(x) for x in offdiagOps.values()]+[len(x) for x in diagOps.values()])
 
             self.h0[k] = Matrix(lookupBasis, basis)
-            for j in xrange(basis.size):
+            for j in range(basis.size):
                 newcolumn = scipy.zeros(lookupBasis.size)
                 newcolumn[j] = basis[j].energy
                 self.h0[k].addColumn(newcolumn)
@@ -205,7 +204,7 @@ class Phi1234():
                 offdiag_V = Matrix(lookupBasis, basis)
                 diagonal = scipy.zeros(basis.size)
 
-                for j in xrange(basis.size):
+                for j in range(basis.size):
 
                     newcolumn = scipy.zeros(lookupBasis.size)
                     for op in offdiagOps[n]:
