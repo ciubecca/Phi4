@@ -6,10 +6,8 @@ import scipy
 import math
 from scipy import optimize
 import json
-import cProfile
 import database
 
-cutoff = 5.
 
 def main(argv):
     if len(argv) < 3:
@@ -38,9 +36,10 @@ def main(argv):
 
     db = database.Database()
 
-    for e in db.table.find(Emax=Emax, m=m, L=a.L, cutoff=cutoff):
-        if (abs(e['g']-g)<10.**(-13.)) and (e['neigs']>=neigs):
-            print 'Spectra for g=', g, ' already present'
+    approxQuery = {"g":g, "L":L, "Emax":Emax}
+    if db.getObjList('spec', approxQuery=approxQuery) != []:
+        print("Eigenvalues already present")
+        return
 
     b = finiteVolH.FiniteVolH(a.L, m)
     g0, g2, g4 = b.directCouplings(g)
@@ -70,7 +69,8 @@ def main(argv):
     # print "Rensubl vacuum: ", a.vacuumE(ren="rensubl")
 
     for k in (1,-1):
-        db.insert(k=k, Emax=Emax, L=a.L, ren="raw", g=g, spec=a.eigenvalues[k], basisSize=a.basis[k].size, neigs=neigs, m=m)
+        db.insert(k=k, Emax=Emax, L=a.L, ren="raw", g=g, spec=a.eigenvalues[k],
+                 eigv=a.eigenvectors[k], basisSize=a.basis[k].size, neigs=neigs)
         # db.insert(k=k, Emax=Emax, L=a.L, ren="renlocal", g=g, spec=a.eigsrenlocal[k], basisSize=a.basis[k].size, \
                         # neigs=neigs, Er=a.Er, cutoff=a.cutoff, m=m)
         # db.insert(k=k, Emax=Emax, L=a.L, ren="rensubl", g=g, spec=a.eigsrensubl[k], basisSize=a.basis[k].size, \
