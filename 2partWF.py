@@ -8,7 +8,7 @@ from matplotlib import rc
 import database
 import phi1234
 
-output = "svg"
+output = "pdf"
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
