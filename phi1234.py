@@ -126,11 +126,11 @@ class Phi1234():
         self.fullBasis[k] = Basis(L=self.L, Emax=Emax, m=self.m, K=k)
 
 
-    def buildBasis(self,k,Emax):
+    def buildBasis(self, k, Emax):
         """ Builds the Hilbert space basis for which the Hamiltonian to actually diagonalize
         is calculated (in general it's a subspace of fullBasis) """
 
-        self.basis[k] = Basis(m=self.m, L=self.L, Emax=Emax, K=k, nmax=self.fullBasis[k].nmax)
+        self.basis[k] = Basis(m=self.m, L=self.L, Emax=Emax, k=k, nmax=self.fullBasis[k].nmax)
         # We use the vector length (nmax) of the full basis. In this way we can compare elements between the two bases
         # print('nmax :', self.basis[k].nmax)
         self.Emax = float(Emax)
