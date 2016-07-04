@@ -16,7 +16,7 @@ rc('text', usetex=True)
 def main(argv):
     args = " <g> <Emax> <L>"
     if len(argv) < 4:
-        print argv[0], args
+        print(argv[0], args)
         return -1
 
     g = float(argv[1])
@@ -30,9 +30,9 @@ def main(argv):
 
     exactQuery = {"ren":"raw", "k":1}
     approxQuery = {"g":g, "Emax":Emax, "L":L}
-    eigv = db.getObjList('eigv', exactQuery, approxQuery)[1]
+    eigv = db.getObjList("eigv", exactQuery=exactQuery, approxQuery=approxQuery)[0]
 
-    vacuumEigv = eigv[1]
+    vacuumEigv = eigv[0]
     print(vacuumEigv)
 
     # plt.figure(1)
