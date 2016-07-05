@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import scipy
 import math
 import json
-from scipy import pi, log, log10, array, sqrt, stats
+from scipy import pi, log, array, sqrt
+from math import factorial
 from matplotlib import rc
 import database
 import statefuncs
@@ -12,6 +13,24 @@ output = "pdf"
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
+
+
+""" Takes the a coefficient of the discretized wafe functions and renormalizes it
+    according to the basis element.
+    Works for general particle number """
+# XXX check this
+def normalizeWF(c, v):
+    # Bose symmetry
+    c *= scipy.prod([factorial(n) for n in v])/factorial(v.occN())
+
+    # Normalization of Fock space states
+    c *= 1/sqrt(scipy.prod([factorial(n) for n in v]))
+
+    # Spatial parity symmetry
+    if v.isParityEigenstate() == False:
+        c *= 1/sqrt(2)
+
+    return c
 
 def main(argv):
     args = " <g1,g2,...,gN> <Emax> <L>"
@@ -43,12 +62,10 @@ def main(argv):
         # Select only coefficients of 3 particles basis states
         wf = [eigv[0][i] for i in indexList]
 
-        print(wf)
+        # Renormalize wave function
+        wf = array([normalizeWF(c,v) for c,v in zip(wf, basis3p)])
 
-        # Normalization: multiply 2 particles at rest by sqrt(2)
-        # Takes into account normalization of states and Bose symmetry
-        # XXX check the normalization
-        # wf[0] = wf[0]*sqrt(2)
+        print(wf)
 
         # Since the wave function will be O(g^2) in the perturbative limit, rescale by this parameter
         # wf = wf/g**2
