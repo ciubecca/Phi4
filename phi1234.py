@@ -123,7 +123,7 @@ class Phi1234():
         self.L = float(L)
         self.m = float(m)
 
-        self.fullBasis[k] = Basis(L=self.L, Emax=Emax, m=self.m, K=k)
+        self.fullBasis[k] = Basis(L=self.L, Emax=Emax, m=self.m, k=k)
 
 
     def buildBasis(self, k, Emax):
