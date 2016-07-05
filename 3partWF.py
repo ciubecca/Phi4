@@ -8,6 +8,7 @@ from math import factorial
 from matplotlib import rc
 import database
 import statefuncs
+import itertools
 
 output = "pdf"
 
@@ -18,7 +19,7 @@ rc('text', usetex=True)
 """ Takes the a coefficient of the discretized wafe functions and renormalizes it
     according to the basis element.
     Works for general particle number """
-# XXX check this
+# XXX possible mistakes here
 def normalizeWF(c, v):
     # Bose symmetry
     c *= scipy.prod([factorial(n) for n in v])/factorial(v.occN())
@@ -51,7 +52,6 @@ def main(argv):
     indexList = [i for i in range(len(basis)) if basis[i].occN()==3]
     basis3p = [basis[i] for i in indexList]
 
-    ydata = []
 
     for g in gList:
         db = database.Database()
@@ -65,20 +65,23 @@ def main(argv):
         # Renormalize wave function
         wf = array([normalizeWF(c,v) for c,v in zip(wf, basis3p)])
 
-        print(wf)
+        # Construct variables in the form [k1,k2,f(k1,k2,k3)]
+        data = []
+        for c, v in zip(wf, basis):
+            # List of momenta of particles in the state
+            momenta = list(itertools.chain(*[[wn]*v[wn] for wn in v.wnList()]))
 
-        # Since the wave function will be O(g^2) in the perturbative limit, rescale by this parameter
-        # wf = wf/g**2
+            # Take all possible inequivalent pairs of wave numbers, including symmetrization
+            s = set(itertools.combinations(momenta,2))
+            s |= set((b,a) for a,b in s)
+            s |= set((-a,-b) for a,b in s)
 
-        # Change sign to compare wave functions
-        # if wf[0]<0:
-            # wf = -wf
+            for a,b in s:
+                data.append(array([a*2*pi/L,b*2*pi/L,c]))
 
-        # klist = array(range(len(wf)))*(2*pi)/L
-        # plt.plot(klist,wf, label="g={:.3f}".format(g))
-            # # linewidth=0.7,
-            # # dashes = [3,2], marker='.', markersize=3, color=evenColor, label=label("raw"))
-        # ydata.extend(wf)
+        data = array(data)
+        scipy.savetxt("data.csv",data.reshape(1,data.size),delimiter=",")
+
 
     # plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     # #plt.xlim(min(xList)-0.01, max(xList)+0.01)

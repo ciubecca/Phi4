@@ -45,7 +45,7 @@ class State():
                 raise ValueError("State not at rest")
 
         if self.size == 2*self.nmax+1 and self.occs[::-1] == self.occs:
-            self.__parityEigenstate=True
+            self.__parityEigenstate = True
         else:
             self.__parityEigenstate = False
 
@@ -88,6 +88,9 @@ class State():
     def __getitem__(self, wn):
         """ Returns the occupation number corresponding to a wave number"""
         return self.occs[wn+self.size-self.nmax-1]
+
+    def wnList(self):
+        return range(-self.nmax,self.nmax+1)
 
     def parityReversed(self):
         """ Reverse under P parity """
