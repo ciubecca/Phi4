@@ -140,6 +140,9 @@ class Basis():
 
             self.Emax = max(self.Emax, state.energy)
 
+    def __len__(self):
+        return len(self.stateList)
+
     def __repr__(self):
         return str(self.stateList)
 
