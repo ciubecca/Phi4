@@ -29,6 +29,8 @@ def main(argv):
 
     basis = statefuncs.Basis(m=1, L=L, Emax=Emax, k=1)
 
+    ydata = []
+
     for g in gList:
         db = database.Database()
         exactQuery = {"ren":"raw", "k":1}
@@ -47,19 +49,25 @@ def main(argv):
         # Since the wave function will be O(g^2) in the perturbative limit, rescale by this parameter
         wf = wf/g**2
 
+        # Change sign to compare wave functions
+        if wf[0]<0:
+            wf = -wf
+
         klist = array(range(len(wf)))*(2*pi)/L
-        plt.plot(klist,wf, label="g={:.1f}".format(g))
+        plt.plot(klist,wf, label="g={:.3f}".format(g))
             # linewidth=0.7,
             # dashes = [3,2], marker='.', markersize=3, color=evenColor, label=label("raw"))
-
+        ydata.extend(wf)
 
     # plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     # #plt.xlim(min(xList)-0.01, max(xList)+0.01)
     plt.title("L={:.1f}, Emax={:.1f}".format(L,Emax))
     plt.xlabel(r"$k$")
-    # plt.ylim(min(wf)-0.01,max(wf)+0.01)
+    plt.ylabel(r"$\psi(k)/g^2$")
+    plt.ylim(min(ydata)-0.01,max(ydata)+0.01)
+    plt.xlim(min(klist),max(klist))
     # plt.ylabel(r"$\Lambda$")
-    plt.legend(loc='lower right', prop={'size':10})
+    plt.legend(loc='upper right', prop={'size':10})
     plt.savefig("wf_L={:.0f}_Emax={:.0f}.{:s}".format(L,Emax,output))
 
 
