@@ -107,7 +107,7 @@ class Phi1234():
         self.eigsrenlocal = {1: None, -1:None}
         self.eigsrensubl = {1: None, -1:None}
         self.eigenvectors = {1: None, -1:None}
-        # Eigenvalues and eigenvectors for different k-parities
+        # Eigenvalues and eigenvectors for different K-parities
 
         self.compBasisSize = {1: None, -1:None}
         # Holds basis sizes used to actually compute the eigenvalues
@@ -123,7 +123,7 @@ class Phi1234():
         self.L = float(L)
         self.m = float(m)
 
-        self.fullBasis[k] = Basis(L=self.L, Emax=Emax, m=self.m, k=k)
+        self.fullBasis[k] = Basis(L=self.L, Emax=Emax, m=self.m, K=k)
 
 
     def buildBasis(self, k, Emax):
