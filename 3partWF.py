@@ -72,7 +72,7 @@ def main(argv):
             wavenumbers = list(itertools.chain(*[[wn]*v[wn] for wn in v.wnList()]))
 
             # Take all possible inequivalent pairs of wave numbers, including symmetrization
-            s = set(itertools.combinations(momenta,2))
+            s = set(itertools.combinations(wavenumbers,2))
             s |= set((b,a) for a,b in s)
             s |= set((-a,-b) for a,b in s)
 

@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     16449,        425]
-NotebookOptionsPosition[     15423,        386]
-NotebookOutlinePosition[     15790,        402]
-CellTagsIndexPosition[     15747,        399]
+NotebookDataLength[     12338,        320]
+NotebookOptionsPosition[     11536,        289]
+NotebookOutlinePosition[     11905,        305]
+CellTagsIndexPosition[     11862,        302]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -32,41 +32,6 @@ Cell[BoxData[{
     RowBox[{"m", "^", "2"}]}], "]"}]}]}], "Input",
  CellChangeTimes->{{3.676782859360414*^9, 3.676782914875373*^9}, {
   3.6767829658813477`*^9, 3.676782979504546*^9}}],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{"Integrate", "[", 
-  RowBox[{
-   RowBox[{
-    RowBox[{"1", "/", 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"\[Omega]", "[", "q1", "]"}], 
-       RowBox[{"\[Omega]", "[", "q2", "]"}], 
-       RowBox[{"\[Omega]", "[", 
-        RowBox[{"q1", "+", "q2", "+", "k"}], "]"}]}], ")"}]}], " ", 
-    RowBox[{"1", "/", 
-     RowBox[{"(", 
-      RowBox[{
-       RowBox[{"\[Omega]", "[", "q1", "]"}], "+", 
-       RowBox[{"\[Omega]", "[", "q2", "]"}], "+", 
-       RowBox[{"\[Omega]", "[", 
-        RowBox[{"q1", "+", "q2", "+", "k"}], "]"}], "+", 
-       RowBox[{"\[Omega]", "[", "k", "]"}]}], ")"}]}]}], ",", 
-   RowBox[{"{", 
-    RowBox[{"q1", ",", 
-     RowBox[{"-", "Infinity"}], ",", "Infinity"}], "}"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"q2", ",", 
-     RowBox[{"-", "Infinity"}], ",", "Infinity"}], "}"}]}], "]"}]], "Input",
- CellChangeTimes->{{3.676782905563483*^9, 3.6767830502082*^9}, {
-  3.676783207543055*^9, 3.67678321250173*^9}}],
-
-Cell[BoxData["$Aborted"], "Output",
- CellChangeTimes->{{3.676783018883617*^9, 3.676783046672717*^9}, 
-   3.676783286568424*^9}]
-}, Open  ]],
 
 Cell[BoxData[
  RowBox[{
@@ -133,7 +98,8 @@ ButtonData:>\\\"paclet:ref/message/NIntegrate/slwcon\\\", ButtonNote -> \
 \\\"NIntegrate::slwcon\\\"]\\)\"\>"}]], "Message", "MSG",
  CellChangeTimes->{
   3.6767832903059053`*^9, {3.676783355468155*^9, 3.676783380195993*^9}, 
-   3.676783420007564*^9, 3.676783471456814*^9, 3.676784252109971*^9}],
+   3.676783420007564*^9, 3.676783471456814*^9, 3.676784252109971*^9, 
+   3.6767884138761787`*^9}],
 
 Cell[BoxData[
  RowBox[{
@@ -148,7 +114,8 @@ ButtonData:>\\\"paclet:ref/message/NIntegrate/slwcon\\\", ButtonNote -> \
 \\\"NIntegrate::slwcon\\\"]\\)\"\>"}]], "Message", "MSG",
  CellChangeTimes->{
   3.6767832903059053`*^9, {3.676783355468155*^9, 3.676783380195993*^9}, 
-   3.676783420007564*^9, 3.676783471456814*^9, 3.67678425234813*^9}],
+   3.676783420007564*^9, 3.676783471456814*^9, 3.676784252109971*^9, 
+   3.676788414048976*^9}],
 
 Cell[BoxData[
  RowBox[{
@@ -163,7 +130,8 @@ ButtonData:>\\\"paclet:ref/message/NIntegrate/slwcon\\\", ButtonNote -> \
 \\\"NIntegrate::slwcon\\\"]\\)\"\>"}]], "Message", "MSG",
  CellChangeTimes->{
   3.6767832903059053`*^9, {3.676783355468155*^9, 3.676783380195993*^9}, 
-   3.676783420007564*^9, 3.676783471456814*^9, 3.67678425257446*^9}],
+   3.676783420007564*^9, 3.676783471456814*^9, 3.676784252109971*^9, 
+   3.6767884142689123`*^9}],
 
 Cell[BoxData[
  RowBox[{
@@ -179,73 +147,8 @@ ButtonData:>\\\"paclet:ref/message/General/stop\\\", ButtonNote -> \
 \\\"General::stop\\\"]\\)\"\>"}]], "Message", "MSG",
  CellChangeTimes->{
   3.6767832903059053`*^9, {3.676783355468155*^9, 3.676783380195993*^9}, 
-   3.676783420007564*^9, 3.676783471456814*^9, 3.676784252600396*^9}]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{"ListPlot", "[", "data1", "]"}]], "Input",
- CellChangeTimes->{{3.676783421616199*^9, 3.676783424265114*^9}, 
-   3.676784250158226*^9}],
-
-Cell[BoxData[
- GraphicsBox[{{}, {{}, 
-    {RGBColor[0.368417, 0.506779, 0.709798], PointSize[0.009166666666666668], 
-     AbsoluteThickness[1.6], PointBox[CompressedData["
-1:eJw10gswlXkYBvCDHLdwXM7RVipTbbVrmVWp1uX/Ljs2kS1UW2u2xFrVKttW
-SpvsqR1MJQk5JJcImyRCbuu4hA51FLlFuZRSSm457rt2n56Zb775z/c+v/eb
-bz6D3Qccf5LncDjH/r1m7h+jad/Sar5xmkWJZpLKlIaX5UpNP57zWNO+g+Zr
-h6bYqpUzKWP6B8cOHguYwvN77LvUsqyywUn2v1bLaoI/rTazmMR8HeNv8Q/N
-9pxgP3vMpIGtNU2Zt/f4OPrN7Ln8jucZvmPsfs1MWllJ1UZhyb5ReO2sVFpg
-KHSSYb6DJR2xuu5mOgK/i8Xt+Jrs5nxA/zljTlOPAieGsK+bzVV3TGx4MQjv
-FUv+fU38roYBeD3Mpujt+lppP7w37M7rqE9c6t7D62UZCyrkbpT1wXvHIgY2
-rfAbeQvvPROqaJyPt+rF/HuWf6U5b2HSa/j9rEhS33p9QQ/6A2ydpY3hnfSX
-2DfIDBvCdgc4d8MbYicNj/V/pfkC3hArdIw//LStC94wk/dZP+Jd3AnvAwv+
-7Fnfm8wOeCMsxKJ1ZH1uOzwZy7ja5aN26Rk8GSu5m27h0NYGb5SJfT64HWat
-8MaYa139peyCFnjjTHHDsIPzpmZ4E2ygUXgoa7wR3gTrWl1dblfYAG+SdYgl
-5ukhj+FNMV6q0qpTPvXwppl9WFVC0IE6eBxSWbx1VYTPI8xziPNQsCQ0+CF8
-DrlKkpf5ZtWy/+or5WgTt8slXyLFPjnSD3xSmGPzAJ48BSm6Zds218CTJ0UP
-q339/tXw5MnVz0j6rbkE76NAb5f4iziq9+Ap0A5J7M6XryrhzSJJd6TZ08YK
-eLNIujja4cnju/Bm0ekWOd6rjnJ4iuRUteX0wvEyeIq032OyNG1RGTwuWQsj
-Bu9tLoXHpa1xPVXF50rgcenM/OKbnXVieErkaxlbcHGxGJ4SLa9w/f6E7G94
-yrRHWczNyi+Cp0wOIl5g5dlCeMpkvPRCp8SrAJ4KibanuLe55MNTIe+KMFuj
-7XnwVIln3Rs05noHniqtSGiePnMkF54q5W2c/GFtRA48NXI/b+e0S5wNT40i
-eZKm/UO34c0mhXVrtjV9eRvebCoKeqE+92gWvNlULxfllVeRCU+dNo9dCLHW
-z4SnTleCnaLtj9+Cp0HXLD53PtCeAU+DbtfJJdvbZ8DTIMPhDYcEJ27C06T2
-BX/opXulw9OkP7O5vNI9N+DxSH167rMi7zT8XzwSchv/4Auvw+eRQcKSom9i
-/kKfRy991V2kJanYx6MveoQm1JcCT4vOpR85u3xpCjwturx6v/Yit2R4WpTj
-12JUnnINnhYFGoeIc4eT4GkRf/OD+wm2SfC06dfqvfomiYnwtEkuNHNUoJgI
-T5u8Jgo7uL9chadNRpOS0wVNCfC0KYiXEd+/IQGeDkX5pO3ZWxqP76NDbtWm
-t3os4+HpUHjjULSpOA6eDtWfdzaZZxMHT4ceFpucrIqLhadLCuc87UqLrsDT
-pe5TxlaVnTHwdKm+eL6jv2YMPF2yemftJrK+DE+X+iwLPcv8ouHx6WSt2Wim
-OAoen8KzPH9cpBIFj09Tqv3GldtE8Phk+2bwsEdaJDw+/SY1yhRzI+EJKGen
-or/I4xI8Adl3zp/Mq46AJ6AWq6N6vasj4AnI1r0hdiIxHJ6ADJQ5kvw54fD0
-KNJfxpGFhMHTIy/3lLoA9TB4eqRWkFLOgi/C0yMDWY3ZiPZFeHoU4+d9NiA6
-FN4cCt86L6p6WSj7B68OVA4=
-      "]]}, {}}, {}},
-  AspectRatio->NCache[GoldenRatio^(-1), 0.6180339887498948],
-  Axes->{True, True},
-  AxesLabel->{None, None},
-  AxesOrigin->{0, 0},
-  DisplayFunction->Identity,
-  Frame->{{False, False}, {False, False}},
-  FrameLabel->{{None, None}, {None, None}},
-  FrameTicks->{{Automatic, Automatic}, {Automatic, Automatic}},
-  GridLines->{None, None},
-  GridLinesStyle->Directive[
-    GrayLevel[0.5, 0.4]],
-  Method->{},
-  PlotRange->{{0, 6.}, {0, 1.956356871324491}},
-  PlotRangeClipping->True,
-  PlotRangePadding->{{
-     Scaled[0.02], 
-     Scaled[0.02]}, {
-     Scaled[0.02], 
-     Scaled[0.05]}},
-  Ticks->{Automatic, Automatic}]], "Output",
- CellChangeTimes->{3.676783441677786*^9, 3.676783511666902*^9, 
-  3.6767842906425047`*^9}]
+   3.676783420007564*^9, 3.676783471456814*^9, 3.676784252109971*^9, 
+   3.676788414291436*^9}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -257,7 +160,7 @@ Cell[BoxData[
   3.6767415400622177`*^9, 3.6767415503385363`*^9}}],
 
 Cell[BoxData["\<\"/home/lorenzo/Phi4\"\>"], "Output",
- CellChangeTimes->{3.676784212272283*^9}]
+ CellChangeTimes->{3.676784212272283*^9, 3.676788450559566*^9}]
 }, Open  ]],
 
 Cell[BoxData[{
@@ -381,11 +284,11 @@ YfHtVTL3VT3tAZvPhsA=
   Ticks->{Automatic, Automatic}]], "Output",
  CellChangeTimes->{
   3.6767842284634666`*^9, {3.6767843142660627`*^9, 3.676784326196432*^9}, 
-   3.676784528687004*^9, 3.6767845936741037`*^9}]
+   3.676784528687004*^9, 3.6767845936741037`*^9, 3.676788451120875*^9}]
 }, Open  ]]
 },
-WindowSize->{1920, 1028},
-WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowSize->{1918, 1028},
+WindowMargins->{{-9, Automatic}, {Automatic, -8}},
 Magnification:>1.25 Inherited,
 FrontEndVersion->"10.3 for Linux x86 (64-bit) (October 9, 2015)",
 StyleDefinitions->"Default.nb"
@@ -402,30 +305,22 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[558, 20, 494, 13, 89, "Input"],
+Cell[1055, 35, 1131, 32, 38, "Input"],
 Cell[CellGroupData[{
-Cell[1077, 37, 963, 26, 38, "Input"],
-Cell[2043, 65, 127, 2, 38, "Output"]
-}, Open  ]],
-Cell[2185, 70, 1131, 32, 38, "Input"],
-Cell[CellGroupData[{
-Cell[3341, 106, 584, 14, 38, "Input"],
-Cell[3928, 122, 699, 13, 27, "Message"],
-Cell[4630, 137, 698, 13, 27, "Message"],
-Cell[5331, 152, 698, 13, 27, "Message"],
-Cell[6032, 167, 688, 14, 27, "Message"]
+Cell[2211, 71, 584, 14, 38, "Input"],
+Cell[2798, 87, 727, 14, 27, "Message"],
+Cell[3528, 103, 725, 14, 27, "Message"],
+Cell[4256, 119, 727, 14, 27, "Message"],
+Cell[4986, 135, 714, 15, 27, "Message"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[6757, 186, 157, 3, 38, "Input"],
-Cell[6917, 191, 2714, 56, 302, "Output"]
+Cell[5737, 155, 221, 4, 38, "Input"],
+Cell[5961, 161, 117, 1, 38, "Output"]
 }, Open  ]],
+Cell[6093, 165, 1496, 36, 89, "Input"],
 Cell[CellGroupData[{
-Cell[9668, 252, 221, 4, 38, "Input"],
-Cell[9892, 258, 95, 1, 38, "Output"]
-}, Open  ]],
-Cell[10002, 262, 1496, 36, 89, "Input"],
-Cell[CellGroupData[{
-Cell[11523, 302, 524, 11, 38, "Input"],
-Cell[12050, 315, 3357, 68, 542, "Output"]
+Cell[7614, 205, 524, 11, 38, "Input"],
+Cell[8141, 218, 3379, 68, 509, "Output"]
 }, Open  ]]
 }
 ]
