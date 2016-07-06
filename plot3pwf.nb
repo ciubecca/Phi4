@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     82943,       1441]
-NotebookOptionsPosition[     82300,       1414]
-NotebookOutlinePosition[     82668,       1430]
-CellTagsIndexPosition[     82625,       1427]
+NotebookDataLength[     82995,       1442]
+NotebookOptionsPosition[     82352,       1415]
+NotebookOutlinePosition[     82720,       1431]
+CellTagsIndexPosition[     82677,       1428]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -37,7 +37,7 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"v", " ", "=", 
    RowBox[{"Import", "[", 
-    RowBox[{"\"\<data.csv\>\"", ",", "\"\<Data\>\""}], "]"}]}], 
+    RowBox[{"\"\<data3p.csv\>\"", ",", "\"\<Data\>\""}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"data", "=", 
@@ -52,7 +52,8 @@ Cell[BoxData[{
  CellChangeTimes->{{3.676737953608423*^9, 3.6767379726359253`*^9}, {
    3.6767380324016857`*^9, 3.676738032533782*^9}, {3.676738185795937*^9, 
    3.676738359959914*^9}, {3.6767390879617558`*^9, 3.676739110730587*^9}, {
-   3.676740807655117*^9, 3.676740821689686*^9}, 3.6767412413985243`*^9}],
+   3.676740807655117*^9, 3.676740821689686*^9}, 3.6767412413985243`*^9, {
+   3.676784187837892*^9, 3.676784188865155*^9}}],
 
 Cell[CellGroupData[{
 
@@ -1433,15 +1434,15 @@ Cell[CellGroupData[{
 Cell[580, 22, 221, 4, 45, "Input"],
 Cell[804, 28, 243, 4, 45, "Output"]
 }, Open  ]],
-Cell[1062, 35, 794, 19, 75, "Input"],
+Cell[1062, 35, 846, 20, 75, "Input"],
 Cell[CellGroupData[{
-Cell[1881, 58, 395, 7, 45, "Input"],
-Cell[2279, 67, 8222, 142, 703, "Output"]
+Cell[1933, 59, 395, 7, 45, "Input"],
+Cell[2331, 68, 8222, 142, 703, "Output"]
 }, Open  ]],
-Cell[10516, 212, 964, 28, 104, "Input"],
+Cell[10568, 213, 964, 28, 104, "Input"],
 Cell[CellGroupData[{
-Cell[11505, 244, 485, 14, 45, "Input"],
-Cell[11993, 260, 70291, 1151, 465, "Output"]
+Cell[11557, 245, 485, 14, 45, "Input"],
+Cell[12045, 261, 70291, 1151, 432, "Output"]
 }, Open  ]]
 }
 ]

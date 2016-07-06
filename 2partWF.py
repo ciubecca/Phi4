@@ -59,6 +59,9 @@ def main(argv):
             # dashes = [3,2], marker='.', markersize=3, color=evenColor, label=label("raw"))
         ydata.extend(wf)
 
+        data = scipy.column_stack((klist,wf))
+        scipy.savetxt("data2p.csv",data.reshape(1,data.size),delimiter=",")
+
     # plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     # #plt.xlim(min(xList)-0.01, max(xList)+0.01)
     plt.title("L={:.1f}, Emax={:.1f}".format(L,Emax))
