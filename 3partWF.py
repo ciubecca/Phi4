@@ -67,7 +67,7 @@ def main(argv):
 
         # Construct variables in the form [k1,k2,f(k1,k2,k3)]
         data = []
-        for c, v in zip(wf, basis):
+        for c, v in zip(wf, basis3p):
             # List of momenta of wavenumbers in the state
             wavenumbers = list(itertools.chain(*[[wn]*v[wn] for wn in v.wnList()]))
 
@@ -80,7 +80,7 @@ def main(argv):
                 data.append(array([a*2*pi/L,b*2*pi/L,c]))
 
         data = array(data)
-        scipy.savetxt("data3p.csv",data.reshape(1,data.size),delimiter=",")
+        scipy.savetxt("data3p_g={:.3f}.csv".format(g),data.reshape(1,data.size),delimiter=",")
 
 
 if __name__ == "__main__":

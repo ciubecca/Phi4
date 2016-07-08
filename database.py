@@ -4,7 +4,7 @@ import dataset
 import datetime
 
 class Database():
-    def __init__(self, dbname="spectra2.db", tablename="spectra2"):
+    def __init__(self, dbname="spectra.db", tablename="spectra"):
         self.db = dataset.connect('sqlite:///'+dbname)
         self.table=self.db[tablename]
 
