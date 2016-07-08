@@ -68,11 +68,11 @@ def main(argv):
         # Construct variables in the form [k1,k2,f(k1,k2,k3)]
         data = []
         for c, v in zip(wf, basis):
-            # List of momenta of particles in the state
-            momenta = list(itertools.chain(*[[wn]*v[wn] for wn in v.wnList()]))
+            # List of momenta of wavenumbers in the state
+            wavenumbers = list(itertools.chain(*[[wn]*v[wn] for wn in v.wnList()]))
 
             # Take all possible inequivalent pairs of wave numbers, including symmetrization
-            s = set(itertools.combinations(momenta,2))
+            s = set(itertools.combinations(wavenumbers,2))
             s |= set((b,a) for a,b in s)
             s |= set((-a,-b) for a,b in s)
 
@@ -80,19 +80,7 @@ def main(argv):
                 data.append(array([a*2*pi/L,b*2*pi/L,c]))
 
         data = array(data)
-        scipy.savetxt("data.csv",data.reshape(1,data.size),delimiter=",")
-
-
-    # plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    # #plt.xlim(min(xList)-0.01, max(xList)+0.01)
-    # plt.title("L={:.1f}, Emax={:.1f}".format(L,Emax))
-    # plt.xlabel(r"$k$")
-    # plt.ylabel(r"$\psi(k)/g^2$")
-    # plt.ylim(min(ydata)-0.01,max(ydata)+0.01)
-    # plt.xlim(min(klist),max(klist))
-    # # plt.ylabel(r"$\Lambda$")
-    # plt.legend(loc='upper right', prop={'size':10})
-    # plt.savefig("wf_L={:.0f}_Emax={:.0f}.{:s}".format(L,Emax,output))
+        scipy.savetxt("data3p.csv",data.reshape(1,data.size),delimiter=",")
 
 
 if __name__ == "__main__":
