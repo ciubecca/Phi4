@@ -63,7 +63,7 @@ def main(argv):
         a.computeHamiltonian(k=1, ren="renlocal")
         # a.computeHamiltonian(k=-1, ren=True)
 
-        a.computeEigval(k=1, sigma=sigma, n=neigs, ren="renlocal", subl=False)
+        a.computeEigval(k=1, sigma=sigma, n=neigs, ren="renlocal")
         # a.computeEigval(k=-1, sigma=sigma, n=neigs, ren=True, corr=True, cutoff=cutoff)
 
         print("Renlocal vacuum: ", a.vacuumE(ren="renlocal"))

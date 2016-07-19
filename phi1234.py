@@ -286,7 +286,7 @@ class Phi1234():
         self.g0r, self.g2r, self.g4r = renorm.renlocal(self.g0,self.g2,self.g4,self.Emax,m=self.m1,Er=Er)
         self.Er = Er
 
-    def computeHamiltonian(self, k=1, ren):
+    def computeHamiltonian(self, k, ren):
         """ Computes the (renormalized) Hamiltonian to diagonalize
         k : K-parity quantum number
         """
@@ -299,7 +299,7 @@ class Phi1234():
         self.compBasisSize[k]=self.H[k].shape[0]
 
 
-    def computeEigval(self, k=1, sigma=0, n=10, ren, cutoff=None):
+    def computeEigval(self, k, ren, sigma=0, n=10, cutoff=None):
         """ Sets the internal variables self.eigenvalues
         k : K-parity quantum number
         n : number of eigenvalues to compute
@@ -327,7 +327,7 @@ class Phi1234():
                     raise RuntimeError('Eigenvector not normalized')
 
                 Ebar = self.eigenvalues["renlocal"][k][i]
-                self.eigenvalues[ren][k][i] += Ebar
+                self.eigenvalues["rensubl"][k][i] += Ebar
                 #print self.g2, self.g4, Ebar, self.Emax, self.Er
 
                 ktab, rentab = renorm.rensubl(self.g2, self.g4, Ebar, self.Emax, self.Er, m=self.m1, cutoff=cutoff*self.m)
@@ -353,31 +353,16 @@ class Phi1234():
 
         gc.collect()
 
-    def vacuumE(self, ren="raw"):
-        if ren=="raw":
-            return self.eigenvalues[1][0]
-        elif ren=="renlocal":
-            return self.eigsrenlocal[1][0]
-        elif ren=="rensubl":
-            return self.eigsrensubl[1][0]
-        else:
-            raise ValueError("")
+    def vacuumE(self, ren):
+        return self.eigenvalues[ren][1][0]
         # The vacuum is K-even
 
-    def spectrum(self, k, ren="raw"):
-        if ren=="raw":
-            eigs = self.eigenvalues
-        elif ren=="renlocal":
-            eigs = self.eigsrenlocal
-        elif ren=="rensubl":
-            eigs = self.eigsrensubl
-        else:
-            raise ValueError("")
-
+    def spectrum(self, k, ren):
+        eigs = self.eigenvalues[ren]
+        # Subtract vacuum energies
         if k==1:
             return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[k][1:]])
         elif k==-1:
             return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[k]])
         else:
-            raise ValueError("")
-            # Subtract vacuum energies
+            raise ValueError("ren value not valid")
