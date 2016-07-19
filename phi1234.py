@@ -103,10 +103,8 @@ class Phi1234():
         self.H = {1 : None, -1 : None}
         self.V = {1 : { }, -1 : { }}
 
-        self.eigenvalues = {1: None, -1:None}
-        self.eigsrenlocal = {1: None, -1:None}
-        self.eigsrensubl = {1: None, -1:None}
-        self.eigenvectors = {1: None, -1:None}
+        self.eigenvalues = {"raw":{}, "renlocal":{}, "rensubl":{}}
+        self.eigenvectors = {"raw":{}, "renlocal":{}, "rensubl":{}}
         # Eigenvalues and eigenvectors for different K-parities
 
         self.compBasisSize = {1: None, -1:None}
@@ -140,13 +138,18 @@ class Phi1234():
 
         self.h0Sub[k] = self.h0[k].sub(self.basis[k],self.basis[k]).M.tocoo()
 
-    def buildMatrix(self):
+    def buildMatrix(self, k=None):
         """ Builds the full hamiltonian in the basis of the free hamiltonian.
         This is computationally intensive. It can be skipped by loading the matrix from file """
         L=self.L
         m=self.m
 
-        for k in (1,-1):
+        if k==None:
+            klist = (1,-1)
+        else:
+            klist = (k,)
+
+        for k in klist:
             basis = self.fullBasis[k]
             lookupBasis = self.fullBasis[k]
             Emax = basis.Emax
@@ -200,7 +203,6 @@ class Phi1234():
             self.h0[k].finalize()
 
             for n in offdiagOps.keys():
-
                 offdiag_V = Matrix(lookupBasis, basis)
                 diagonal = scipy.zeros(basis.size)
 
@@ -220,14 +222,12 @@ class Phi1234():
                     offdiag_V.addColumn(newcolumn)
 
                     for op in diagOps[n]:
-
                         (x,i) = op.apply(basis,j,lookupBasis)
                         # It should be j=i
 
                         if i!= None:
                             if i != j:
                                 raise RuntimeError('Non-diagonal operator')
-
                             diagonal[i]+=x
 
                 offdiag_V.finalize()
@@ -286,12 +286,12 @@ class Phi1234():
         self.g0r, self.g2r, self.g4r = renorm.renlocal(self.g0,self.g2,self.g4,self.Emax,m=self.m1,Er=Er)
         self.Er = Er
 
-    def computeHamiltonian(self, k=1, ren = False):
+    def computeHamiltonian(self, k=1, ren):
         """ Computes the (renormalized) Hamiltonian to diagonalize
         k : K-parity quantum number
         """
 
-        if not(ren):
+        if ren=="raw":
             self.H[k] = self.h0Sub[k] + self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         else:
             self.H[k] = self.h0Sub[k] + self.V[k][0]*self.g0r + self.V[k][2]*self.g2r + self.V[k][4]*self.g4r
@@ -299,33 +299,35 @@ class Phi1234():
         self.compBasisSize[k]=self.H[k].shape[0]
 
 
-    def computeEigval(self, k=1, sigma=0, n=10, ren=False, corr=False, cutoff=None):
+    def computeEigval(self, k=1, sigma=0, n=10, ren, cutoff=None):
         """ Sets the internal variables self.eigenvalues
         k : K-parity quantum number
         n : number of eigenvalues to compute
         sigma : point around which we should look for the eigenvalues."""
 
-        if not ren:
-            (self.eigenvalues[k], eigenvectorstranspose) = scipy.sparse.linalg.eigsh(self.H[k], k=n, sigma=sigma,
-                            which='LM', return_eigenvectors=True)
-        else:
-            (self.eigsrenlocal[k], eigenvectorstranspose) = scipy.sparse.linalg.eigsh(self.H[k], k=n, sigma=sigma,
-                            which='LM', return_eigenvectors=True)
-        self.eigenvectors[k] = eigenvectorstranspose.T
 
-        if corr:
+        if ren=="rensubl":
+            renH = "renlocal"
+        else:
+            renH = ren
+
+        (self.eigenvalues[renH][k], eigenvectorstranspose) = scipy.sparse.linalg.eigsh(self.H[k], k=n, sigma=sigma,
+                            which='LM', return_eigenvectors=True)
+        self.eigenvectors[renH][k] = eigenvectorstranspose.T
+
+        if ren=="rensubl":
             #print "Adding subleading corrections to k=",k, " eigenvalues"
 
-            self.eigsrensubl[k] = scipy.zeros(n)
+            self.eigenvalues[ren][k] = scipy.zeros(n)
             self.cutoff = cutoff
 
             for i in range(n):
-                cbar = self.eigenvectors[k][i]
+                cbar = self.eigenvectors["renlocal"][k][i]
                 if abs(sum([x*x for x in cbar])-1.0) > 10**(-13):
                     raise RuntimeError('Eigenvector not normalized')
 
-                Ebar = self.eigsrenlocal[k][i]
-                self.eigsrensubl[k][i] += Ebar
+                Ebar = self.eigenvalues["renlocal"][k][i]
+                self.eigenvalues[ren][k][i] += Ebar
                 #print self.g2, self.g4, Ebar, self.Emax, self.Er
 
                 ktab, rentab = renorm.rensubl(self.g2, self.g4, Ebar, self.Emax, self.Er, m=self.m1, cutoff=cutoff*self.m)
@@ -347,7 +349,7 @@ class Phi1234():
                         Eab2= (self.basis[k][a].energy + self.basis[k][b].energy)/2.
 
                         coeff = tckren[nn](Eab2)
-                        self.eigsrensubl[k][i] += c * coeff * cbar[a] * cbar[b] * Vab
+                        self.eingenvalues["rensubl"][k][i] += c*coeff*cbar[a]*cbar[b]*Vab
 
         gc.collect()
 
