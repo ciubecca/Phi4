@@ -9,7 +9,6 @@ class Database():
         self.table=self.db[tablename]
 
     def insert(self, k, L, Emax, g, spec, eigv, basisSize, neigs, ren, cutoff=5.):
-
         self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, Emax=Emax, g=g, ren=ren, eigv=eigv.tostring(), \
                                 cutoff=cutoff, spec=spec.tostring(), basisSize=basisSize, neigs=neigs))
 
