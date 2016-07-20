@@ -51,3 +51,11 @@ class Database():
             return listRes
         else:
             return [y for (x,y) in sorted(zip(orderBy, listRes))]
+
+
+    def migrateJsonToBytes(self, otherdb)
+        for e in self.table:
+            del e["id"]
+            e['eigv'] = scipy.array(json.loads(e['eigv'])).tostring()
+            e['spec'] = scipy.array(json.loads(e['spec'])).tostring()
+            otherdb.table.insert(e)
