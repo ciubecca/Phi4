@@ -24,6 +24,8 @@ def main(argv):
 
     exactQuery = {"ren":"raw", "k":1}
     data = [db.getObjList(x, exactQuery=exactQuery, approxQuery=query) for x in values]
+    # Check integrity of eigv data
+    eigv = db.getObjList("eigv", exactQuery=exactQuery, approxQuery=query)
     res = set(zip(*data))
     # Transpose list and remove duplicates
 

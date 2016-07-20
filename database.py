@@ -20,7 +20,9 @@ class Database():
             if all([abs(e[key]-value)<10.**(-12.) for key,value in approxQuery.items()]) and \
                 all([value[0]<=e[key]<value[1] for key,value in boundQuery.items()]):
                 if obj=='eigv':
-                    listRes.append(scipy.fromstring(e[obj]).reshape(e['neigs'],-1))
+                    # print(scipy.fromstring(e[obj]).size)
+                    # print(e["neigs"]*e["basisSize"])
+                    listRes.append(scipy.fromstring(e[obj]).reshape(e['neigs'], e['basisSize']))
                 elif obj=='spec':
                     listRes.append(scipy.fromstring(e[obj]))
                 else:
