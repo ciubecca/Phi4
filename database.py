@@ -32,5 +32,3 @@ class Database():
             return listRes
         else:
             return [y for (x,y) in sorted(zip(orderBy, listRes))]
-
-
