@@ -4,10 +4,7 @@ import renorm
 import sys
 import scipy
 import math
-from scipy import optimize
-import json
 import database
-
 
 def main(argv):
     if len(argv) < 2:
