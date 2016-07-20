@@ -14,17 +14,17 @@ rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
 def main(argv):
-    args = "<g> <Emax>"
+    args = "<Emax> <g>"
     if len(argv) < 3:
         print("{0} {1}".format(argv[0],args))
         return -1
 
-    g = float(argv[1])
-    Emax = float(argv[2])
+    Emax = float(argv[1])
+    g = float(argv[2])
 
     # Hardcoded parameters
     neigs = 1
-    Llist = scipy.linspace(8, 16, 17)
+    Llist = scipy.linspace(8, 10, 2)
     print(Llist)
 
     params = {'legend.fontsize': 8}

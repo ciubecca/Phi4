@@ -18,7 +18,7 @@ def main(argv):
     m=1.
     sigma = -30.
     neigs = 1
-    Llist = scipy.linspace(10, 12, 2)
+    Llist = scipy.linspace(8, 10, 2)
     print(Llist)
 
     db = database.Database()
