@@ -214,9 +214,9 @@ class Phi4():
         c = 2.*sum([1/(2.*pi)*scipy.special.kn(0,n*self.m*self.L) for n in range(1,10)])
         self.m1 = self.m*exp(-2.*pi*c)
 
-    def renlocal(self,Er):
-        self.g0r, self.g2r, self.g4r = renorm.renlocal(self.g0,self.g2,self.g4,self.Emax,m=self.m1,Er=Er)
-        self.Er = Er
+    def renlocal(self, Emax, Er):
+        self.g0r, self.g2r, self.g4r = \
+            renorm.renlocal(self.g0, self.g2, self.g4, Emax, m=self.m1, Er=Er)
 
     def computeHamiltonian(self, k, Emax, ren):
         if ren=="raw":
