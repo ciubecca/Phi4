@@ -134,7 +134,7 @@ class Basis():
         if occmax==None:
             self.occmax = int(math.floor(Emax/self.m))
         else:
-            occmax = occmax
+            self.occmax = occmax
 
         # Collection of Fock space states, possibly sorted in energy
         stateList = sorted(self.__buildBasis(self), key=attrgetter('energy'))
