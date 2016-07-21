@@ -145,7 +145,7 @@ class Basis():
     def fromBasis(self, basis, filterFun):
         """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
         stateList = [v for v in basis.stateList if filterFun(v) == True]
-        Emax = max([v.Emax for v in stateList])
+        Emax = max([v.energy for v in stateList])
         return self(basis.L, basis.Emax, basis.m, basis.k, stateList)
 
 
