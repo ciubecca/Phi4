@@ -24,7 +24,7 @@ def main(argv):
 
     # Hardcoded parameters
     neigs = 1
-    Llist = scipy.linspace(5, 16, 23)
+    Llist = scipy.linspace(5, 15, 21)
     print(Llist)
 
     params = {'legend.fontsize': 8}
