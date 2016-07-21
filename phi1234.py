@@ -97,12 +97,6 @@ class Phi1234():
         self.L=None
         self.m=None
 
-        self.h0 = {1 : None, -1 : None}
-        self.potential = { 1 : { }, -1 : { }}
-        self.h0Sub = {1 : None, -1 : None}
-        self.H = {1 : None, -1 : None}
-        self.V = {1 : { }, -1 : { }}
-
         self.eigenvalues = {"raw":{}, "renlocal":{}, "rensubl":{}}
         self.eigenvectors = {"raw":{}, "renlocal":{}, "rensubl":{}}
         # Eigenvalues and eigenvectors for different K-parities
@@ -112,31 +106,31 @@ class Phi1234():
 
         scipy.set_printoptions(precision=15)
 
-        self.basis = {1: None, -1:None}
-        self.fullBasis = {1: None, -1:None}
 
-    def buildFullBasis(self,k,L,m,Emax):
+    def buildFullBasis(self, k, L, m, Emax, occmax):
         """ Builds the full Hilbert space basis """
-
         self.L = float(L)
         self.m = float(m)
+        self.EmaxT = Emax
 
-        self.fullBasis[k] = Basis(L=self.L, Emax=Emax, m=self.m, k=k)
+        self.fullBasis[k] = Basis(L=self.L, Emax=Emax, m=self.m, k=k, occmax=occmax)
+        for nn in (0,2,4):
+            self.V[k][nn] = self.potential[k][nn].M.tocoo()
 
-
-    def buildBasis(self, k, Emax):
+    def buildBasis(self, k, Emax, nmax, occmax):
         """ Builds the Hilbert space basis for which the Hamiltonian to actually diagonalize
         is calculated (in general it's a subspace of fullBasis) """
 
-        self.basis[k] = Basis(m=self.m, L=self.L, Emax=Emax, k=k, nmax=self.fullBasis[k].nmax)
+        self.basis[k] = Basis(m=self.m, L=self.L, Emax=Emax, k=k, nmax=self.fullBasis[k].nmax, occmax=occmax)
         # We use the vector length (nmax) of the full basis. In this way we can compare elements between the two bases
         # print('nmax :', self.basis[k].nmax)
         self.Emax = float(Emax)
-
-        for nn in (0,2,4):
-            self.V[k][nn] = self.potential[k][nn].sub(self.basis[k], self.basis[k]).M.tocoo()
+        self.occmax = occmax
 
         self.h0Sub[k] = self.h0[k].sub(self.basis[k],self.basis[k]).M.tocoo()
+        for nn in (0,2,4):
+            self.Vsub[k][nn] = self.V[k][nn].sub(self.basis[k], self.basis[k]).M.tocoo()
+
 
     def buildMatrix(self, k=None):
         """ Builds the full hamiltonian in the basis of the free hamiltonian.
@@ -286,25 +280,30 @@ class Phi1234():
         self.g0r, self.g2r, self.g4r = renorm.renlocal(self.g0,self.g2,self.g4,self.Emax,m=self.m1,Er=Er)
         self.Er = Er
 
-    def computeHamiltonian(self, k, ren):
+    def computeHamiltonian(self, k, ren, ):
         """ Computes the (renormalized) Hamiltonian to diagonalize
         k : K-parity quantum number
         """
-
         if ren=="raw":
-            self.H[k] = self.h0Sub[k] + self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
+            self.H[k] = self.h0[k] + self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         else:
-            self.H[k] = self.h0Sub[k] + self.V[k][0]*self.g0r + self.V[k][2]*self.g2r + self.V[k][4]*self.g4r
+            self.H[k] = self.h0[k] + self.V[k][0]*self.g0r + self.V[k][2]*self.g2r + self.V[k][4]*self.g4r
 
-        self.compBasisSize[k]=self.H[k].shape[0]
+        self.Hsub[k] = self.H[k].sub(self.basis[k],self.basis[k])
+        self.compBasisSize[k]=self.Hsub[k].shape[0]
+
+        # Add tails
+        # TODO add subleading tails
+        basisT = highBasis
+        self.Hlt =
+        self.Htt =
 
 
-    def computeEigval(self, k, ren, sigma=0, n=10, cutoff=None):
+    def computeEigval(self, k, ren, sigma=0, n=10):
         """ Sets the internal variables self.eigenvalues
         k : K-parity quantum number
         n : number of eigenvalues to compute
         sigma : point around which we should look for the eigenvalues."""
-
 
         if ren=="rensubl":
             renH = "renlocal"

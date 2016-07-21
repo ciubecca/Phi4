@@ -1,17 +1,19 @@
 import scipy
 import scipy.sparse.linalg
 import scipy.sparse
+from scipy import pi
 import math
 from operator import attrgetter
 import gc
 
-pi=scipy.pi # this is pi=3.14159...
+# "tolerance" parameter to avoid possible numerical
+# issues when confronting energies with Emax
+tol = 10**(-5)
 
-# NOT IMPORTANT. I use this "tolerance" parameter throughout the code to avoid possible numerical issues when confronting energies with Emax
-tol = 0.00001
-
-""" P denotes spatial parity, while K field parity. For now only the P-even sector is implemented """
-
+"""
+P denotes spatial parity, while K field parity.
+For now only the P-even sector is implemented
+"""
 
 def omega(n,L,m):
     """ computes one particle energy from wavenumber"""
@@ -40,9 +42,8 @@ class State():
 
         self.totalWN = (wavenum*self.occs).sum()
 
-        if checkAtRest:
-            if self.totalWN != 0:
-                raise ValueError("State not at rest")
+        if checkAtRest and self.totalWN != 0:
+            raise ValueError("State not at rest")
 
         if self.size == 2*self.nmax+1 and self.occs[::-1] == self.occs:
             self.__parityEigenstate = True
@@ -52,6 +53,8 @@ class State():
         self.L=L
         self.m=m
         self.energy = sum(energies*self.occs)
+        # Total occupation number
+        self.occ = sum(self.occs)
         self.momentum = (2.*pi/self.L)*self.totalWN
 
     def isParityEigenstate(self):
@@ -61,10 +64,6 @@ class State():
     def Kparity(self):
         """ Returns the K-parity quantum number """
         return (-1)**sum(self.occs)
-
-    def occN(self):
-        """ Total occupation number """
-        return sum(self.occs)
 
     def __repr__(self):
         return str(self.occs)
@@ -98,116 +97,123 @@ class State():
             raise ValueError("attempt to reverse asymmetric occupation list")
         return State(self.occs[::-1],self.nmax,L=self.L,m=self.m)
 
+
+
 class NotInBasis(LookupError):
     """ Exception class """
     pass
 
-class Basis():
-    """ Generic list of basis elements sorted in energy. """
-    def __init__(self, L,Emax,m, k=None, nmax=None):
-        """ nmax: forces the state vectors to have length 2nmax+1
-            K: parity can be 1 or -1. If None, both parities are present """
 
+
+class Basis():
+    def __init__(self, L, Emax, m, k, stateList):
         self.L = L
         self.Emax = Emax
         self.m = m
         self.k = k
 
-        if nmax == None:
-            self.nmax = int(math.floor(scipy.sqrt((Emax/2.)**2.-m**2.)*self.L/(2.*pi)))
-        else:
-            self.nmax=nmax
+        self.stateList = stateList
 
-        self.stateList = sorted(self.__buildBasis(), key=attrgetter('energy'))
-        # Collection of Fock space states, possibly sorted in energy
-
-        self.reversedStateList = [state.parityReversed() for state in self.stateList]
         # P-parity reversed collection of Fock-space states
+        self.reversedStateList = [state.parityReversed() for state in self.stateList]
 
         self.statePos = { state : i for i, state in enumerate(self.stateList) }
         self.reversedStatePos = { state : i for i, state in enumerate(self.reversedStateList) }
 
         self.size = len(self.stateList)
 
+    @classmethod
+    def fromScratch(self, L, Emax, m, k, occmax=None):
+        """ Builds the truncated Hilbert space up to cutoff Emax """
+        self.L = L
+        self.Emax = Emax
+        self.m = m
+        self.k = k
 
-    def addState(self, state):
-        """ Adds state to the basis """
-        if state not in self.statePos and state not in self.reversedStatePos:
-            # this uses hashing function internally
-            state.setLM(L=self.L, m=self.m)
-            self.stateList.append(state)
-            self.reversedStateList.append(state.parityReversed())
-            self.statePos[state] = len(self.stateList)-1
-            self.reversedStatePos[state.parityReversed()] = len(self.reversedStateList)-1
-            self.size = len(self.stateList)
+        self.nmax = int(math.floor(scipy.sqrt((Emax/2.)**2.-m**2.)*self.L/(2.*pi)))
+        if occmax==None:
+            self.occmax = int(math.floor(Emax/self.m))
+        else:
+            occmax = occmax
 
-            self.Emax = max(self.Emax, state.energy)
+        # Collection of Fock space states, possibly sorted in energy
+        stateList = sorted(self.__buildBasis(self), key=attrgetter('energy'))
+
+        return self(L, Emax, m, k, stateList)
+
+    @classmethod
+    def fromBasis(self, basis, filterFun):
+        """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
+        stateList = [v for v in basis.stateList if filterFun(v) == True]
+        Emax = max([v.Emax for v in stateList])
+        return self(basis.L, basis.Emax, basis.m, basis.k, stateList)
+
 
     def __len__(self):
         return len(self.stateList)
-
     def __repr__(self):
         return str(self.stateList)
-
     def __getitem__(self,index):
         return self.stateList[index]
 
-
-    def lookup(self, state, printNotFound = False):
-        # Now this is implemented only for P-even states. Generalization for P-odd states is straightforward
-        """looks up the index of a state. If this is not present, tries to look up for its parity-reversed """
+    def lookup(self, state):
+        """
+        looks up the index of a state. If this is not present, tries to look up for its parity-reversed
+        """
         try:
             i = self.statePos[state]
-
             c=1.
             if(self.stateList[i].isParityEigenstate()):
-                c=scipy.sqrt(2.)
                 # Required for state normalization
+                c=scipy.sqrt(2.)
             return (c, i)
-
+        # In case the state is not found
         except KeyError:
-            # In case the state is not found
             try:
                 return (1., self.reversedStatePos[state])
             except KeyError:
                 raise NotInBasis()
 
     def __buildRMlist(self):
-        """ sets list of all right -moving states with particles of individual wave number
+        """
+        sets list of all right -moving states with particles of individual wave number
         <= nmax, total momentum <= Emax/2 and total energy <= Emax
         This function works by first filling in n=1 mode in all possible ways, then n=2 mode
-        in all possible ways assuming the occupation of n=1 mode, etc"""
+        in all possible ways assuming the occupation of n=1 mode, etc
+        """
 
-        if self.nmax == 0:
-            self.__RMlist = [State([],0,L=self.L,m=self.m,checkAtRest=False)]
-            return
+        kmax = self.nmax*2*pi/self.L
 
-        kmax = max(0., scipy.sqrt((self.Emax/2.)**2.-self.m**2.))
+        # maximal occupation number of n=1 mode
+        # If there is a right-moving particle, there must be also a left-moving one
+        maxN1 = int(math.floor(min(self.occmax-1, kmax/k(1,self.L), self.Emax/omega(1,self.L,self.m))))
 
-        maxN1 = int(math.floor(
-            min(kmax/k(1,self.L), self.Emax/omega(1,self.L,self.m))
-            )) #maximal occupation number of n=1 mode
-
+        # seed list of RM states, all possible n=1 mode occupation numbers
         RMlist0 = [State([N],1,L=self.L,m=self.m,checkAtRest=False) for N in range(maxN1+1)]
-        # seed list of RM states,all possible n=1 mode occupation numbers
 
-        for n in range(2,self.nmax+1): #go over all other modes
-            RMlist1=[] #we will take states out of RMlist0, augment them and add to RMlist1
-            for RMstate in RMlist0: # cycle over all RMstates
+        #go over all other modes
+        for n in range(2,self.nmax+1):
+            #we will take states out of RMlist0, augment them and add to RMlist1
+            RMlist1=[]
+            # cycle over all RMstates
+            for RMstate in RMlist0:
                 p0 = RMstate.momentum
                 e0 = RMstate.energy
+                #maximal occupation number of mode n given the occupation numbers of all previous modes
                 maxNn = int(math.floor(
-                    min((kmax-p0)/k(n,self.L), (self.Emax-scipy.sqrt(self.m**2+p0**2)-e0)/omega(n,self.L,self.m))
-                    ))#maximal occupation number of mode n given the occupation numbers of all previous modes
+                    min(self.occmax-RMstate.occ-1, (kmax-p0)/k(n,self.L), (self.Emax-scipy.sqrt(self.m**2+p0**2)-e0)/omega(n,self.L,self.m))
+                    ))
 
                 for N in range(maxNn+1):
                     longerstate=RMstate.occs[:]
-                    longerstate.append(N) #add all possible occupation numbers for mode n
+                    #add all possible occupation numbers for mode n
+                    longerstate.append(N)
                     RMlist1.append(State(longerstate,len(longerstate),L=self.L,m=self.m, checkAtRest=False))
             #RMlist1 created, copy it back to RMlist0
             RMlist0 = RMlist1
 
-        self.__RMlist = RMlist0 #save list of RMstates in an internal variable
+        #save list of RMstates in an internal variable
+        self.__RMlist = RMlist0
 
     def __divideRMlist(self):
         """ divides the list of RMstates into a list of lists, RMdivided,
@@ -215,8 +221,10 @@ class Basis():
         also each sublist is ordered in energy"""
 
         self.__nRMmax=max([RMstate.totalWN for RMstate in self.__RMlist])
-        self.__RMdivided = [[] for ntot in range(self.__nRMmax+1)] #initialize list of lists
-        for RMstate in self.__RMlist: #go over RMstates and append them to corresponding sublists
+        #initialize list of lists
+        self.__RMdivided = [[] for ntot in range(self.__nRMmax+1)]
+        #go over RMstates and append them to corresponding sublists
+        for RMstate in self.__RMlist:
             self.__RMdivided[RMstate.totalWN].append(RMstate)
 
         #now sort each sublist in energy
@@ -225,31 +233,46 @@ class Basis():
 
     # finally function which builds the basis
     def __buildBasis(self):
-        """ creates basis of states of total momentum zero and energy <=Emax """
-        self.__buildRMlist()
-        self.__divideRMlist()
+        """
+        creates basis of states of total momentum zero, energy <= Emax
+        and occupation number <= occmax
+        """
+        self.__buildRMlist(self)
+        self.__divideRMlist(self)
 
         statelist = []
 
         for nRM,RMsublist in enumerate(self.__RMdivided):
             for i, RMstate in enumerate(RMsublist):
                 ERM = RMstate.energy
-                for LMstate in RMsublist[i:]: # LM part of the state will come from the same sublist. We take the position of LMState to be greater or equal to the position of RMstate
-                    #we will just have to reverse it
+                ORM = RMstate.occ
+
+                # LM part of the state will come from the same sublist.
+                # We take the position of LMState to be greater or equal to the position of RMstate
+                for LMstate in RMsublist[i:]:
+                    # we will just have to reverse it
                     ELM = LMstate.energy
+                    OLM = LMstate.occ
                     deltaE = self.Emax - ERM - ELM
-                    if deltaE < 0: #if this happens, we can break since subsequent LMstates have even higher
-                        #energy (RMsublist is ordered in energy)
+                    deltaOcc = self.occmax - ORM - OLM
+
+                    # if this happens, we can break since subsequent LMstates
+                    # have even higher energy (RMsublist is ordered in energy)
+                    if deltaE<0:
                         break
+                    if deltaOcc<0:
+                        continue
 
-                    maxN0 = int(math.floor(deltaE/self.m))
+                    maxN0 = min(deltaOcc, math.floor(deltaE/self.m))
 
+                    # possible values for the occupation value at rest
                     for N0 in range(maxN0+1):
-                        #possible values for the occupation value at rest
 
                         state = State(LMstate.occs[::-1]+[N0]+RMstate.occs, self.nmax, L=self.L,m=self.m,checkAtRest=True)
 
-                        if self.k == None or self.k == state.Kparity():
-                            statelist.append(state)
-
+                        # XXX just to be sure
+                        if state.energy <= self.Emax and state.occ <= self.occmax:
+                            # XXX Can this be optimized?
+                            if self.k == state.Kparity():
+                                statelist.append(state)
         return statelist
