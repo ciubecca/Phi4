@@ -97,6 +97,10 @@ class Phi4():
         self.L=None
         self.m=None
 
+        self.basis = {}
+        self.h0 = {}
+        self.V = {k:{} for k in {-1,1}}
+
         self.eigenvalues = {"raw":{}, "renlocal":{}}
         self.eigenvectors = {"raw":{}, "renlocal":{}}
 
@@ -111,7 +115,7 @@ class Phi4():
         self.L = float(L)
         self.m = float(m)
 
-        self.basis[k] = Basis(L=self.L, Emax=Emax, m=self.m, k=k, occmax=occmax)
+        self.basis[k] = Basis.fromScratch(L=self.L, Emax=Emax, m=self.m, k=k, occmax=occmax)
 
     def buildMatrix(self, k):
         """ Builds the full hamiltonian in the basis of the free hamiltonian.
@@ -129,7 +133,7 @@ class Phi4():
 
         diagOps[0] = [ NOO([],[],L,m) ]
 
-        offdiagOs[0] = []
+        offdiagOps[0] = []
 
         diagOps[2] = [ NOO([a],[a],L,m, extracoeff = 2.) for a in range(-nmax,nmax+1) ]
 
@@ -200,7 +204,7 @@ class Phi4():
             offdiag_V.finalize()
             diag_V = scipy.sparse.spdiags(diagonal,0,basis.size,basis.size)
 
-            self.potential[k][n] = (offdiag_V+offdiag_V.transpose()+Matrix(lookupBasis, basis, diag_V)).to('coo')*self.L
+            self.V[k][n] = (offdiag_V+offdiag_V.transpose()+Matrix(lookupBasis, basis, diag_V)).to('coo')*self.L
 
 
     def setCouplings(self, g0, g2, g4):
@@ -222,13 +226,13 @@ class Phi4():
         else:
             raise ValueError()
 
-        basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy >= Emax)
-        basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy >= Emax)
+        basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
+        basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
 
         Hll = H.sub(basisL, basisL)
-        self.compBasisSize[k] = Hll.shape[0]
+        self.compBasisSize[k] = Hll.M.shape[0]
 
-        return Hll
+        return Hll.M
 
         # Add tails
         # TODO add subleading tails
@@ -275,13 +279,13 @@ class Phi4():
             self.fullBasis[1].Emax, self.fullBasis[1].nmax,  \
             self.fullBasis[-1].Emax, self.fullBasis[-1].nmax, \
             self.h0[1].M.data,self.h0[1].M.row,self.h0[1].M.col, \
-            self.potential[1][0].M.data,self.potential[1][0].M.row,self.potential[1][0].M.col, \
-            self.potential[1][2].M.data,self.potential[1][2].M.row,self.potential[1][2].M.col, \
-            self.potential[1][4].M.data,self.potential[1][4].M.row,self.potential[1][4].M.col, \
+            self.V[1][0].M.data,self.V[1][0].M.row,self.V[1][0].M.col, \
+            self.V[1][2].M.data,self.V[1][2].M.row,self.V[1][2].M.col, \
+            self.V[1][4].M.data,self.V[1][4].M.row,self.V[1][4].M.col, \
             self.h0[-1].M.data,self.h0[-1].M.row,self.h0[-1].M.col, \
-            self.potential[-1][0].M.data,self.potential[-1][0].M.row,self.potential[-1][0].M.col, \
-            self.potential[-1][2].M.data,self.potential[-1][2].M.row,self.potential[-1][2].M.col, \
-            self.potential[-1][4].M.data,self.potential[-1][4].M.row,self.potential[-1][4].M.col \
+            self.V[-1][0].M.data,self.V[-1][0].M.row,self.V[-1][0].M.col, \
+            self.V[-1][2].M.data,self.V[-1][2].M.row,self.V[-1][2].M.col, \
+            self.V[-1][4].M.data,self.V[-1][4].M.row,self.V[-1][4].M.col \
             )
         scipy.savez(*t)
 
@@ -305,9 +309,9 @@ class Phi4():
 
             self.h0[k] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+i*n))], (f['arr_'+(str(z+1+i*n))],
                 f['arr_'+(str(z+2+i*n))])), shape=(basisI.size, basisJ.size)))
-            self.potential[k][0] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+3+i*n))],
+            self.V[k][0] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+3+i*n))],
                 (f['arr_'+(str(z+4+i*n))], f['arr_'+(str(z+5+i*n))])), shape=(basisI.size, basisJ.size)))
-            self.potential[k][2] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+6+i*n))],
+            self.V[k][2] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+6+i*n))],
                 (f['arr_'+(str(z+7+i*n))], f['arr_'+(str(z+8+i*n))])), shape=(basisI.size, basisJ.size)))
-            self.potential[k][4] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+9+i*n))],
+            self.V[k][4] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+9+i*n))],
                 (f['arr_'+(str(z+10+i*n))], f['arr_'+(str(z+11+i*n))])), shape=(basisI.size, basisJ.size)))
