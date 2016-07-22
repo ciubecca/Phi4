@@ -24,7 +24,8 @@ def main(argv):
 
     # Hardcoded parameters
     neigs = 1
-    Elist = scipy.linspace(10, 29, 20)
+    Emaxbar = 30
+    Elist = scipy.linspace(10, 28, 19)
     print(Elist)
 
     params = {'legend.fontsize': 8}
@@ -33,7 +34,7 @@ def main(argv):
     db = database.Database()
 
     exactQuery = {"k":1}
-    approxQuery = {"g":g, "Emax":Emax, "Emaxbar":Emaxbar}
+    approxQuery = {"g":g, "L":L, "Emaxbar":Emaxbar}
 
     E0 = {}
     v0 = {}
@@ -41,9 +42,9 @@ def main(argv):
         E0[ren] = []
         v0[ren] = []
 
-        for L in Llist:
+        for Emax in Elist:
             exactQuery["ren"] = ren
-            approxQuery["L"] = L
+            approxQuery["Emax"] = Emax
             E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
             v0[ren].append(db.getObjList('eigv', exactQuery, approxQuery)[0][0])
 
@@ -51,29 +52,30 @@ def main(argv):
     # VACUUM ENERGY
     plt.figure(1)
 
-    data = E0["raw"]/Llist
-    plt.plot(Llist, data, linewidth=1.,
-            dashes = [4,1], marker='+', markersize=3)
+    data = E0["raw"]
+    plt.plot(Elist, data, linewidth=1., color="b",
+            dashes = [4,1], marker='+', markersize=3, label="raw")
 
-    data = E0["renlocal"]/Llist
-    plt.plot(Llist, data, linewidth=1.,
-            dashes = [4,1], marker='+', markersize=3)
+    data = E0["renlocal"]
+    plt.plot(Elist, data, linewidth=1., color="r",
+            dashes = [4,1], marker='+', markersize=3, label="renlocal")
 
 
     # OVERLAP WITH PERTURBATIVE VACUUM
     # plt.figure(2)
     # data = [x[0]**2. for x in v0["renlocal"]]
-    # plt.plot(Llist, data, linewidth=0.7,
+    # plt.plot(Elist, data, linewidth=0.7,
             # dashes = [3,2], marker='.', markersize=3)
 
 #############################################################################
 
     plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     #plt.xlim(min(xList)-0.01, max(xList)+0.01)
-    plt.title(r"g={0:.2f}, $E_{{\rm max}}$={1:.2f}".format(g,Emax))
-    plt.xlabel(r"$L$")
-    plt.ylabel(r"$E_0/L$")
-    plt.savefig("fig_E0vsE_g={0:.2f}_Emax={1:.2f}.{2}".format(g,Emax,output))
+    plt.title(r"$g$={0:.2f}, $L$={1:.2f}, $\bar{{E}}_{{\rm max}}$={2:.2f}".format(g,L,Emaxbar))
+    plt.xlabel(r"$E_{{\rm max}}$")
+    plt.ylabel(r"$E_0$")
+    plt.legend()
+    plt.savefig("fig_E0vsE_g={0:.2f}_L={1:.2f}.{2}".format(g,L,output))
 
     # plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     # #plt.xlim(min(xList)-0.01, max(xList)+0.01)
