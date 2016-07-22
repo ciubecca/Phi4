@@ -20,6 +20,7 @@ def main(argv):
     m = 1.
     Emaxbar = 30
     Elist = scipy.linspace(10, 29, 20)
+    occmax = 4
     sigma = -30.
     neigs = 1
     k = 1
@@ -31,7 +32,7 @@ def main(argv):
         db = database.Database(dbname="spectraJson.db", useJson=True)
 
     a = phi4.Phi4()
-    a.buildBasis(Emax=Emaxbar, L=L, m=m, k=k, occmax=4)
+    a.buildBasis(Emax=Emaxbar, L=L, m=m, k=k, occmax=occmax)
     print("Basis size: ", a.basis[k].size)
 
     a.buildMatrix(k=k)
@@ -48,7 +49,6 @@ def main(argv):
             print("Eigenvalues already present")
             continue
 
-
         Er = 0
         for ren in ("raw","renlocal"):
             a.renlocal(Emax=Emaxbar, Er=Er)
@@ -64,7 +64,7 @@ def main(argv):
 
             db.insert(k=k, Emax=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
                     Emaxbar=Emaxbar, eigv=a.eigenvectors[ren][k],
-                    basisSize=compsize, neigs=neigs)
+                    occmax=occmax, basisSize=compsize, neigs=neigs)
 
 
 if __name__ == "__main__":

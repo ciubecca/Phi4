@@ -25,6 +25,7 @@ def main(argv):
     # Hardcoded parameters
     neigs = 1
     Emaxbar = 30
+    occmax = 4
     Elist = scipy.linspace(10, 28, 19)
     print(Elist)
 
@@ -33,7 +34,7 @@ def main(argv):
 
     db = database.Database()
 
-    exactQuery = {"k":1}
+    exactQuery = {"k":1, "occmax":occmax}
     approxQuery = {"g":g, "L":L, "Emaxbar":Emaxbar}
 
     E0 = {}
@@ -71,11 +72,12 @@ def main(argv):
 
     plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     #plt.xlim(min(xList)-0.01, max(xList)+0.01)
-    plt.title(r"$g$={0:.2f}, $L$={1:.2f}, $\bar{{E}}_{{\rm max}}$={2:.2f}".format(g,L,Emaxbar))
+    plt.title(r"$g$={0:.2f}, $L$={1:.2f}, $\bar{{E}}_{{\rm max}}$={2:.2f},
+            $n_{{\rm max}}$={3:d}".format(g,L,Emaxbar,occmax))
     plt.xlabel(r"$E_{{\rm max}}$")
     plt.ylabel(r"$E_0$")
     plt.legend()
-    plt.savefig("fig_E0vsE_g={0:.2f}_L={1:.2f}.{2}".format(g,L,output))
+    plt.savefig("fig_E0vsE_g={0:.2f}_L={1:.2f}_nmax={2:d}.{3}".format(g,L,occmax,output))
 
     # plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     # #plt.xlim(min(xList)-0.01, max(xList)+0.01)
