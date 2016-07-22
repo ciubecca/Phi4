@@ -174,6 +174,7 @@ class Basis():
             except KeyError:
                 raise NotInBasis()
 
+
     def __buildRMlist(self):
         """
         sets list of all right -moving states with particles of individual wave number

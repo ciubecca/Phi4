@@ -174,13 +174,20 @@ class Phi4():
         self.compBasisSize[k] = Hll.M.shape[0]
 
         # Choose "alpha" vectors
-        basisAlpha = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
+        basisAlpha1 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
+        # XXX reinsert n=4
+        basisAlpha2 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2)))
 
         # Construct new basis vectors
         propagator = (Er*Matrix(basisH, basisH, scipy.sparse.eye(basisH.size)) - H0.sub(basisH,basisH)).to("csc").inverse()
-        psialpha1 = propagator*V.sub(basisH, basisAlpha)
-        psialpha2 = V.sub(basisH, basisH)*psialpha1
+        psialpha1 = (propagator*V.sub(basisH, basisAlpha1)).M
+        psialpha2 = (propagator*V.sub(basisH, basisH)*propagator*V.sub(basisH, basisAlpha2)).M
 
+        # Gram matrices
+        gramL = Matrix(basisL, basisL, scipy.sparse.eye(basisL.size)).M
+        # XXX check offdiag elements
+        gramAlpha = scipy.sparse.bmat([[psialpha1.transpose()*psialpha1, psialpha1.transpose()*psialpha2],
+                                    [psialpha2.transpose()*psialpha1, psialpha2.transpose()*psialpha2]])
 
         # Add tails
         # TODO add subleading tails
