@@ -170,8 +170,6 @@ class Phi4():
         basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
         basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
 
-        Hll = H.sub(basisL, basisL)
-        self.compBasisSize[k] = Hll.M.shape[0]
 
         # Choose "alpha" vectors
         basisAlpha1 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
@@ -188,14 +186,22 @@ class Phi4():
         # XXX check offdiag elements
         gramAlpha = scipy.sparse.bmat([[psialpha1.transpose()*psialpha1, psialpha1.transpose()*psialpha2],
                                     [psialpha2.transpose()*psialpha1, psialpha2.transpose()*psialpha2]])
+        gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
 
-        # Add tails
-        # TODO add subleading tails
-        # basisT = highBasis
-        # self.Hlt =
-        # self.Htt =
+        # Hamiltonian matrix
+        # XXX check offdiag elements
+        Hll = H.sub(basisL, basisL).M
+        self.compBasisSize[k] = Hll.shape[0]
+        Hlh = H.sub(basisL, basisH).M
+        Hhl = H.sub(basisH, basisL).M
+        Hhh = H.sub(basisH, basisH).M
+        Hfull = scipy.sparse.bmat([
+            [Hll, Hlh*psialpha1, Hlh*psialpha2],
+            [psialpha1.transpose()*Hhl, psialpha1.transpose()*Hhh*psialpha1, psialpha1.transpose()*Hhh*psialpha2],
+            [(Hlh*psialpha2).transpose(), psialpha2.transpose()*Hhh*psialpha1, psialpha2.transpose()*Hhh*psialpha2]])
+        # TODO check that Gram and H are symmetric
 
-        return Hll.M
+        return Hfull
 
     def computeEigval(self, k, Emax, ren, sigma=0, neigs=10):
         """ Sets the internal variables self.eigenvalues
