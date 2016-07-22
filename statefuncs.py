@@ -106,7 +106,7 @@ class NotInBasis(LookupError):
 
 
 class Basis():
-    def __init__(self, L, Emax, m, k, stateList):
+    def __init__(self, L, m, k, stateList, Emax=None):
         self.L = L
         self.Emax = Emax
         self.m = m
@@ -139,14 +139,13 @@ class Basis():
         # Collection of Fock space states, possibly sorted in energy
         stateList = sorted(self.__buildBasis(self), key=attrgetter('energy'))
 
-        return self(L, Emax, m, k, stateList)
+        return self(L, m, k, stateList, Emax)
 
     @classmethod
     def fromBasis(self, basis, filterFun):
         """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
         stateList = [v for v in basis.stateList if filterFun(v) == True]
-        Emax = max([v.energy for v in stateList])
-        return self(basis.L, basis.Emax, basis.m, basis.k, stateList)
+        return self(basis.L, basis.m, basis.k, stateList)
 
 
     def __len__(self):

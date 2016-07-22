@@ -156,7 +156,7 @@ class Phi4():
         self.g0r, self.g2r, self.g4r = \
             renorm.renlocal(self.g0, self.g2, self.g4, Emax, m=self.m1, Er=Er)
 
-    def computeHamiltonian(self, k, Emax, ren, Er=0):
+    def computeHamiltonian(self, k, Emax, ren, addTails=True, Er=0):
         if ren=="raw":
             V = self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         elif ren=="renlocal":
@@ -168,15 +168,21 @@ class Phi4():
         H = H0 + V
 
         basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
-        basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
+        Hll = H.sub(basisL, basisL).M
+        gramL = Matrix(basisL, basisL, scipy.sparse.eye(basisL.size)).M
 
+        if addTails==False:
+            self.compH = Hll
+            self.gram = gramL
+            return
 
         # Choose "alpha" vectors
         basisAlpha1 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
         # XXX reinsert n=4
-        basisAlpha2 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2)))
+        basisAlpha2 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
 
         # Construct new basis vectors
+        basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
         propagator = (Er*Matrix(basisH, basisH, scipy.sparse.eye(basisH.size)) - H0.sub(basisH,basisH)).to("csc").inverse()
         psialpha1 = (propagator*V.sub(basisH, basisAlpha1)).M
         psialpha2 = (propagator*V.sub(basisH, basisH)*propagator*V.sub(basisH, basisAlpha2)).M
@@ -186,24 +192,22 @@ class Phi4():
         # XXX check offdiag elements
         gramAlpha = scipy.sparse.bmat([[psialpha1.transpose()*psialpha1, psialpha1.transpose()*psialpha2],
                                     [psialpha2.transpose()*psialpha1, psialpha2.transpose()*psialpha2]])
-        gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
+        self.gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
 
         # Hamiltonian matrix
         # XXX check offdiag elements
-        Hll = H.sub(basisL, basisL).M
-        self.compBasisSize[k] = Hll.shape[0]
         Hlh = H.sub(basisL, basisH).M
         Hhl = H.sub(basisH, basisL).M
         Hhh = H.sub(basisH, basisH).M
-        Hfull = scipy.sparse.bmat([
+        self.compH = scipy.sparse.bmat([
             [Hll, Hlh*psialpha1, Hlh*psialpha2],
             [psialpha1.transpose()*Hhl, psialpha1.transpose()*Hhh*psialpha1, psialpha1.transpose()*Hhh*psialpha2],
             [(Hlh*psialpha2).transpose(), psialpha2.transpose()*Hhh*psialpha1, psialpha2.transpose()*Hhh*psialpha2]])
         # TODO check that Gram and H are symmetric
 
-        return Hfull
+        return
 
-    def computeEigval(self, k, Emax, ren, sigma=0, neigs=10):
+    def computeEigval(self, ren, k, sigma=0, neigs=10):
         """ Sets the internal variables self.eigenvalues
         k : field parity
         Emax : max energy of truncated Hilbert space
@@ -212,9 +216,8 @@ class Phi4():
         sigma : point around which we should look for eigenvalues.
         """
 
-        H = self.computeHamiltonian(k, Emax, ren)
-
-        (self.eigenvalues[ren][k], eigenvectorstranspose) = scipy.sparse.linalg.eigsh(H, k=neigs, sigma=sigma,
+        (self.eigenvalues[ren][k], eigenvectorstranspose) = \
+            scipy.sparse.linalg.eigsh(self.compH, M=self.gram, k=neigs, sigma=sigma,
                             which='LM', return_eigenvectors=True)
         self.eigenvectors[ren][k] = eigenvectorstranspose.T
 

@@ -3,7 +3,7 @@ import json
 import dataset
 import datetime
 
-rentypes = ["raw","renlocal","rensubl"]
+rentypes = ["raw","renlocal"]
 
 #FIXME Feature needed: forbid merging json and non-json data
 class Database():
@@ -12,7 +12,7 @@ class Database():
         self.table=self.db[tablename]
         self.useJson = useJson
 
-    def insert(self, k, L, Emax, g, spec, eigv, basisSize, neigs, ren, cutoff=5.):
+    def insert(self, k, L, Emax, g, spec, eigv, basisSize, neigs, ren, Emaxbar):
         if(basisSize*neigs != eigv.size):
             print(eigv.size)
             raise ValueError("basisSize, neigs and eigv dimension don't match")
@@ -21,11 +21,14 @@ class Database():
             raise ValueError("ren argument must be in {}".format(", ".join(rentypes)))
 
         if self.useJson==True:
-            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, Emax=Emax, g=g, ren=ren, eigv=json.dumps(eigv.tolist()), \
-                                cutoff=cutoff, spec=json.dumps(spec.tolist()), basisSize=basisSize, neigs=neigs))
+            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L,
+                Emax=Emax, g=g, ren=ren, eigv=json.dumps(eigv.tolist()),
+                Emaxbar=Emaxbar, spec=json.dumps(spec.tolist()), basisSize=basisSize,
+                neigs=neigs))
         else:
-            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, Emax=Emax, g=g, ren=ren, eigv=eigv.tostring(), \
-                                cutoff=cutoff, spec=spec.tostring(), basisSize=basisSize, neigs=neigs))
+            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, Emax=Emax,
+                g=g, ren=ren, eigv=eigv.tostring(), Emaxbar=Emaxbar, spec=spec.tostring(),
+                basisSize=basisSize, neigs=neigs))
 
     # Get a list of all objects satisfying the query
     def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={}, orderBy=None):
