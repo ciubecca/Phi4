@@ -156,13 +156,16 @@ class Phi4():
         self.g0r, self.g2r, self.g4r = \
             renorm.renlocal(self.g0, self.g2, self.g4, Emax, m=self.m1, Er=Er)
 
-    def computeHamiltonian(self, k, Emax, ren):
+    def computeHamiltonian(self, k, Emax, ren, Er=0):
         if ren=="raw":
-            H = self.h0[k] + self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
+            V = self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         elif ren=="renlocal":
-            H = self.h0[k] + self.V[k][0]*self.g0r + self.V[k][2]*self.g2r + self.V[k][4]*self.g4r
+            V = self.V[k][0]*self.g0r + self.V[k][2]*self.g2r + self.V[k][4]*self.g4r
         else:
             raise ValueError()
+
+        H0 = self.h0[k]
+        H = H0 + V
 
         basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
         basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
@@ -170,10 +173,14 @@ class Phi4():
         Hll = H.sub(basisL, basisL)
         self.compBasisSize[k] = Hll.M.shape[0]
 
-
         # Choose "alpha" vectors
         basisAlpha = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
-        print(basisAlpha)
+
+        # Construct new basis vectors
+        propagator = (Er*Matrix(basisH, basisH, scipy.sparse.eye(basisH.size)) - H0.sub(basisH,basisH)).to("csc").inverse()
+        psialpha1 = propagator*V.sub(basisH, basisAlpha)
+        psialpha2 = V.sub(basisH, basisH)*psialpha1
+
 
         # Add tails
         # TODO add subleading tails

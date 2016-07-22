@@ -4,7 +4,6 @@ import scipy.sparse
 import scipy.interpolate
 
 
-
 # TODO use metaclasses?
 class Matrix():
     """ Matrix with specified state bases for row and column indexes.
@@ -33,8 +32,16 @@ class Matrix():
 
     def __add__(self, other):
         """ Sum of matrices """
-
         return Matrix(self.basisI, self.basisJ, self.M+other.M)
+    def __sub__(self, other):
+        return Matrix(self.basisI, self.basisJ, self.M-other.M)
+
+    def __rmul__(self, other):
+        """ Multiplication of matrix with matrix or number"""
+        if(other.__class__ == self.__class__):
+            return Matrix(other.basisI, self.basisJ, other.M*self.M)
+        else:
+            return Matrix(self.basisI, self.basisJ, self.M*float(other))
 
     def __mul__(self, other):
         """ Multiplication of matrix with matrix or number"""
@@ -69,5 +76,4 @@ class Matrix():
     def transpose(self):
         return Matrix(self.basisJ, self.basisI, self.M.transpose())
     def inverse(self):
-        return Matrix(self.basisJ, self.basisI, scipy.sparese.linalg.inv(self.M))
-
+        return Matrix(self.basisJ, self.basisI, scipy.sparse.linalg.inv(self.M))
