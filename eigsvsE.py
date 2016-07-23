@@ -19,7 +19,7 @@ def main(argv):
     # Hardcoded parameters
     m = 1.
     Emaxbar = 30
-    Elist = scipy.linspace(5, 29, 25)
+    Elist = scipy.linspace(6, 29, 24)
     occmax = 4
     sigma = -30.
     neigs = 1
@@ -43,7 +43,8 @@ def main(argv):
     for Emax in Elist:
         print("Emax: ", Emax)
 
-        approxQuery = {"g":g, "L":L, "Emaxbar":Emaxbar, "Emax":Emax}
+        # Emaxbar == Emax means there are no tails
+        approxQuery = {"g":g, "L":L, "Emaxbar":Emax, "Emax":Emax}
         exactQuery = {"k":k}
         if db.getObjList('spec', approxQuery=approxQuery, exactQuery=exactQuery) != []:
             print("Eigenvalues already present")
@@ -51,8 +52,9 @@ def main(argv):
 
         Er = 0
         for ren in ("raw","renlocal"):
-            a.renlocal(Emax=Emaxbar, Er=Er)
-            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, Er=Er)
+            # This is different wrt with tails
+            a.renlocal(Emax=Emax, Er=Er)
+            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, Er=Er, addTails=False)
 
             compsize = a.compH.shape[0]
             print("Comp basis size: ", a.compH.shape[0])
@@ -62,9 +64,9 @@ def main(argv):
 
             print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
 
-            db.insert(k=k, Emax=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
-                    Emaxbar=Emaxbar, eigv=a.eigenvectors[ren][k],
-                    occmax=occmax, basisSize=compsize, neigs=neigs)
+            # If Emaxbar == Emax it means there are no tails
+            db.insert(k=k, Emax=Emax, Emaxbar=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
+                    eigv=a.eigenvectors[ren][k], occmax=occmax, basisSize=compsize, neigs=neigs)
 
 
 if __name__ == "__main__":
