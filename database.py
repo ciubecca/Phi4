@@ -7,7 +7,7 @@ rentypes = ["raw","renlocal"]
 
 #FIXME Feature needed: forbid merging json and non-json data
 class Database():
-    def __init__(self, dbname="spectra.db", tablename="spectra", useJson=False):
+    def __init__(self, dbname="data/spectra.db", tablename="spectra", useJson=False):
         self.db = dataset.connect('sqlite:///'+dbname)
         self.table=self.db[tablename]
         self.useJson = useJson

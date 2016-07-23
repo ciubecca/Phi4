@@ -40,7 +40,7 @@ def main(argv):
     plt.xlabel(r"$E_{{\rm max}}$")
     plt.ylabel(r"$E_0$")
     plt.legend(loc="lower right")
-    plt.savefig("fig_E0vsEcompare_g={0:.2f}_L={1:.2f}_nmax={2:d}.{3}".format(g,L,occmax,output))
+    plt.savefig("figs/fig_E0vsEcompare_g={0:.2f}_L={1:.2f}_nmax={2:d}.{3}".format(g,L,occmax,output))
 
 
 
