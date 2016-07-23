@@ -61,7 +61,7 @@ class State():
         """ Returns True if the Fock space state is a P-parity eigenstate """
         return self.__parityEigenstate
 
-    def Kparity(self):
+    def kparity(self):
         """ Returns the K-parity quantum number """
         return (-1)**sum(self.occs)
 
@@ -273,6 +273,6 @@ class Basis():
                         # XXX just to be sure
                         if state.energy <= self.Emax and state.occ <= self.occmax:
                             # XXX Can this be optimized?
-                            if self.k == state.Kparity():
+                            if self.k == state.kparity():
                                 statelist.append(state)
         return statelist
