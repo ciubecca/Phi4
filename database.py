@@ -3,15 +3,33 @@ import json
 import dataset
 import datetime
 
+rentypes = ["raw","renlocal"]
+
+#FIXME Feature needed: forbid merging json and non-json data
 class Database():
-    def __init__(self, dbname="spectra.db", tablename="spectra"):
+    def __init__(self, dbname="spectra.db", tablename="spectra", useJson=False):
         self.db = dataset.connect('sqlite:///'+dbname)
         self.table=self.db[tablename]
+        self.useJson = useJson
 
-    def insert(self, k, L, Emax, g, spec, eigv, basisSize, neigs, ren, cutoff=5.):
+    def insert(self, k, L, Emax, g, spec, eigv, basisSize,
+            occmax, neigs, ren, Emaxbar):
+        if(basisSize*neigs != eigv.size):
+            print(eigv.size)
+            raise ValueError("basisSize, neigs and eigv dimension don't match")
 
-        self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, Emax=Emax, g=g, ren=ren, eigv=eigv.tostring(), \
-                                cutoff=cutoff, spec=spec.tostring(), basisSize=basisSize, neigs=neigs))
+        if ren not in rentypes:
+            raise ValueError("ren argument must be in {}".format(", ".join(rentypes)))
+
+        if self.useJson==True:
+            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L,
+                Emax=Emax, g=g, ren=ren, eigv=json.dumps(eigv.tolist()),
+                Emaxbar=Emaxbar, spec=json.dumps(spec.tolist()), basisSize=basisSize,
+                neigs=neigs, occmax=occmax))
+        else:
+            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, Emax=Emax,
+                g=g, ren=ren, eigv=eigv.tostring(), Emaxbar=Emaxbar, spec=spec.tostring(),
+                basisSize=basisSize, neigs=neigs, occmax=occmax))
 
     # Get a list of all objects satisfying the query
     def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={}, orderBy=None):
@@ -21,9 +39,15 @@ class Database():
             if all([abs(e[key]-value)<10.**(-12.) for key,value in approxQuery.items()]) and \
                 all([value[0]<=e[key]<value[1] for key,value in boundQuery.items()]):
                 if obj=='eigv':
-                    listRes.append(scipy.fromstring(e[obj]).reshape(e['neigs'],-1))
+                    if self.useJson == True:
+                        listRes.append(json.loads(e[obj]))
+                    else:
+                        listRes.append(scipy.fromstring(e[obj]).reshape(e['neigs'], e['basisSize']))
                 elif obj=='spec':
-                    listRes.append(scipy.fromstring(e[obj]))
+                    if self.useJson == True:
+                        listRes.append(json.loads(e[obj]))
+                    else:
+                        listRes.append(scipy.fromstring(e[obj]))
                 else:
                     listRes.append(e[obj])
 
@@ -33,3 +57,9 @@ class Database():
             return [y for (x,y) in sorted(zip(orderBy, listRes))]
 
 
+    def migrateJsonToBytes(self, otherdb):
+        for e in self.table:
+            del e["id"]
+            e['eigv'] = scipy.array(json.loads(e['eigv'])).tostring()
+            e['spec'] = scipy.array(json.loads(e['spec'])).tostring()
+            otherdb.table.insert(e)
