@@ -205,6 +205,14 @@ class Phi4():
             [(Hlh*psialpha2).transpose(), psialpha2.transpose()*Hhh*psialpha1, psialpha2.transpose()*Hhh*psialpha2]])
         # TODO check that Gram and H are symmetric
 
+        # print(psialpha1.getformat())
+        # print(Hlh.getformat())
+        # print(psialpha2.getformat())
+        # print(Hhh.getformat())
+        # print(Hll.getformat())
+        # print(propagator.M.getformat())
+        # print(V.M.getformat())
+
         return
 
     def computeEigval(self, ren, k, sigma=0, neigs=10):

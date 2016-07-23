@@ -19,7 +19,7 @@ def main(argv):
     # Hardcoded parameters
     m = 1.
     Emaxbar = 30
-    Elist = scipy.linspace(5, 29, 25)
+    Elist = scipy.linspace(6, 29, 24)
     occmax = 4
     sigma = -30.
     neigs = 1
