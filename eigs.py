@@ -7,7 +7,7 @@ import math
 import database
 
 json = False
-occmax = 4
+occmax = 5
 m = 1.
 sigma = -30.
 neigs = 1
@@ -53,17 +53,16 @@ def main(argv):
             a.computeHamiltonian(Emax=Emax, k=k, ren=ren, Er=Er, addTails=False)
 
             compsize = a.compH.shape[0]
-            print("Comp basis size: ", a.compH.shape[0])
+            if ren == "raw": print("Comp basis size: ", a.compH.shape[0])
 
             a.computeEigval(k=k, ren=ren, sigma=sigma, neigs=neigs)
             Er = a.vacuumE(ren="raw")
 
-            print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
+            if k==1: print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
 
             # If Emaxbar == Emax it means there are no tails
             db.insert(k=k, Emax=Emax, Emaxbar=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
                     eigv=a.eigenvectors[ren][k], occmax=occmax, basisSize=compsize, neigs=neigs)
-
 
 if __name__ == "__main__":
     main(sys.argv)
