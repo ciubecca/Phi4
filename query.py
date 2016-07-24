@@ -18,18 +18,18 @@ def main(argv):
         query[key] = float(value)
 
     # Hardcoded parameters
-    values = ("L", "Emax", "basisSize", "g", "ren")
+    values = ("L", "Emax", "basisSize", "g", "occmax")
 
     # db = database.Database(dbname="spectraJson.db",useJson=True)
     db = database.Database()
 
-    exactQuery = {"ren":"raw", "k":1}
+    exactQuery = {}
     data = [db.getObjList(x, exactQuery=exactQuery, approxQuery=query) for x in values]
     # Check integrity of eigv data
     eigv = db.getObjList("eigv", exactQuery=exactQuery, approxQuery=query)
     res = set(zip(*data))
     # Transpose list and remove duplicates
-    res = zip(*data)
+    # res = zip(*data)
 
     for x in sorted(res):
         print(list(zip(values, x)))

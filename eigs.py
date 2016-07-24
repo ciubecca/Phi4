@@ -14,7 +14,7 @@ neigs = 1
 klist = (1,-1)
 
 def main(argv):
-    if len(argv) < 3:
+    if len(argv) < 4:
         print(argv[0], " <L> <Emax> <g>")
         return -1
 
@@ -61,8 +61,9 @@ def main(argv):
             if k==1: print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
 
             # If Emaxbar == Emax it means there are no tails
-            db.insert(k=k, Emax=Emax, Emaxbar=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
-                    eigv=a.eigenvectors[ren][k], occmax=occmax, basisSize=compsize, neigs=neigs)
+            db.insert(k=k, Emax=Emax, Emaxbar=Emax, L=a.L, ren=ren, g=g,
+                    spec=a.eigenvalues[ren][k], eigv=a.eigenvectors[ren][k],
+                    occmax=occmax, basisSize=compsize, neigs=neigs)
 
 if __name__ == "__main__":
     main(sys.argv)
