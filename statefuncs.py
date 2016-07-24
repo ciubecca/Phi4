@@ -67,10 +67,9 @@ class State():
 
     def __repr__(self):
         return str(self.occs)
-
     def __eq__(self, other):
-       return (self.occs == other.occs) or (self.occs == other.occs[::-1])
        # check also if the P-reversed is the same!
+       return (self.occs == other.occs) or (self.occs == other.occs[::-1])
 
     def __hash__(self):
         return hash(tuple(self.occs))

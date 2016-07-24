@@ -22,10 +22,11 @@ rc('text', usetex=True)
     Works for general particle number """
 # XXX possible mistakes here
 def normalizeWF(c, v):
+    c0 = c
     # Bose symmetry
-    c *= scipy.prod([factorial(n) for n in v])/factorial(v.occ)
+    c *= scipy.prod([factorial(n) for n in v.occs])/factorial(v.occ)
     # Normalization of Fock space states
-    c *= 1/sqrt(scipy.prod([factorial(n) for n in v]))
+    c *= 1/sqrt(scipy.prod([factorial(n) for n in v.occs]))
     # Spatial parity symmetry
     if v.isParityEigenstate() == False:
         c *= 1/sqrt(2)
