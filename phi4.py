@@ -177,21 +177,27 @@ class Phi4():
             return
 
         # Choose "alpha" vectors
-        basisAlpha1 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
+        basisAlpha1 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n
+            for n in (0,2,4,6)))
         # XXX reinsert n=4
-        basisAlpha2 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n for n in (0,2,4)))
+        basisAlpha2 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n
+            for n in (0,2,4,6)))
 
         # Construct new basis vectors
         basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
-        propagator = (Er*Matrix(basisH, basisH, scipy.sparse.eye(basisH.size)) - H0.sub(basisH,basisH)).to("csc").inverse()
+        propagator = (Er*Matrix(basisH, basisH, scipy.sparse.eye(basisH.size))
+                -H0.sub(basisH,basisH)).to("csc").inverse()
         psialpha1 = (propagator*V.sub(basisH, basisAlpha1)).M
-        psialpha2 = (propagator*V.sub(basisH, basisH)*propagator*V.sub(basisH, basisAlpha2)).M
+        psialpha2 = (propagator*V.sub(basisH, basisH)*propagator*
+                V.sub(basisH, basisAlpha2)).M
 
         # Gram matrices
         gramL = Matrix(basisL, basisL, scipy.sparse.eye(basisL.size)).M
         # XXX check offdiag elements
-        gramAlpha = scipy.sparse.bmat([[psialpha1.transpose()*psialpha1, psialpha1.transpose()*psialpha2],
-                                    [psialpha2.transpose()*psialpha1, psialpha2.transpose()*psialpha2]])
+        gramAlpha = scipy.sparse.bmat([
+        [psialpha1.transpose()*psialpha1, psialpha1.transpose()*psialpha2],
+        [psialpha2.transpose()*psialpha1, psialpha2.transpose()*psialpha2]
+        ])
         self.gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
 
         # Hamiltonian matrix
@@ -200,18 +206,12 @@ class Phi4():
         Hhl = H.sub(basisH, basisL).M
         Hhh = H.sub(basisH, basisH).M
         self.compH = scipy.sparse.bmat([
-            [Hll, Hlh*psialpha1, Hlh*psialpha2],
-            [psialpha1.transpose()*Hhl, psialpha1.transpose()*Hhh*psialpha1, psialpha1.transpose()*Hhh*psialpha2],
-            [(Hlh*psialpha2).transpose(), psialpha2.transpose()*Hhh*psialpha1, psialpha2.transpose()*Hhh*psialpha2]])
+        [Hll, Hlh*psialpha1, Hlh*psialpha2],
+        [psialpha1.transpose()*Hhl, psialpha1.transpose()*Hhh*psialpha1,
+            psialpha1.transpose()*Hhh*psialpha2],
+        [(Hlh*psialpha2).transpose(), psialpha2.transpose()*Hhh*psialpha1,
+            psialpha2.transpose()*Hhh*psialpha2]])
         # TODO check that Gram and H are symmetric
-
-        # print(psialpha1.getformat())
-        # print(Hlh.getformat())
-        # print(psialpha2.getformat())
-        # print(Hhh.getformat())
-        # print(Hll.getformat())
-        # print(propagator.M.getformat())
-        # print(V.M.getformat())
 
         return
 
