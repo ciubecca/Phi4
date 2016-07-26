@@ -8,22 +8,23 @@ import database
 
 json = False
 
+# Hardcoded parameters
+m = 1.
+Emaxbar = 20
+Elist = scipy.linspace(5, 19, 15)
+occmax = 6
+sigma = -30.
+neigs = 1
+k = 1
+
 def main(argv):
-    if len(argv) < 2:
+    if len(argv) < 3:
         print(argv[0], " <L> <g>")
         return -1
 
     L = float(argv[1])
     g = float(argv[2])
 
-    # Hardcoded parameters
-    m = 1.
-    Emaxbar = 30
-    Elist = scipy.linspace(5, 29, 25)
-    occmax = 4
-    sigma = -30.
-    neigs = 1
-    k = 1
     print(Elist)
 
     if json == False:
