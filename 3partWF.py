@@ -10,7 +10,7 @@ import database
 from statefuncs import Basis
 import itertools
 
-occmax = 5
+occmax = 3
 output = "pdf"
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -22,7 +22,6 @@ rc('text', usetex=True)
     Works for general particle number """
 # XXX possible mistakes here
 def normalizeWF(c, v):
-    c0 = c
     # Bose symmetry
     c *= scipy.prod([factorial(n) for n in v.occs])/factorial(v.occ)
     # Normalization of Fock space states
@@ -34,21 +33,21 @@ def normalizeWF(c, v):
     return c
 
 def main(argv):
-    args = " <g> <Emax> <L>"
+    args = " <L> <Emax> <g>"
     if len(argv) < 4:
         print(argv[0], args)
         return -1
 
-    g = float(argv[1])
+    L = float(argv[1])
     Emax = float(argv[2])
-    L = float(argv[3])
+    g = float(argv[3])
 
     plt.figure(1)
     params = {'legend.fontsize': 8}
     plt.rcParams.update(params)
 
     db = database.Database()
-    exactQuery = {"ren":"raw", "k":-1}
+    exactQuery = {"ren":"raw", "k":-1, "occmax":occmax}
     approxQuery = {"g":g, "Emax":Emax, "L":L}
     eigv = db.getObjList("eigv", exactQuery=exactQuery, approxQuery=approxQuery)[0]
 
@@ -78,7 +77,8 @@ def main(argv):
             data.append(array([a*2*pi/L,b*2*pi/L,c]))
 
     data = array(data)
-    scipy.savetxt("data/wf3p_g={0:g}_L={1:g}_E={2:g}.csv".format(g,L,Emax),
+    scipy.savetxt("data/wf3p_g={0:g}_L={1:g}_E={2:g}_nmax={3:d}.csv"
+            .format(g,L,Emax,occmax),
             data.reshape(1,data.size),delimiter=",")
 
 

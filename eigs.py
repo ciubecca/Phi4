@@ -41,7 +41,7 @@ def main(argv):
 
         # Emaxbar == Emax means there are no tails
         approxQuery = {"g":g, "L":L, "Emaxbar":Emax, "Emax":Emax}
-        exactQuery = {"k":k}
+        exactQuery = {"k":k, "occmax":occmax}
         if db.getObjList('spec', approxQuery=approxQuery, exactQuery=exactQuery) != []:
             print("Eigenvalues already present")
             continue
@@ -56,7 +56,7 @@ def main(argv):
             if ren == "raw": print("Comp basis size: ", a.compH.shape[0])
 
             a.computeEigval(k=k, ren=ren, sigma=sigma, neigs=neigs)
-            Er = a.vacuumE(ren="raw")
+            # Er = a.vacuumE(ren="raw")
 
             if k==1: print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
 
