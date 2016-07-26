@@ -156,7 +156,7 @@ class Phi4():
         self.g0r, self.g2r, self.g4r = \
             renorm.renlocal(self.g0, self.g2, self.g4, Emax, m=self.m1, Er=Er)
 
-    def computeHamiltonian(self, k, Emax, ren, addTails=True, Er=0):
+    def computeHamiltonian(self, k, Emax, ren, addTails=False, Er=0):
         if ren=="raw":
             V = self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         elif ren=="renlocal":

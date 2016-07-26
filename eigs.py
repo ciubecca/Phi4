@@ -7,11 +7,11 @@ import math
 import database
 
 json = False
-occmax = 5
+occmax = 3
 m = 1.
 sigma = -30.
 neigs = 1
-klist = (1,-1)
+klist = (-1,)
 
 def main(argv):
     if len(argv) < 4:
