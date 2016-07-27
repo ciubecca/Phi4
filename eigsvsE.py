@@ -6,37 +6,52 @@ import scipy
 import math
 import database
 
+addTails = False
+saveondb = False
 json = False
 
 # Hardcoded parameters
 m = 1.
-Emaxbar = 20
-Elist = scipy.linspace(5, 19, 15)
-occmax = 6
+Emin = 5
 sigma = -30.
 neigs = 1
 k = 1
 
 def main(argv):
-    if len(argv) < 3:
-        print(argv[0], " <L> <g>")
+    if len(argv) < 5:
+        print(argv[0], "<L> <Emaxbar> <g> <k> <occmax>")
         return -1
 
     L = float(argv[1])
-    g = float(argv[2])
+    Emaxbar = float(argv[2])
+    g = float(argv[3])
+    k = int(argv[4])
+    try:
+        occmax = int(argv[5])
+    except IndexError:
+        occmax = None
 
-    print(Elist)
+    Elist = scipy.linspace(Emin, Emaxbar-1, Emaxbar-Emin)
+    print("Elist:", Elist)
+    print("addTails:", addTails)
 
-    if json == False:
-        db = database.Database()
-    else:
-        db = database.Database(dbname="spectraJson.db", useJson=True)
+    if saveondb:
+        if json == False:
+            db = database.Database()
+        else:
+            db = database.Database(dbname="spectraJson.db", useJson=True)
 
     a = phi4.Phi4()
     a.buildBasis(Emax=Emaxbar, L=L, m=m, k=k, occmax=occmax)
     print("Basis size: ", a.basis[k].size)
 
-    a.buildMatrix(k=k)
+    try:
+        a.loadMatrix(L=L, Emax=Emaxbar, k=k, occmax=occmax)
+        print("matrix loaded")
+    except FileNotFoundError:
+        print("building matrix...")
+        a.buildMatrix(k=k)
+
     a.setCouplings(0, 0, g)
     # b = finiteVolH.FiniteVolH(a.L, m)
     # g0, g2, g4 = b.directCouplings(g)
@@ -44,18 +59,22 @@ def main(argv):
     for Emax in Elist:
         print("Emax: ", Emax)
 
-        # Emaxbar == Emax means there are no tails
-        approxQuery = {"g":g, "L":L, "Emaxbar":Emax, "Emax":Emax}
-        exactQuery = {"k":k}
-        if db.getObjList('spec', approxQuery=approxQuery, exactQuery=exactQuery) != []:
-            print("Eigenvalues already present")
-            continue
+        if addTails:
+            cutoff = Emaxbar
+        else:
+            cutoff = Emax
+
+        if saveondb:
+            approxQuery = {"g":g, "L":L, "Emaxbar":cutoff, "Emax":Emax}
+            exactQuery = {"k":k}
+            if db.getObjList('spec', approxQuery=approxQuery, exactQuery=exactQuery) != []:
+                print("Eigenvalues already present")
+                continue
 
         Er = 0
         for ren in ("raw","renlocal"):
-            # This is different wrt with tails
-            a.renlocal(Emax=Emax, Er=Er)
-            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, Er=Er, addTails=False)
+            a.renlocal(Emax=cutoff, Er=Er)
+            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, addTails=addTails, Er=Er)
 
             compsize = a.compH.shape[0]
             print("Comp basis size: ", a.compH.shape[0])
@@ -65,9 +84,14 @@ def main(argv):
 
             print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
 
-            # If Emaxbar == Emax it means there are no tails
-            db.insert(k=k, Emax=Emax, Emaxbar=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
-                    eigv=a.eigenvectors[ren][k], occmax=occmax, basisSize=compsize, neigs=neigs)
+            if saveondb:
+                if addTails:
+                    Emaxbardb = Emaxbar
+                else:
+                    Emaxbardb = Emax
+                db.insert(k=k, Emax=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
+                        Emaxbar=cutoff, eigv=a.eigenvectors[ren][k],
+                        occmax=occmax, basisSize=compsize, neigs=neigs)
 
 
 if __name__ == "__main__":

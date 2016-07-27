@@ -6,7 +6,7 @@ import scipy
 import math
 import database
 
-saveondb = False
+saveondb = True
 json = False
 m = 1.
 sigma = -30.
