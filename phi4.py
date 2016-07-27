@@ -179,7 +179,6 @@ class Phi4():
         # Choose "alpha" vectors
         basisAlpha1 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n
             for n in (0,2,4,6)))
-        # XXX reinsert n=4
         basisAlpha2 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n
             for n in (0,2,4,6)))
 
@@ -193,7 +192,6 @@ class Phi4():
 
         # Gram matrices
         gramL = Matrix(basisL, basisL, scipy.sparse.eye(basisL.size)).M
-        # XXX check offdiag elements
         gramAlpha = scipy.sparse.bmat([
         [psialpha1.transpose()*psialpha1, psialpha1.transpose()*psialpha2],
         [psialpha2.transpose()*psialpha1, psialpha2.transpose()*psialpha2]
@@ -201,7 +199,6 @@ class Phi4():
         self.gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
 
         # Hamiltonian matrix
-        # XXX check offdiag elements
         Hlh = H.sub(basisL, basisH).M
         Hhl = H.sub(basisH, basisL).M
         Hhh = H.sub(basisH, basisH).M
@@ -211,7 +208,6 @@ class Phi4():
             psialpha1.transpose()*Hhh*psialpha2],
         [(Hlh*psialpha2).transpose(), psialpha2.transpose()*Hhh*psialpha1,
             psialpha2.transpose()*Hhh*psialpha2]])
-        # TODO check that Gram and H are symmetric
 
         return
 
@@ -246,19 +242,14 @@ class Phi4():
             raise ValueError("ren value not valid")
 
 
-    def saveMatrix(self, fname):
+    def saveMatrix(self, fname, k):
         """ Saves the potential and free hamiltonian to file """
-        t = (fname, self.L, self.m, \
-            self.fullBasis[1].Emax, self.fullBasis[1].nmax,  \
-            self.fullBasis[-1].Emax, self.fullBasis[-1].nmax, \
-            self.h0[1].M.data,self.h0[1].M.row,self.h0[1].M.col, \
-            self.V[1][0].M.data,self.V[1][0].M.row,self.V[1][0].M.col, \
-            self.V[1][2].M.data,self.V[1][2].M.row,self.V[1][2].M.col, \
-            self.V[1][4].M.data,self.V[1][4].M.row,self.V[1][4].M.col, \
-            self.h0[-1].M.data,self.h0[-1].M.row,self.h0[-1].M.col, \
-            self.V[-1][0].M.data,self.V[-1][0].M.row,self.V[-1][0].M.col, \
-            self.V[-1][2].M.data,self.V[-1][2].M.row,self.V[-1][2].M.col, \
-            self.V[-1][4].M.data,self.V[-1][4].M.row,self.V[-1][4].M.col \
+        t = (fname, self.L, self.m, k, \
+            self.basis[k].Emax, self.basis[k].occmax, \
+            self.h0[k].M.data,self.h0[k].M.row,self.h0[k].M.col, \
+            self.V[k][0].M.data,self.V[k][0].M.row,self.V[k][0].M.col, \
+            self.V[k][2].M.data,self.V[k][2].M.row,self.V[k][2].M.col, \
+            self.V[k][4].M.data,self.V[k][4].M.row,self.V[k][4].M.col, \
             )
         scipy.savez(*t)
 
@@ -268,23 +259,19 @@ class Phi4():
         self.L = f['arr_0'].item()
         self.m = f['arr_1'].item()
 
-        Emax = {1:f['arr_2'].item(), -1:f['arr_4'].item()}
-        nmax = {1:f['arr_3'].item(), -1:f['arr_5'].item()}
+        k = f['arr_2'].item()
+        Emax = f['arr_3'].item()
+        occmax = f['arr_4'].item()
 
-        for i, k in enumerate((1,-1)):
-            n = 12
-            z = 6
+        self.buildBasis(L=self.L, Emax=Emax, m=self.m, k=k, occmax=occmax)
+        basis = self.basis[k]
 
-            self.buildFullBasis(L=self.L, Emax=Emax[k], m=self.m, k=k)
-
-            basisI = self.fullBasis[k]
-            basisJ = self.fullBasis[k]
-
-            self.h0[k] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+i*n))], (f['arr_'+(str(z+1+i*n))],
-                f['arr_'+(str(z+2+i*n))])), shape=(basisI.size, basisJ.size)))
-            self.V[k][0] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+3+i*n))],
-                (f['arr_'+(str(z+4+i*n))], f['arr_'+(str(z+5+i*n))])), shape=(basisI.size, basisJ.size)))
-            self.V[k][2] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+6+i*n))],
-                (f['arr_'+(str(z+7+i*n))], f['arr_'+(str(z+8+i*n))])), shape=(basisI.size, basisJ.size)))
-            self.V[k][4] = Matrix(basisI, basisJ, scipy.sparse.coo_matrix((f['arr_'+(str(z+9+i*n))],
-                (f['arr_'+(str(z+10+i*n))], f['arr_'+(str(z+11+i*n))])), shape=(basisI.size, basisJ.size)))
+        z = 5
+        self.h0[k] = Matrix(basis, basis, scipy.sparse.coo_matrix(
+            (f['arr_'+str(z)], (f['arr_'+str(z+1)],f['arr_'+str(z+2)])),
+            shape=(basis.size, basis.size)))
+        z = 8
+        for n in (0,1,2):
+            self.V[k][2*n] = Matrix(basis, basis, scipy.sparse.coo_matrix(
+            (f['arr_'+str(z+3*n)],(f['arr_'+str(z+1+3*n)], f['arr_'+str(z+2+3*n)])),
+              shape=(basis.size, basis.size)))

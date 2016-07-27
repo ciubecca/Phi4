@@ -1,37 +1,35 @@
 import inspect
 import os
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-os.sys.path.insert(0,parentdir)
-
-import phi1234
+import phi4
 import sys
 import math
 import scipy
 
-def main(argv):
+m = 1.
 
-    if len(argv) < 3:
-        print("python genMatrix.py <L> <Emax>")
+def main(argv):
+    args = "<L> <Emax> <k> <?occmax>"
+    if len(argv) < 4:
+        print("python", argv[0], args)
         sys.exit(-1)
 
-    L=float(argv[1])
-    Emax=float(argv[2])
+    L = float(argv[1])
+    Emax = float(argv[2])
+    k = int(argv[3])
+    try:
+        occmax = int(argv[4])
+    except IndexError:
+        occmax = None
 
-    m = 1.
+    a = phi4.Phi4()
 
-    a = phi1234.Phi1234()
+    a.buildBasis(k=k, Emax=Emax, m=m, L=L, occmax=occmax)
+    print("basis size :", a.basis[k].size)
 
-    a.buildFullBasis(k=1,Emax=Emax,m=m,L=L)
-    a.buildFullBasis(k=-1,Emax=Emax,m=m,L=L)
+    a.buildMatrix(k=k)
 
-    print("K=1 basis size :", a.fullBasis[1].size)
-    print("K=-1 basis size :", a.fullBasis[-1].size)
-
-    fstr = "L="+str(a.L)+"_Emax="+str(a.fullBasis[1].Emax)
-
-    a.buildMatrix()
-    a.saveMatrix(fstr)
+    fstr = "matrices/L={0:}_Emax={1:}_k={2:}_nmax={3:}".format(L,Emax,k,occmax)
+    a.saveMatrix(fstr, k=k)
 
 if __name__ == "__main__":
     main(sys.argv)
