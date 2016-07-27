@@ -105,9 +105,14 @@ def plotvsE(Elist, tails):
     plt.plot(Elist, data, linewidth=linewidth, color="b", marker=marker,
             markersize=markersize, dashes = dashes, label="raw w/"+s+" tails")
 
+    if tails:
+        plt.axhline(y=data[-1], color='k')
+        # plt.axhline(y=data[-1], xmin=min(Elist), xmax=max(Elist), linewidth=2, color = 'k')
+
     data = E0["renlocal"]
     plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
             markersize=markersize, dashes = dashes, label="ren w/"+s+" tails")
+
 
 
 

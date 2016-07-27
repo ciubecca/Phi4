@@ -7,12 +7,13 @@ import math
 import database
 
 addTails = True
-saveondb = False
+saveondb = True
 json = False
 
 # Hardcoded parameters
 m = 1.
 Emin = 5
+Elim = 20
 sigma = -30.
 neigs = 1
 k = 1
@@ -32,7 +33,7 @@ def main(argv):
         occmax = None
     print("occmax:", occmax)
 
-    Elist = scipy.linspace(Emin, Emaxbar-1, Emaxbar-Emin)
+    Elist = scipy.linspace(Emin, Elim, Elim-Emin+1)
     print("Elist:", Elist)
     print("addTails:", addTails)
     print("saveondb:", saveondb)
@@ -68,7 +69,7 @@ def main(argv):
 
         if saveondb:
             approxQuery = {"g":g, "L":L, "Emaxbar":cutoff, "Emax":Emax}
-            exactQuery = {"k":k}
+            exactQuery = {"k":k, "occmax":occmax}
             if db.getObjList('spec', approxQuery=approxQuery, exactQuery=exactQuery) != []:
                 print("Eigenvalues already present")
                 continue

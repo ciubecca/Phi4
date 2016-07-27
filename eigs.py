@@ -6,23 +6,25 @@ import scipy
 import math
 import database
 
-saveondb = True
+saveondb = False
+addTails = True
 json = False
 m = 1.
 sigma = -30.
 neigs = 1
-klist = (-1,)
+klist = (1,)
 
 def main(argv):
-    if len(argv) < 4:
-        print(argv[0], " <L> <Emax> <g> <occmax>")
+    if len(argv) < 5:
+        print(argv[0], " <L> <Emaxbar> <Emax> <g> <occmax>")
         return -1
 
     L = float(argv[1])
-    Emax = float(argv[2])
-    g = float(argv[3])
+    Emaxbar = float(argv[2])
+    Emax = float(argv[3])
+    g = float(argv[4])
     try:
-        occmax = int(argv[4])
+        occmax = int(argv[5])
     except IndexError:
         occmax = None
 
@@ -34,13 +36,19 @@ def main(argv):
 
     a = phi4.Phi4()
 
+    if addTails:
+        cutoff = Emaxbar
+    else:
+        cutoff = Emax
+
     for k in klist:
         print("k=", k)
-        a.buildBasis(Emax=Emax, L=L, m=m, k=k, occmax=occmax)
+        a.buildBasis(Emax=Emaxbar, L=L, m=m, k=k, occmax=occmax)
         print("Basis size: ", a.basis[k].size)
 
         try:
-            a.loadMatrix(L=L, Emax=Emax, k=k, occmax=occmax)
+            a.loadMatrix(L=L, Emax=Emaxbar, k=k, occmax=occmax)
+            print("matrix loaded")
         except FileNotFoundError:
             print("building matrix...")
             a.buildMatrix(k=k)
@@ -51,7 +59,7 @@ def main(argv):
 
         if saveondb:
             # Emaxbar == Emax means there are no tails
-            approxQuery = {"g":g, "L":L, "Emaxbar":Emax, "Emax":Emax}
+            approxQuery = {"g":g, "L":L, "Emaxbar":cutoff, "Emax":Emax}
             exactQuery = {"k":k, "occmax":occmax}
             if db.getObjList('spec', approxQuery=approxQuery, exactQuery=exactQuery) != []:
                 print("Eigenvalues already present")
@@ -60,8 +68,8 @@ def main(argv):
         Er = 0
         for ren in ("raw","renlocal"):
             # This is different wrt with tails
-            a.renlocal(Emax=Emax, Er=Er)
-            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, Er=Er, addTails=False)
+            a.renlocal(Emax=cutoff, Er=Er)
+            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, Er=Er, addTails=addTails)
 
             compsize = a.compH.shape[0]
             if ren == "raw": print("Comp basis size: ", a.compH.shape[0])
@@ -73,7 +81,7 @@ def main(argv):
 
             if saveondb:
                 # If Emaxbar == Emax it means there are no tails
-                db.insert(k=k, Emax=Emax, Emaxbar=Emax, L=a.L, ren=ren, g=g,
+                db.insert(k=k, Emax=Emax, Emaxbar=cutoff, L=a.L, ren=ren, g=g,
                         spec=a.eigenvalues[ren][k], eigv=a.eigenvectors[ren][k],
                         occmax=occmax, basisSize=compsize, neigs=neigs)
             else:
