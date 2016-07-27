@@ -54,13 +54,17 @@ class Matrix():
         """ Format conversion """
         return Matrix(self.basisI, self.basisJ, self.M.asformat(form))
 
+    # XXX inefficient
     def sub(self, subBasisI=None, subBasisJ=None):
-        """ This extracts a submatrix given a subspace of the initial vector space, both for rows and columns """
+        """ This extracts a submatrix given a subspace of
+        the initial vector space, both for rows and columns
+        """
 
         if subBasisI != None and subBasisJ != None:
             rows = [self.basisI.lookup(state)[1]  for state in subBasisI]
             columns = [self.basisJ.lookup(state)[1]  for state in subBasisJ]
-            return Matrix(subBasisI, subBasisJ, self.M.tocsr()[scipy.array(rows)[:,scipy.newaxis],scipy.array(columns)])
+            return Matrix(subBasisI, subBasisJ,
+                    self.M.tocsr()[scipy.array(rows)[:,scipy.newaxis],scipy.array(columns)])
 
         elif subBasisI != None and subBasisJ == None:
             rows = [self.basisI.lookup(state)[1]  for state in subBasisI]
@@ -76,4 +80,4 @@ class Matrix():
     def transpose(self):
         return Matrix(self.basisJ, self.basisI, self.M.transpose())
     def inverse(self):
-        return Matrix(self.basisJ, self.basisI, scipy.sparse.linalg.inv(self.M))
+        return Matrix(self.basisJ, self.basisI, scipy.sparse.linalg.inv(self.M.tocsc()))

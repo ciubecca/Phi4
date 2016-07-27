@@ -6,7 +6,7 @@ import scipy
 import math
 import database
 
-addTails = False
+addTails = True
 saveondb = False
 json = False
 
@@ -30,10 +30,12 @@ def main(argv):
         occmax = int(argv[5])
     except IndexError:
         occmax = None
+    print("occmax:", occmax)
 
     Elist = scipy.linspace(Emin, Emaxbar-1, Emaxbar-Emin)
     print("Elist:", Elist)
     print("addTails:", addTails)
+    print("saveondb:", saveondb)
 
     if saveondb:
         if json == False:

@@ -165,11 +165,11 @@ class Phi4():
             raise ValueError()
 
         H0 = self.h0[k]
-        H = H0 + V
+        H = (H0 + V)
 
         basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
         Hll = H.sub(basisL, basisL).M
-        gramL = Matrix(basisL, basisL, scipy.sparse.eye(basisL.size)).M
+        gramL = scipy.sparse.eye(basisL.size)
 
         if addTails==False:
             self.compH = Hll
@@ -185,16 +185,16 @@ class Phi4():
         # Construct new basis vectors
         basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
         propagator = (Er*Matrix(basisH, basisH, scipy.sparse.eye(basisH.size))
-                -H0.sub(basisH,basisH)).to("csc").inverse()
+                -H0.sub(basisH,basisH)).inverse()
         psialpha1 = (propagator*V.sub(basisH, basisAlpha1)).M
         psialpha2 = (propagator*V.sub(basisH, basisH)*propagator*
                 V.sub(basisH, basisAlpha2)).M
 
         # Gram matrices
-        gramL = Matrix(basisL, basisL, scipy.sparse.eye(basisL.size)).M
+        psi1psi2 = psialpha1.transpose()*psialpha2
         gramAlpha = scipy.sparse.bmat([
-        [psialpha1.transpose()*psialpha1, psialpha1.transpose()*psialpha2],
-        [psialpha2.transpose()*psialpha1, psialpha2.transpose()*psialpha2]
+        [psialpha1.transpose()*psialpha1, psi1psi2],
+        [psi1psi2.transpose(), psialpha2.transpose()*psialpha2]
         ])
         self.gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
 
@@ -202,12 +202,14 @@ class Phi4():
         Hlh = H.sub(basisL, basisH).M
         Hhl = H.sub(basisH, basisL).M
         Hhh = H.sub(basisH, basisH).M
+        Hlpsi1 = Hlh*psialpha1
+        Hlpsi2 = Hlh*psialpha2
+        psi1Hpsi2 = psialpha1.transpose()*Hhh*psialpha2
         self.compH = scipy.sparse.bmat([
-        [Hll, Hlh*psialpha1, Hlh*psialpha2],
-        [psialpha1.transpose()*Hhl, psialpha1.transpose()*Hhh*psialpha1,
-            psialpha1.transpose()*Hhh*psialpha2],
-        [(Hlh*psialpha2).transpose(), psialpha2.transpose()*Hhh*psialpha1,
-            psialpha2.transpose()*Hhh*psialpha2]])
+        [Hll, Hlpsi1, Hlpsi2],
+        [Hlpsi1.transpose(), psialpha1.transpose()*Hhh*psialpha1, psi1Hpsi2],
+        [Hlpsi2.transpose(), psi1Hpsi2.transpose(), psialpha2.transpose()*Hhh*psialpha2]
+        ])
 
         return
 
