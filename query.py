@@ -18,7 +18,7 @@ def main(argv):
         query[key] = float(value)
 
     # Hardcoded parameters
-    values = ("L", "Emax", "basisSize", "g", "occmax")
+    values = ("L", "Emax", "basisSize", "g", "occmax", "Emaxbar")
 
     # db = database.Database(dbname="spectraJson.db",useJson=True)
     db = database.Database()
