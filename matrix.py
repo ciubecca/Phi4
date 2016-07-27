@@ -3,7 +3,6 @@ import scipy.sparse.linalg
 import scipy.sparse
 import scipy.interpolate
 
-
 # TODO use metaclasses?
 class Matrix():
     """ Matrix with specified state bases for row and column indexes.
@@ -54,28 +53,15 @@ class Matrix():
         """ Format conversion """
         return Matrix(self.basisI, self.basisJ, self.M.asformat(form))
 
-    # XXX inefficient
-    def sub(self, subBasisI=None, subBasisJ=None):
+    def sub(self, subBasisI, subBasisJ):
         """ This extracts a submatrix given a subspace of
         the initial vector space, both for rows and columns
         """
-
-        if subBasisI != None and subBasisJ != None:
-            rows = [self.basisI.lookup(state)[1]  for state in subBasisI]
-            columns = [self.basisJ.lookup(state)[1]  for state in subBasisJ]
-            return Matrix(subBasisI, subBasisJ,
-                    self.M.tocsr()[scipy.array(rows)[:,scipy.newaxis],scipy.array(columns)])
-
-        elif subBasisI != None and subBasisJ == None:
-            rows = [self.basisI.lookup(state)[1]  for state in subBasisI]
-            return Matrix(subBasisI, self.basisJ, self.M.tocsr()[scipy.array(rows),:])
-
-        elif subBasisI == None and subBasisJ != None:
-            columns = [self.basisJ.lookup(state)[1]  for state in subBasisJ]
-            return Matrix(self.basisI, subBasisJ, self.M.tocsr()[:,scipy.array(columns)])
-
-        else:
-            return self
+        rows = [self.basisI.lookup(state)[1]  for state in subBasisI]
+        columns = [self.basisJ.lookup(state)[1]  for state in subBasisJ]
+        return Matrix(subBasisI, subBasisJ,
+                self.M.tocsr()[scipy.array(rows),].
+                tocsc()[:,scipy.array(columns)])
 
     def transpose(self):
         return Matrix(self.basisJ, self.basisI, self.M.transpose())
