@@ -97,13 +97,6 @@ class State():
         return State(self.occs[::-1],self.nmax,L=self.L,m=self.m)
 
 
-
-class NotInBasis(LookupError):
-    """ Exception class """
-    pass
-
-
-
 class Basis():
     def __init__(self, L, m, k, stateList, Emax=None):
         self.L = L
@@ -128,12 +121,14 @@ class Basis():
         self.Emax = Emax
         self.m = m
         self.k = k
+        self.occmax = occmax
 
+        # Maximum wavenumber
         self.nmax = int(math.floor(scipy.sqrt((Emax/2.)**2.-m**2.)*self.L/(2.*pi)))
         if occmax==None:
-            self.occmax = int(math.floor(Emax/self.m))
+            self._occmax = int(math.floor(Emax/self.m))
         else:
-            self.occmax = occmax
+            self._occmax = occmax
 
         # Collection of Fock space states, possibly sorted in energy
         stateList = sorted(self.__buildBasis(self), key=attrgetter('energy'))
@@ -170,7 +165,7 @@ class Basis():
             try:
                 return (1., self.reversedStatePos[state])
             except KeyError:
-                raise NotInBasis()
+                raise LookupError()
 
 
     def __buildRMlist(self):
@@ -185,7 +180,7 @@ class Basis():
 
         # maximal occupation number of n=1 mode
         # If there is a right-moving particle, there must be also a left-moving one
-        maxN1 = int(math.floor(min(self.occmax-1, kmax/k(1,self.L), self.Emax/omega(1,self.L,self.m))))
+        maxN1 = int(math.floor(min(self._occmax-1, kmax/k(1,self.L), self.Emax/omega(1,self.L,self.m))))
 
         # seed list of RM states, all possible n=1 mode occupation numbers
         RMlist0 = [State([N],1,L=self.L,m=self.m,checkAtRest=False) for N in range(maxN1+1)]
@@ -200,7 +195,7 @@ class Basis():
                 e0 = RMstate.energy
                 #maximal occupation number of mode n given the occupation numbers of all previous modes
                 maxNn = int(math.floor(
-                    min(self.occmax-RMstate.occ-1, (kmax-p0)/k(n,self.L), (self.Emax-scipy.sqrt(self.m**2+p0**2)-e0)/omega(n,self.L,self.m))
+                    min(self._occmax-RMstate.occ-1, (kmax-p0)/k(n,self.L), (self.Emax-scipy.sqrt(self.m**2+p0**2)-e0)/omega(n,self.L,self.m))
                     ))
 
                 for N in range(maxNn+1):
@@ -253,7 +248,7 @@ class Basis():
                     ELM = LMstate.energy
                     OLM = LMstate.occ
                     deltaE = self.Emax - ERM - ELM
-                    deltaOcc = self.occmax - ORM - OLM
+                    deltaOcc = self._occmax - ORM - OLM
 
                     # if this happens, we can break since subsequent LMstates
                     # have even higher energy (RMsublist is ordered in energy)
@@ -270,7 +265,7 @@ class Basis():
                         state = State(LMstate.occs[::-1]+[N0]+RMstate.occs, self.nmax, L=self.L,m=self.m,checkAtRest=True)
 
                         # XXX just to be sure
-                        if state.energy <= self.Emax and state.occ <= self.occmax:
+                        if state.energy <= self.Emax and state.occ <= self._occmax:
                             # XXX Can this be optimized?
                             if self.k == state.kparity():
                                 statelist.append(state)
