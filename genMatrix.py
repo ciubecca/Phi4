@@ -27,9 +27,7 @@ def main(argv):
     print("basis size :", a.basis[k].size)
 
     a.buildMatrix(k=k)
-
-    fstr = "matrices/L={0:}_Emax={1:}_k={2:}_nmax={3:}".format(L,Emax,k,occmax)
-    a.saveMatrix(fstr, k=k)
+    a.saveMatrix(k=k)
 
 if __name__ == "__main__":
     main(sys.argv)

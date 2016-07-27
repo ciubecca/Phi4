@@ -40,8 +40,7 @@ def main(argv):
         print("Basis size: ", a.basis[k].size)
 
         try:
-            fstr = "matrices/L={0:}_Emax={1:}_k={2:}_nmax={3:}.npz".format(L,Emax,k,occmax)
-            a.loadMatrix(fstr)
+            a.loadMatrix(L=L, Emax=Emax, k=k, occmax=occmax)
         except FileNotFoundError:
             print("building matrix...")
             a.buildMatrix(k=k)

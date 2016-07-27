@@ -6,7 +6,7 @@ import math
 from operator import attrgetter
 import gc
 
-from statefuncs import omega, State, NotInBasis
+from statefuncs import omega, State
 
 
 pi=scipy.pi # this is pi=3.14159...
@@ -49,15 +49,17 @@ class NormalOrderedOperator():
 
     def apply(self, basis, i, lookupbasis):
         """ Takes a state index in basis, returns another state index (if it
-        belongs to the lookupbasis) and a proportionality coefficient. Otherwise raises NotInBasis.
-        lookupbasis can be different from basis, but it's assumed that they have the same nmax"""
+        belongs to the lookupbasis) and a proportionality coefficient.
+        Otherwise raises LookupError
+        lookupbasis can be different from basis,
+        but it's assumed that they have the same nmax"""
 
         v = basis[i]
 
         if self.deltaE+v.energy < 0.-tol or self.deltaE+v.energy > lookupbasis.Emax+tol:
             # FIX
             # The trasformed element surely does not belong to the basis if E>Emax
-            raise NotInBasis()
+            raise LookupError()
 
         n, newstate = self._transformState(v)
 

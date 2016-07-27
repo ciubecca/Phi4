@@ -9,7 +9,7 @@ import gc
 import copy
 import statefuncs
 from math import factorial
-from statefuncs import Basis, NotInBasis, omega, State
+from statefuncs import Basis, omega, State
 import oscillators
 from oscillators import NormalOrderedOperator as NOO
 import collections
@@ -125,7 +125,7 @@ class Phi4():
                         (x,i) = op.apply(basis,j,lookupBasis)
                         if(i != None):
                             newcolumn[i]+=x
-                    except NotInBasis:
+                    except LookupError:
                         pass
 
                 offdiag_V.addColumn(newcolumn)
@@ -242,8 +242,13 @@ class Phi4():
             raise ValueError("ren value not valid")
 
 
-    def saveMatrix(self, fname, k):
+    @staticmethod
+    def matrixfname(L, Emax, k, occmax):
+        return "matrices/L={0:}_Emax={1:}_k={2:}_nmax={3:}".format(L,Emax,k,occmax)
+
+    def saveMatrix(self, k):
         """ Saves the potential and free hamiltonian to file """
+        fname = self.matrixfname(self.L, self.basis[k].Emax, k, self.basis[k].occmax)
         t = (fname, self.L, self.m, k, \
             self.basis[k].Emax, self.basis[k].occmax, \
             self.h0[k].M.data,self.h0[k].M.row,self.h0[k].M.col, \
@@ -253,8 +258,9 @@ class Phi4():
             )
         scipy.savez(*t)
 
-    def loadMatrix(self, fname):
+    def loadMatrix(self, L, Emax, k, occmax):
         """ Loads the potential and free hamiltonian from file """
+        fname = self.matrixfname(L, Emax, k, occmax)+".npz"
         f = scipy.load(fname)
         self.L = f['arr_0'].item()
         self.m = f['arr_1'].item()
