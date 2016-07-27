@@ -69,13 +69,13 @@ def main(argv):
         for ren in ("raw","renlocal"):
             # This is different wrt with tails
             a.renlocal(Emax=cutoff, Er=Er)
-            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, Er=Er, addTails=addTails)
+            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, addTails=addTails)
 
             compsize = a.compH.shape[0]
             if ren == "raw": print("Comp basis size: ", a.compH.shape[0])
 
             a.computeEigval(k=k, ren=ren, sigma=sigma, neigs=neigs)
-            # Er = a.vacuumE(ren="raw")
+            Er = a.vacuumE(ren="raw")
 
             if k==1: print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
 

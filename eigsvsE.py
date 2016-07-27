@@ -77,7 +77,7 @@ def main(argv):
         Er = 0
         for ren in ("raw","renlocal"):
             a.renlocal(Emax=cutoff, Er=Er)
-            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, addTails=addTails, Er=Er)
+            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, addTails=addTails)
 
             compsize = a.compH.shape[0]
             print("Comp basis size: ", a.compH.shape[0])

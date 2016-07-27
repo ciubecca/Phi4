@@ -156,7 +156,7 @@ class Phi4():
         self.g0r, self.g2r, self.g4r = \
             renorm.renlocal(self.g0, self.g2, self.g4, Emax, m=self.m1, Er=Er)
 
-    def computeHamiltonian(self, k, Emax, ren, addTails=False, Er=0):
+    def computeHamiltonian(self, k, Emax, ren, addTails=False):
         if ren=="raw":
             V = self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         elif ren=="renlocal":
@@ -165,9 +165,10 @@ class Phi4():
             raise ValueError()
 
         H0 = self.h0[k]
-        H = (H0 + V)
+        H = H0 + V
 
         basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
+        basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
         Hll = H.sub(basisL, basisL).M
         gramL = scipy.sparse.eye(basisL.size)
 
@@ -176,42 +177,42 @@ class Phi4():
             self.gram = gramL
             return
 
-        # Choose "alpha" vectors
-        basisAlpha1 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n
-            for n in (0,2,4,6)))
-        basisAlpha2 = Basis.fromBasis(basisL, lambda v: any(v[0]==n and v.occ==n
-            for n in (0,2,4,6)))
-
-        # Construct new basis vectors
-        basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
-        propagator = (Er*Matrix(basisH, basisH, scipy.sparse.eye(basisH.size))
-                -H0.sub(basisH,basisH)).inverse()
-        psialpha1 = (propagator*V.sub(basisH, basisAlpha1)).M
-        psialpha2 = (propagator*V.sub(basisH, basisH)*propagator*
-                V.sub(basisH, basisAlpha2)).M
+        psialpha = self.tails(H0, V, basisL, basisH)
 
         # Gram matrices
-        psi1psi2 = psialpha1.transpose()*psialpha2
-        gramAlpha = scipy.sparse.bmat([
-        [psialpha1.transpose()*psialpha1, psi1psi2],
-        [psi1psi2.transpose(), psialpha2.transpose()*psialpha2]
-        ])
+        gramAlpha = psialpha.transpose()*psialpha
         self.gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
 
         # Hamiltonian matrix
         Hlh = H.sub(basisL, basisH).M
-        Hhl = H.sub(basisH, basisL).M
         Hhh = H.sub(basisH, basisH).M
-        Hlpsi1 = Hlh*psialpha1
-        Hlpsi2 = Hlh*psialpha2
-        psi1Hpsi2 = psialpha1.transpose()*Hhh*psialpha2
+        Hlpsi = Hlh*psialpha
         self.compH = scipy.sparse.bmat([
-        [Hll, Hlpsi1, Hlpsi2],
-        [Hlpsi1.transpose(), psialpha1.transpose()*Hhh*psialpha1, psi1Hpsi2],
-        [Hlpsi2.transpose(), psi1Hpsi2.transpose(), psialpha2.transpose()*Hhh*psialpha2]
+         [Hll, Hlpsi],
+         [Hlpsi.transpose(), psialpha.transpose()*Hhh*psialpha]
         ])
 
-        return
+    def tails(self, H0, V, basisL, basisH):
+        k = basisL.k
+        propagator = H0.sub(basisH,basisH).inverse()
+        Vhh = V.sub(basisH,basisH)
+
+        basisAlpha = Basis.fromBasis(basisL,
+                lambda x: any(x[0]==n and x.occ==n for n in (0,2,4,6)))
+
+        matrixlist = [propagator*V.sub(basisH, basisAlpha)]
+        newmatrixlist = matrixlist
+        for times in range(2):
+            newmatrixlist = [propagator*m for m in newmatrixlist] + \
+                         [propagator*Vhh*m for m in newmatrixlist]
+            matrixlist += newmatrixlist
+
+        psialpha = scipy.sparse.coo_matrix((basisH.size, 1))
+        for m in matrixlist:
+            psialpha = scipy.sparse.hstack([psialpha,m.M])
+
+        return psialpha.tocsc()[:,1:]
+
 
     def computeEigval(self, ren, k, sigma=0, neigs=10):
         """ Sets the internal variables self.eigenvalues
