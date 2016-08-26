@@ -1,6 +1,6 @@
 *.pyc
 .*.swp
 *~
-figs
+figs*
 data
 matrices

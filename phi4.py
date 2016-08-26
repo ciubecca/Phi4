@@ -156,7 +156,8 @@ class Phi4():
         self.g0r, self.g2r, self.g4r = \
             renorm.renlocal(self.g0, self.g2, self.g4, Emax, m=self.m1, Er=Er)
 
-    def computeHamiltonian(self, k, Emax, ren, addTails=False):
+
+    def computeHamiltonian(self, k, Emax, ren):
         if ren=="raw":
             V = self.V[k][0]*self.g0 + self.V[k][2]*self.g2 + self.V[k][4]*self.g4
         elif ren=="renlocal":
@@ -172,47 +173,8 @@ class Phi4():
         Hll = H.sub(basisL, basisL).M
         gramL = scipy.sparse.eye(basisL.size)
 
-        if addTails==False:
-            self.compH = Hll
-            self.gram = gramL
-            return
-
-        psialpha = self.tails(H0, V, basisL, basisH)
-
-        # Gram matrices
-        gramAlpha = psialpha.transpose()*psialpha
-        self.gram = scipy.sparse.bmat([[gramL, None],[None,gramAlpha]])
-
-        # Hamiltonian matrix
-        Hlh = H.sub(basisL, basisH).M
-        Hhh = H.sub(basisH, basisH).M
-        Hlpsi = Hlh*psialpha
-        self.compH = scipy.sparse.bmat([
-         [Hll, Hlpsi],
-         [Hlpsi.transpose(), psialpha.transpose()*Hhh*psialpha]
-        ])
-
-    def tails(self, H0, V, basisL, basisH):
-        k = basisL.k
-        propagator = H0.sub(basisH,basisH).inverse()
-        Vhh = V.sub(basisH,basisH)
-
-        basisAlpha = Basis.fromBasis(basisL,
-                lambda x: any(x[0]==n and x.occ==n for n in (0,2,4,6)))
-
-        matrixlist = [propagator*V.sub(basisH, basisAlpha)]
-        newmatrixlist = matrixlist
-        for times in range(2):
-            newmatrixlist = [propagator*m for m in newmatrixlist] + \
-                         [propagator*Vhh*m for m in newmatrixlist]
-            matrixlist += newmatrixlist
-
-        psialpha = scipy.sparse.coo_matrix((basisH.size, 1))
-        for m in matrixlist:
-            psialpha = scipy.sparse.hstack([psialpha,m.M])
-
-        return psialpha.tocsc()[:,1:]
-
+        self.compH = Hll
+        self.gram = gramL
 
     def computeEigval(self, ren, k, sigma=0, neigs=10):
         """ Sets the internal variables self.eigenvalues
