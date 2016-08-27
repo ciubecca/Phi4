@@ -117,32 +117,36 @@ class Phi4():
             offdiag_V = Matrix(lookupBasis, basis)
             diagonal = scipy.zeros(basis.size)
 
-            for j in range(basis.size):
+            for v in basis:
 
                 newcolumn = scipy.zeros(lookupBasis.size)
                 for op in offdiagOps[n]:
                     try:
-                        (x,i) = op.apply(basis,j,lookupBasis)
-                        if(i != None):
-                            newcolumn[i]+=x
+                        (x,i) = op.apply(v,lookupBasis)
+                        # if(i != None):
+                        newcolumn[i]+=x
                     except LookupError:
                         pass
 
                 offdiag_V.addColumn(newcolumn)
 
                 for op in diagOps[n]:
-                    (x,i) = op.apply(basis,j,lookupBasis)
-                    # It should be j=i
+                    try:
+                        (x,i) = op.apply(v,lookupBasis)
 
-                    if i!= None:
-                        if i != j:
-                            raise RuntimeError('Non-diagonal operator')
+                        # It should be j=i
+                        # if i != j:
+                            # raise RuntimeError('Non-diagonal operator')
                         diagonal[i]+=x
+
+                    except LookupError:
+                        pass
 
             offdiag_V.finalize()
             diag_V = scipy.sparse.spdiags(diagonal,0,basis.size,basis.size)
 
-            self.V[k][n] = (offdiag_V+offdiag_V.transpose()+Matrix(lookupBasis, basis, diag_V)).to('coo')*self.L
+            self.V[k][n] = (offdiag_V+offdiag_V.transpose()
+                            + Matrix(lookupBasis, basis, diag_V)).to('coo')*self.L
 
 
     def setCouplings(self, g0, g2, g4):

@@ -30,14 +30,12 @@ class NormalOrderedOperator():
         return str(self.clist)+" "+str(self.dlist)
 
     def _transformState(self, state0):
-
         state = State(state0.occs[:], state0.nmax, fast=True)
-
         n=1.
-
         for i in self.dlist:
             if state[i]==0:
-                return(0,None)
+                raise LookupError()
+                #return(0,None)
             n*=state[i]
             state[i]-=1
 
@@ -47,25 +45,21 @@ class NormalOrderedOperator():
 
         return (n, state)
 
-    def apply(self, basis, i, lookupbasis):
+    def apply(self, v, lookupbasis):
         """ Takes a state index in basis, returns another state index (if it
         belongs to the lookupbasis) and a proportionality coefficient.
         Otherwise raises LookupError
         lookupbasis can be different from basis,
         but it's assumed that they have the same nmax"""
 
-        v = basis[i]
-
         if self.deltaE+v.energy < 0.-tol or self.deltaE+v.energy > lookupbasis.Emax+tol:
-            # FIX
+            # FIX (ADD CHECK ON OCCMAX)
             # The trasformed element surely does not belong to the basis if E>Emax
             raise LookupError()
 
         n, newstate = self._transformState(v)
-
-        if n==0:
-            return (0, None)
-
+        # if n==0:
+            # return (0, None)
         m, j = lookupbasis.lookup(newstate)
 
         c = 1.
