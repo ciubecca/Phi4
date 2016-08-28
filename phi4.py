@@ -140,7 +140,7 @@ class Phi4():
                         # It should be j=i
                         # if i != j:
                             # raise RuntimeError('Non-diagonal operator')
-                        diagonal[i]+=x
+                        diagonal[i] += x
                     except LookupError:
                         pass
 
