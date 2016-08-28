@@ -2,11 +2,9 @@ import sys
 import scipy
 import scipy.sparse.linalg
 import scipy.sparse
-import scipy.interpolate
 import math
 from operator import attrgetter
 import gc
-import copy
 import statefuncs
 from math import factorial
 from statefuncs import Basis, omega, State
@@ -17,7 +15,7 @@ import renorm
 import itertools
 import finiteVolH
 from matrix import Matrix
-from scipy import exp, pi
+from scipy import exp, pi, array
 
 
 # I use this "tolerance" parameter throughout the code to
@@ -26,7 +24,8 @@ tol = 0.0001
 
 def comb(*x):
     """ computes combinatorial factor for list of elements """
-    return factorial(len(x))/scipy.prod(list(map(factorial,collections.Counter(x).values())))
+    return factorial(len(x))/\
+            scipy.prod(list(map(factorial,collections.Counter(x).values())))
 
 
 class Phi4():
@@ -69,82 +68,93 @@ class Phi4():
         diagOps = {0: None, 2:None, 4:None}
         offdiagOps = {0: None, 2:None, 4:None}
 
-        diagOps[0] = [ NOO([],[],L,m) ]
+        diagOps[0] = [NOO([],[],L,m)]
 
         offdiagOps[0] = []
 
-        diagOps[2] = [ NOO([a],[a],L,m, extracoeff = 2.) for a in range(-nmax,nmax+1) ]
+        diagOps[2] = [NOO([a],[a],L,m, extracoeff = 2.) for a in range(-nmax,nmax+1)]
 
         offdiagOps[2] = [ NOO([a,-a],[],L,m,extracoeff=comb(a,-a))
                 for a in range(-nmax,nmax+1) if a<=-a<=nmax and
                 omega(a,L,m)+omega(-a,L,m) <= Emax+tol]
 
-        diagOps[4] = [ NOO([a,b],[c,a+b-c],L,m, extracoeff = 6. * comb(a,b)*comb(c,a+b-c))
+        diagOps[4] = \
+                [ NOO([a,b],[c,a+b-c],L,m, extracoeff = 6.*comb(a,b)*comb(c,a+b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(-nmax,nmax+1) if
                 ( c<=a+b-c<=nmax
                 and (a,b) == (c,a+b-c)
-                and -Emax-tol <= omega(a,L,m)+omega(b,L,m) - omega(c,L,m)-omega(a+b-c,L,m) <=Emax+tol)]
+                and -Emax-tol<=omega(a,L,m)+omega(b,L,m)-omega(c,L,m)-omega(a+b-c,L,m)
+                    <=Emax+tol)]
 
-        offdiagOps[4] = [ NOO([a,b,c,-a-b-c],[],L,m,extracoeff=comb(a,b,c,-a-b-c))
+        offdiagOps[4] = \
+              [ NOO([a,b,c,-a-b-c],[],L,m,extracoeff=comb(a,b,c,-a-b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(b,nmax+1) if c<=-a-b-c<=nmax and
-                omega(a,L,m)+omega(b,L,m) + omega(c,L,m)+omega(-a-b-c,L,m)<= Emax+tol]  \
+                omega(a,L,m)+omega(b,L,m) + omega(c,L,m)+omega(-a-b-c,L,m)<= Emax+tol] \
             + [ NOO([a,b,c],[a+b+c],L,m, extracoeff = 4. * comb(a,b,c))
                 for a in range(-nmax, nmax+1) for b in range (a,nmax+1)
                 for c in range(b,nmax+1) if
                 (-nmax<=a+b+c<=nmax
-                and -Emax-tol <= omega(a,L,m)+omega(b,L,m)+ omega(c,L,m)-omega(a+b+c,L,m) <=Emax+tol)] \
+                and -Emax-tol <= omega(a,L,m)+omega(b,L,m)+ omega(c,L,m)-omega(a+b+c,L,m)
+                    <=Emax+tol)] \
             + [ NOO([a,b],[c,a+b-c],L,m, extracoeff = 6. * comb(a,b)*comb(c,a+b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(-nmax,nmax+1) if
                 ( c<=a+b-c<=nmax
                 and (a,b) != (c,a+b-c)
                 and sorted([abs(a),abs(b)]) < sorted([abs(c),abs(a+b-c)])
-                and -Emax-tol <= omega(a,L,m)+omega(b,L,m)- omega(c,L,m)-omega(a+b-c,L,m) <=Emax+tol)]
+                and -Emax-tol <= omega(a,L,m)+omega(b,L,m)- omega(c,L,m)-omega(a+b-c,L,m)
+                    <=Emax+tol)]
 
-
-        #print "Number of operators:", sum([len(x) for x in offdiagOps.values()]+[len(x) for x in diagOps.values()])
+        print("Number of operators:", len(offdiagOps[4]))
 
         self.h0[k] = Matrix(lookupBasis, basis)
-        for j in range(basis.size):
+        for j,v in enumerate(basis):
             newcolumn = scipy.zeros(lookupBasis.size)
-            newcolumn[j] = basis[j].energy
+            newcolumn[j] = v.energy
             self.h0[k].addColumn(newcolumn)
         self.h0[k].finalize()
 
+        # XXX Cycle only through relevant operators (or relevant basis elements?)
         for n in offdiagOps.keys():
-            offdiag_V = Matrix(lookupBasis, basis)
+            data = []
+            row = []
+            col = []
             diagonal = scipy.zeros(basis.size)
 
-            for v in basis:
+            for j,v in enumerate(basis):
 
-                newcolumn = scipy.zeros(lookupBasis.size)
                 for op in offdiagOps[n]:
                     try:
                         (x,i) = op.apply(v,lookupBasis)
                         # if(i != None):
-                        newcolumn[i]+=x
+                        # newcolumn[i]+=x
+                        data.append(x)
+                        row.append(i)
+                        col.append(j)
                     except LookupError:
                         pass
 
-                offdiag_V.addColumn(newcolumn)
+                # offdiag_V.addColumn(newcolumn)
 
                 for op in diagOps[n]:
                     try:
                         (x,i) = op.apply(v,lookupBasis)
-
                         # It should be j=i
                         # if i != j:
                             # raise RuntimeError('Non-diagonal operator')
                         diagonal[i]+=x
-
                     except LookupError:
                         pass
 
-            offdiag_V.finalize()
+            # XXX Remove duplicates??
+            offdiag_V = Matrix(basis,basis,
+                    scipy.sparse.coo_matrix((data,(row,col)),
+                        shape=(basis.size,basis.size)))
             diag_V = scipy.sparse.spdiags(diagonal,0,basis.size,basis.size)
 
+            c = offdiag_V.transpose()
             self.V[k][n] = (offdiag_V+offdiag_V.transpose()
                             + Matrix(lookupBasis, basis, diag_V)).to('coo')*self.L
 
