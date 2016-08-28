@@ -109,8 +109,9 @@ class Basis():
         # P-parity reversed collection of Fock-space states
         self.reversedStateList = [state.parityReversed() for state in self.stateList]
 
-        self.statePos = { state : i for i, state in enumerate(self.stateList) }
-        self.reversedStatePos = { state : i for i, state in enumerate(self.reversedStateList) }
+        self.statePos = {state:i for i, state in enumerate(self.stateList) }
+        self.reversedStatePos = {state:i for i, state
+                in enumerate(self.reversedStateList) }
 
         self.size = len(self.stateList)
 

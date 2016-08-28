@@ -1,21 +1,16 @@
-import sys
 import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 import math
-from operator import attrgetter
 import gc
-import statefuncs
 from math import factorial
 from statefuncs import Basis, omega, State
-import oscillators
 from oscillators import NormalOrderedOperator as NOO
-import collections
+from collections import Counter
 import renorm
-import itertools
-import finiteVolH
 from matrix import Matrix
 from scipy import exp, pi, array
+from sortedcontainers import SortedList
 
 
 # I use this "tolerance" parameter throughout the code to
@@ -24,8 +19,7 @@ tol = 0.0001
 
 def comb(*x):
     """ computes combinatorial factor for list of elements """
-    return factorial(len(x))/\
-            scipy.prod(list(map(factorial,collections.Counter(x).values())))
+    return factorial(len(x))/scipy.prod(list(map(factorial,Counter(x).values())))
 
 
 class Phi4():
@@ -108,6 +102,10 @@ class Phi4():
                 and -Emax-tol <= omega(a,L,m)+omega(b,L,m)- omega(c,L,m)-omega(a+b-c,L,m)
                     <=Emax+tol)]
 
+        # Sort with respect to total energy of oscillators
+        for n in offdiagOps.keys():
+            offdiagOps[n] = SortedList(offdiagOps[n], key=lambda x:x.deltaE)
+
         print("Number of operators:", len(offdiagOps[4]))
 
         self.h0[k] = Matrix(basis, basis,
@@ -123,7 +121,7 @@ class Phi4():
 
             for j,v in enumerate(basis):
 
-                for op in offdiagOps[n]:
+                for op in offdiagOps[n].irange_key(-v.energy, Emax-v.energy):
                     try:
                         (x,i) = op.apply(v,lookupBasis)
                         # if(i != None):

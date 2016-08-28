@@ -5,7 +5,7 @@ import scipy.sparse
 import math
 from operator import attrgetter
 import gc
-
+from sortedcontainers import SortedList
 from statefuncs import omega, State
 
 
@@ -19,15 +19,18 @@ tol = 0.0001
 class NormalOrderedOperator():
     """ abstract class for normal ordered operator """
     def __init__(self,clist,dlist,L,m,extracoeff=1):
-        self.clist=clist
-        self.dlist=dlist
-        self.L=L
-        self.m=m
-        self.coeff = extracoeff/np.product([math.sqrt(2.*L*omega(n,L,m)) for n in clist+dlist])
-        self.deltaE = sum([omega(n,L,m) for n in clist]) - sum([omega(n,L,m) for n in dlist])
+        self.clist = clist
+        self.dlist = dlist
+        self.L = L
+        self.m = m
+        self.coeff = extracoeff/\
+            np.product([math.sqrt(2.*L*omega(n,L,m)) for n in clist+dlist])
+        self.deltaE = sum([omega(n,L,m) for n in clist])-sum([omega(n,L,m) for n in dlist])
+        # self.deltaN = len(clist)-len(dlist)
 
     def __repr__(self):
         return str(self.clist)+" "+str(self.dlist)
+
 
     def _transformState(self, state0):
         state = State(state0.occs[:], state0.nmax, fast=True)
