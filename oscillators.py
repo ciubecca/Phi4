@@ -5,7 +5,6 @@ import scipy.sparse
 import math
 from operator import attrgetter
 import gc
-from sortedcontainers import SortedList
 from statefuncs import omega, State
 
 
@@ -55,10 +54,10 @@ class NormalOrderedOperator():
         lookupbasis can be different from basis,
         but it's assumed that they have the same nmax"""
 
-        if self.deltaE+v.energy < 0.-tol or self.deltaE+v.energy > lookupbasis.Emax+tol:
-            # FIX (ADD CHECK ON OCCMAX)
-            # The trasformed element surely does not belong to the basis if E>Emax
-            raise LookupError()
+        # if self.deltaE+v.energy < 0.-tol or self.deltaE+v.energy > lookupbasis.Emax+tol:
+            # # FIX (ADD CHECK ON OCCMAX)
+            # # The trasformed element surely does not belong to the basis if E>Emax
+            # raise LookupError()
 
         n, newstate = self._transformState(v)
         # if n==0:
