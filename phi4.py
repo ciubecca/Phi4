@@ -52,7 +52,8 @@ class Phi4():
         self.L = float(L)
         self.m = float(m)
 
-        self.basis[k] = Basis.fromScratch(L=self.L, Emax=Emax, m=self.m, k=k, occmax=occmax)
+        self.basis[k] = Basis.fromScratch(L=self.L, Emax=Emax, m=self.m, k=k,
+                                            occmax=occmax)
 
     def buildMatrix(self, k):
         """ Builds the full hamiltonian in the basis of the free hamiltonian.
@@ -109,12 +110,9 @@ class Phi4():
 
         print("Number of operators:", len(offdiagOps[4]))
 
-        self.h0[k] = Matrix(lookupBasis, basis)
-        for j,v in enumerate(basis):
-            newcolumn = scipy.zeros(lookupBasis.size)
-            newcolumn[j] = v.energy
-            self.h0[k].addColumn(newcolumn)
-        self.h0[k].finalize()
+        self.h0[k] = Matrix(basis, basis,
+                scipy.sparse.spdiags([v.energy for v in basis],
+                    0,basis.size,basis.size)).to("coo")
 
         # XXX Cycle only through relevant operators (or relevant basis elements?)
         for n in offdiagOps.keys():
@@ -149,14 +147,12 @@ class Phi4():
                         pass
 
             # XXX Remove duplicates??
-            offdiag_V = Matrix(basis,basis,
-                    scipy.sparse.coo_matrix((data,(row,col)),
-                        shape=(basis.size,basis.size)))
+            offdiag_V = scipy.sparse.coo_matrix((data,(row,col)),
+                                            shape=(basis.size,basis.size))
             diag_V = scipy.sparse.spdiags(diagonal,0,basis.size,basis.size)
 
-            c = offdiag_V.transpose()
-            self.V[k][n] = (offdiag_V+offdiag_V.transpose()
-                            + Matrix(lookupBasis, basis, diag_V)).to('coo')*self.L
+            self.V[k][n] = Matrix(basis,basis,
+                    offdiag_V+offdiag_V.transpose()+diag_V).to('coo')*self.L
 
 
     def setCouplings(self, g0, g2, g4):

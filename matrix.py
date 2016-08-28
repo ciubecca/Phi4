@@ -7,22 +7,10 @@ import scipy.interpolate
 class Matrix():
     """ Matrix with specified state bases for row and column indexes.
     This class is useful to easily extract submatrices """
-    def __init__(self, basisI, basisJ, M=None):
+    def __init__(self, basisI, basisJ, M):
         self.basisI = basisI
         self.basisJ = basisJ
-
-        if(M == None):
-            self.M = scipy.sparse.coo_matrix((basisI.size, 1))
-        else:
-            self.M = M
-            self.check()
-
-    def addColumn(self, newcolumn):
-        m = scipy.sparse.coo_matrix(newcolumn).transpose()
-        self.M = scipy.sparse.hstack([self.M,m])
-
-    def finalize(self):
-        self.M = self.M.tocsc()[:,1:].tocoo()
+        self.M = M
         self.check()
 
     def check(self):
