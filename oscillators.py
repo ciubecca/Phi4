@@ -1,10 +1,5 @@
 import scipy
-import numpy as np
-import scipy.sparse.linalg
-import scipy.sparse
-import math
-from operator import attrgetter
-import gc
+from scipy import pi, sqrt, array
 from statefuncs import omega, State
 
 
@@ -17,13 +12,13 @@ tol = 0.0001
 
 class NormalOrderedOperator():
     """ abstract class for normal ordered operator """
-    def __init__(self,clist,dlist,L,m,extracoeff=1):
+    def __init__(self,clist,dlist,L,m,nmax,extracoeff=1):
         self.clist = clist
         self.dlist = dlist
         self.L = L
         self.m = m
         self.coeff = extracoeff/\
-            np.product([math.sqrt(2.*L*omega(n,L,m)) for n in clist+dlist])
+            scipy.product([sqrt(2.*L*omega(n,L,m)) for n in clist+dlist])
         self.deltaE = sum([omega(n,L,m) for n in clist])-sum([omega(n,L,m) for n in dlist])
         # self.deltaN = len(clist)-len(dlist)
 
@@ -62,11 +57,11 @@ class NormalOrderedOperator():
         n, newstate = self._transformState(v)
         # if n==0:
             # return (0, None)
-        m, j = lookupbasis.lookup(newstate)
+        j = lookupbasis.lookup(newstate)
 
         c = 1.
-        if v.isParityEigenstate():
-            c = 1/scipy.sqrt(2.)
-            # Required for state normalization
+        # Required for state normalization
+        if v.isParityEigenstate(): c /= sqrt(2.)
+        if lookupbasis[j].isParityEigenstate(): c *= sqrt(2)
 
-        return (m*c*math.sqrt(n)*self.coeff, j)
+        return (c*sqrt(n)*self.coeff, j)

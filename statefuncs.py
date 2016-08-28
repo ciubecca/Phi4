@@ -27,9 +27,9 @@ class State():
         """ occs: occupation number list
             nmax: wave number of the last element in occs """
         self.occs = occs
-        self.size = len(self.occs)
         self.nmax = nmax
         self.fast = fast
+        self.size = len(self.occs)
 
         if(fast == False):
             self.setLM(L,m, checkAtRest)
@@ -69,6 +69,7 @@ class State():
         return str(self.occs)
     def __eq__(self, other):
        # check also if the P-reversed is the same!
+       # return (self.occs == other.occs).all() or (self.occs == other.occs[::-1]).all()
        return (self.occs == other.occs) or (self.occs == other.occs[::-1])
 
     def __hash__(self):
@@ -84,7 +85,7 @@ class State():
         self.occs[wn+self.size-self.nmax-1] = n
 
     def __getitem__(self, wn):
-        """ Returns the occupation number corresponding to a wave number"""
+        """ Returns the occupation number corresponding to a wave number """
         return self.occs[wn+self.size-self.nmax-1]
 
     def wnList(self):
@@ -105,15 +106,9 @@ class Basis():
         self.k = k
 
         self.stateList = stateList
-
-        # P-parity reversed collection of Fock-space states
-        self.reversedStateList = [state.parityReversed() for state in self.stateList]
+        self.size = len(self.stateList)
 
         self.statePos = {state:i for i, state in enumerate(self.stateList) }
-        self.reversedStatePos = {state:i for i, state
-                in enumerate(self.reversedStateList) }
-
-        self.size = len(self.stateList)
 
     @classmethod
     def fromScratch(self, L, Emax, m, k, occmax=None):
@@ -151,22 +146,11 @@ class Basis():
         return self.stateList[index]
 
     def lookup(self, state):
-        """
-        looks up the index of a state. If this is not present, tries to look up for its parity-reversed
-        """
+        """ Looks up the index of a state. """
         try:
-            i = self.statePos[state]
-            c=1.
-            if(self.stateList[i].isParityEigenstate()):
-                # Required for state normalization
-                c=scipy.sqrt(2.)
-            return (c, i)
-        # In case the state is not found
+            return self.statePos[state]
         except KeyError:
-            try:
-                return (1., self.reversedStatePos[state])
-            except KeyError:
-                raise LookupError()
+            raise LookupError()
 
 
     def __buildRMlist(self):
@@ -186,24 +170,26 @@ class Basis():
         # seed list of RM states, all possible n=1 mode occupation numbers
         RMlist0 = [State([N],1,L=self.L,m=self.m,checkAtRest=False) for N in range(maxN1+1)]
 
-        #go over all other modes
+        # go over all other modes
         for n in range(2,self.nmax+1):
-            #we will take states out of RMlist0, augment them and add to RMlist1
+            # we will take states out of RMlist0, augment them and add to RMlist1
             RMlist1=[]
             # cycle over all RMstates
             for RMstate in RMlist0:
                 p0 = RMstate.momentum
                 e0 = RMstate.energy
-                #maximal occupation number of mode n given the occupation numbers of all previous modes
+                # maximal occupation number of mode n given the occupation numbers of
+                # all previous modes
                 maxNn = int(math.floor(
-                    min(self._occmax-RMstate.occ-1, (kmax-p0)/k(n,self.L), (self.Emax-scipy.sqrt(self.m**2+p0**2)-e0)/omega(n,self.L,self.m))
-                    ))
+                    min(self._occmax-RMstate.occ-1, (kmax-p0)/k(n,self.L),
+                        (self.Emax-scipy.sqrt(self.m**2+p0**2)-e0)/omega(n,self.L,self.m))))
 
                 for N in range(maxNn+1):
                     longerstate=RMstate.occs[:]
                     #add all possible occupation numbers for mode n
                     longerstate.append(N)
-                    RMlist1.append(State(longerstate,len(longerstate),L=self.L,m=self.m, checkAtRest=False))
+                    RMlist1.append(State(longerstate,len(longerstate),
+                        L=self.L,m=self.m, checkAtRest=False))
             #RMlist1 created, copy it back to RMlist0
             RMlist0 = RMlist1
 
@@ -243,7 +229,8 @@ class Basis():
                 ORM = RMstate.occ
 
                 # LM part of the state will come from the same sublist.
-                # We take the position of LMState to be greater or equal to the position of RMstate
+                # We take the position of LMState to be greater or equal
+                #to the position of RMstate
                 for LMstate in RMsublist[i:]:
                     # we will just have to reverse it
                     ELM = LMstate.energy

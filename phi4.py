@@ -63,18 +63,18 @@ class Phi4():
         diagOps = {0: None, 2:None, 4:None}
         offdiagOps = {0: None, 2:None, 4:None}
 
-        diagOps[0] = [NOO([],[],L,m)]
+        diagOps[0] = [NOO([],[],L,m,nmax)]
 
         offdiagOps[0] = []
 
-        diagOps[2] = [NOO([a],[a],L,m, extracoeff = 2.) for a in range(-nmax,nmax+1)]
+        diagOps[2] = [NOO([a],[a],L,m,nmax,extracoeff=2.) for a in range(-nmax,nmax+1)]
 
-        offdiagOps[2] = [ NOO([a,-a],[],L,m,extracoeff=comb(a,-a))
+        offdiagOps[2] = [ NOO([a,-a],[],L,m,nmax,extracoeff=comb(a,-a))
                 for a in range(-nmax,nmax+1) if a<=-a<=nmax and
                 omega(a,L,m)+omega(-a,L,m) <= Emax+tol]
 
         diagOps[4] = \
-                [ NOO([a,b],[c,a+b-c],L,m, extracoeff = 6.*comb(a,b)*comb(c,a+b-c))
+                [ NOO([a,b],[c,a+b-c],L,m,nmax, extracoeff = 6.*comb(a,b)*comb(c,a+b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(-nmax,nmax+1) if
                 ( c<=a+b-c<=nmax
@@ -83,17 +83,17 @@ class Phi4():
                     <=Emax+tol)]
 
         offdiagOps[4] = \
-              [ NOO([a,b,c,-a-b-c],[],L,m,extracoeff=comb(a,b,c,-a-b-c))
+              [ NOO([a,b,c,-a-b-c],[],L,m,nmax,extracoeff=comb(a,b,c,-a-b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(b,nmax+1) if c<=-a-b-c<=nmax and
                 omega(a,L,m)+omega(b,L,m) + omega(c,L,m)+omega(-a-b-c,L,m)<= Emax+tol] \
-            + [ NOO([a,b,c],[a+b+c],L,m, extracoeff = 4. * comb(a,b,c))
+            + [ NOO([a,b,c],[a+b+c],L,m,nmax, extracoeff = 4. * comb(a,b,c))
                 for a in range(-nmax, nmax+1) for b in range (a,nmax+1)
                 for c in range(b,nmax+1) if
                 (-nmax<=a+b+c<=nmax
                 and -Emax-tol <= omega(a,L,m)+omega(b,L,m)+ omega(c,L,m)-omega(a+b+c,L,m)
                     <=Emax+tol)] \
-            + [ NOO([a,b],[c,a+b-c],L,m, extracoeff = 6. * comb(a,b)*comb(c,a+b-c))
+            + [ NOO([a,b],[c,a+b-c],L,m,nmax, extracoeff = 6.*comb(a,b)*comb(c,a+b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(-nmax,nmax+1) if
                 ( c<=a+b-c<=nmax
