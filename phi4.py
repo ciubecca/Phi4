@@ -106,7 +106,8 @@ class Phi4():
         for n in offdiagOps.keys():
             offdiagOps[n] = SortedList(offdiagOps[n], key=lambda x:x.deltaE)
 
-        print("Number of operators:", len(offdiagOps[4]))
+        self.nops = sum(len(offdiagOps[n]) for n in (0,2,4))
+        print("Number of (offdiag) operators:", self.nops)
 
         self.h0[k] = Matrix(basis, basis,
                 scipy.sparse.spdiags([v.energy for v in basis],
