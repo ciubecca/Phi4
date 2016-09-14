@@ -4,6 +4,7 @@ import scipy.sparse
 from scipy import pi
 import math
 from operator import attrgetter
+import itertools
 import gc
 
 # "tolerance" parameter to avoid possible numerical
@@ -117,17 +118,20 @@ class Basis():
         self.Emax = Emax
         self.m = m
         self.k = k
+        # This can be "None"
         self.occmax = occmax
 
-        # Maximum wavenumber
-        self.nmax = int(math.floor(scipy.sqrt((Emax/2.)**2.-m**2.)*self.L/(2.*pi)))
         if occmax==None:
+            # This is used in the basis construction
             self._occmax = int(math.floor(Emax/self.m))
         else:
             self._occmax = occmax
 
+        self.kmax = scipy.sqrt((Emax/2.)**2.-m**2.)
+        self.nmax = int(math.floor(self.kmax*L/(2*pi)))
+
         # Collection of Fock space states, possibly sorted in energy
-        stateList = sorted(self.__buildBasis(self), key=attrgetter('energy'))
+        stateList = sorted(self.buildBasis(self), key=attrgetter('energy'))
 
         return self(L, m, k, stateList, Emax)
 
@@ -153,84 +157,50 @@ class Basis():
             raise LookupError()
 
 
-    def __buildRMlist(self):
-        """
-        sets list of all right -moving states with particles of individual wave number
-        <= nmax, total momentum <= Emax/2 and total energy <= Emax
-        This function works by first filling in n=1 mode in all possible ways, then n=2 mode
-        in all possible ways assuming the occupation of n=1 mode, etc
-        """
+    def genRMlist(self, RMstate, n):
+        """ Recursive function generating all the states starting from RMstate, by adding
+        any number of particles with wavenumber n.
+        It starts from the seed state with 0 particles and wavenumber 1 """
 
-        kmax = self.nmax*2*pi/self.L
+        if n > self.nmax:
+            return [RMstate]
 
-        # maximal occupation number of n=1 mode
-        # If there is a right-moving particle, there must be also a left-moving one
-        maxN1 = int(math.floor(min(self._occmax-1, kmax/k(1,self.L), self.Emax/omega(1,self.L,self.m))))
+        maxN = int(math.floor(min(
+                self._occmax-RMstate.occ,
+                (self.kmax-RMstate.momentum)/k(n,self.L),
+                (self.Emax-RMstate.energy)/omega(n,self.L,self.m))))
 
-        # seed list of RM states, all possible n=1 mode occupation numbers
-        RMlist0 = [State([N],1,L=self.L,m=self.m,checkAtRest=False) for N in range(maxN1+1)]
+        ret = []
+        for N in range(maxN+1):
+            newoccs = RMstate.occs[:]
+            newoccs[n-1] = N
+            newstate = State(newoccs, self.nmax, L=self.L, m=self.m, checkAtRest=False)
+            ret += self.genRMlist(self,newstate,n+1)
+        return ret
 
-        # go over all other modes
-        for n in range(2,self.nmax+1):
-            # we will take states out of RMlist0, augment them and add to RMlist1
-            RMlist1=[]
-            # cycle over all RMstates
-            for RMstate in RMlist0:
-                p0 = RMstate.momentum
-                e0 = RMstate.energy
-                # maximal occupation number of mode n given the occupation numbers of
-                # all previous modes
-                maxNn = int(math.floor(
-                    min(self._occmax-RMstate.occ-1, (kmax-p0)/k(n,self.L),
-                        (self.Emax-scipy.sqrt(self.m**2+p0**2)-e0)/omega(n,self.L,self.m))))
 
-                for N in range(maxNn+1):
-                    longerstate=RMstate.occs[:]
-                    #add all possible occupation numbers for mode n
-                    longerstate.append(N)
-                    RMlist1.append(State(longerstate,len(longerstate),
-                        L=self.L,m=self.m, checkAtRest=False))
-            #RMlist1 created, copy it back to RMlist0
-            RMlist0 = RMlist1
+    def buildBasis(self):
+        """ Generates the basis starting from the list of RM states """
 
-        #save list of RMstates in an internal variable
-        self.__RMlist = RMlist0
+        RMlist = self.genRMlist(self,
+                RMstate=State([0]*self.nmax,self.nmax,self.L,self.m), n=1)
 
-    def __divideRMlist(self):
-        """ divides the list of RMstates into a list of lists, RMdivided,
-        so that two states in each list have a fixed total RM wavenumber,
-        also each sublist is ordered in energy"""
-
-        self.__nRMmax=max([RMstate.totalWN for RMstate in self.__RMlist])
-        #initialize list of lists
-        self.__RMdivided = [[] for ntot in range(self.__nRMmax+1)]
-        #go over RMstates and append them to corresponding sublists
-        for RMstate in self.__RMlist:
-            self.__RMdivided[RMstate.totalWN].append(RMstate)
-
-        #now sort each sublist in energy
-        for RMsublist in self.__RMdivided:
-            RMsublist.sort(key=attrgetter('energy'))
-
-    # finally function which builds the basis
-    def __buildBasis(self):
-        """
-        creates basis of states of total momentum zero, energy <= Emax
-        and occupation number <= occmax
-        """
-        self.__buildRMlist(self)
-        self.__divideRMlist(self)
-
+        # divides the list of RMstates into a list of lists,
+        # so that two states in each list have a fixed total RM wavenumber,
+        # and sort each sublist in energy
+        sortedRMlist = sorted(RMlist, key=attrgetter('totalWN'))
+        dividedRMlist = [sorted(l, key=attrgetter('energy')) for wn,l in
+            itertools.groupby(sortedRMlist,key=attrgetter('totalWN'))]
         statelist = []
 
-        for nRM,RMsublist in enumerate(self.__RMdivided):
+        for RMwn, RMsublist in enumerate(dividedRMlist):
             for i, RMstate in enumerate(RMsublist):
                 ERM = RMstate.energy
                 ORM = RMstate.occ
 
                 # LM part of the state will come from the same sublist.
                 # We take the position of LMState to be greater or equal
-                #to the position of RMstate
+                # to the position of RMstate
                 for LMstate in RMsublist[i:]:
                     # we will just have to reverse it
                     ELM = LMstate.energy
@@ -249,12 +219,9 @@ class Basis():
 
                     # possible values for the occupation value at rest
                     for N0 in range(maxN0+1):
+                        # Only states with correct parity
+                        if (-1)**(N0+OLM+ORM) == self.k:
+                            statelist.append(State(LMstate.occs[::-1]+[N0]+RMstate.occs,
+                                        self.nmax, L=self.L, m=self.m, checkAtRest=True))
 
-                        state = State(LMstate.occs[::-1]+[N0]+RMstate.occs, self.nmax, L=self.L,m=self.m,checkAtRest=True)
-
-                        # XXX just to be sure
-                        if state.energy <= self.Emax and state.occ <= self._occmax:
-                            # XXX Can this be optimized?
-                            if self.k == state.kparity():
-                                statelist.append(state)
         return statelist
