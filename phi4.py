@@ -7,15 +7,14 @@ from math import factorial
 from statefuncs import Basis, omega, State
 from oscillators import NormalOrderedOperator as NOO
 from collections import Counter
+from operator import attrgetter
 import renorm
 from matrix import Matrix
 from scipy import exp, pi, array
 from sortedcontainers import SortedList
 
 
-# I use this "tolerance" parameter throughout the code to
-# avoid possible numerical issues when confronting energies with Emax
-tol = 0.0001
+
 
 def comb(*x):
     """ computes combinatorial factor for list of elements """
@@ -25,9 +24,6 @@ def comb(*x):
 class Phi4():
     """ main FVHT class """
     def __init__(self):
-        self.L=None
-        self.m=None
-
         self.basis = {}
         self.h0 = {}
         self.V = {k:{} for k in {-1,1}}
@@ -43,15 +39,15 @@ class Phi4():
 
     def buildBasis(self, k, L, m, Emax, occmax=None):
         """ Builds the full Hilbert space basis """
-        self.L = float(L)
-        self.m = float(m)
+        self.L = L
+        self.m = m
 
-        self.basis[k] = Basis.fromScratch(L=self.L, Emax=Emax, m=self.m, k=k,
-                                            occmax=occmax)
+        self.basis[k] = Basis.fromScratch(LL=L, mm=m, Emax=Emax, k=k, occmax=occmax)
 
     def buildMatrix(self, k):
         """ Builds the full hamiltonian in the basis of the free hamiltonian.
-        This is computationally intensive. It can be skipped by loading the matrix from file """
+        This is computationally intensive.
+        It can be skipped by loading the matrix from file """
         L=self.L
         m=self.m
 
@@ -62,16 +58,15 @@ class Phi4():
 
         diagOps = {0: None, 2:None, 4:None}
         offdiagOps = {0: None, 2:None, 4:None}
-
         diagOps[0] = [NOO([],[],L,m,nmax)]
-
         offdiagOps[0] = []
-
         diagOps[2] = [NOO([a],[a],L,m,nmax,extracoeff=2.) for a in range(-nmax,nmax+1)]
-
         offdiagOps[2] = [ NOO([a,-a],[],L,m,nmax,extracoeff=comb(a,-a))
                 for a in range(-nmax,nmax+1) if a<=-a<=nmax and
-                omega(a,L,m)+omega(-a,L,m) <= Emax+tol]
+                omega(a,L,m)+omega(-a,L,m) <= Emax]
+
+
+        # Take the diagonal operators from the 4-particles basis states
 
         diagOps[4] = \
                 [ NOO([a,b],[c,a+b-c],L,m,nmax, extracoeff = 6.*comb(a,b)*comb(c,a+b-c))
@@ -79,32 +74,31 @@ class Phi4():
                 for c in range(-nmax,nmax+1) if
                 ( c<=a+b-c<=nmax
                 and (a,b) == (c,a+b-c)
-                and -Emax-tol<=omega(a,L,m)+omega(b,L,m)-omega(c,L,m)-omega(a+b-c,L,m)
-                    <=Emax+tol)]
+                and -Emax <=omega(a,L,m)+omega(b,L,m)-omega(c,L,m)-omega(a+b-c,L,m) <=Emax)]
 
         offdiagOps[4] = \
               [ NOO([a,b,c,-a-b-c],[],L,m,nmax,extracoeff=comb(a,b,c,-a-b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(b,nmax+1) if c<=-a-b-c<=nmax and
-                omega(a,L,m)+omega(b,L,m) + omega(c,L,m)+omega(-a-b-c,L,m)<= Emax+tol] \
-            + [ NOO([a,b,c],[a+b+c],L,m,nmax, extracoeff = 4. * comb(a,b,c))
+                omega(a,L,m)+omega(b,L,m) + omega(c,L,m)+omega(-a-b-c,L,m)<= Emax] \
+            + [ NOO([a,b,c],[a+b+c],L,m,nmax, extracoeff = 4*comb(a,b,c))
                 for a in range(-nmax, nmax+1) for b in range (a,nmax+1)
                 for c in range(b,nmax+1) if
                 (-nmax<=a+b+c<=nmax
-                and -Emax-tol <= omega(a,L,m)+omega(b,L,m)+ omega(c,L,m)-omega(a+b+c,L,m)
-                    <=Emax+tol)] \
-            + [ NOO([a,b],[c,a+b-c],L,m,nmax, extracoeff = 6.*comb(a,b)*comb(c,a+b-c))
+                and -Emax <= omega(a,L,m)+omega(b,L,m)+ omega(c,L,m)-omega(a+b+c,L,m)
+                    <=Emax)] \
+            + [ NOO([a,b],[c,a+b-c],L,m,nmax, extracoeff = 6*comb(a,b)*comb(c,a+b-c))
                 for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
                 for c in range(-nmax,nmax+1) if
                 ( c<=a+b-c<=nmax
                 and (a,b) != (c,a+b-c)
                 and sorted([abs(a),abs(b)]) < sorted([abs(c),abs(a+b-c)])
-                and -Emax-tol <= omega(a,L,m)+omega(b,L,m)- omega(c,L,m)-omega(a+b-c,L,m)
-                    <=Emax+tol)]
+                and -Emax <= omega(a,L,m)+omega(b,L,m)- omega(c,L,m)-omega(a+b-c,L,m)
+                    <=Emax)]
 
         # Sort with respect to total energy of oscillators
         for n in offdiagOps.keys():
-            offdiagOps[n] = SortedList(offdiagOps[n], key=lambda x:x.deltaE)
+            offdiagOps[n] = SortedList(offdiagOps[n], key=attrgetter("deltaE"))
 
         self.nops = sum(len(offdiagOps[n]) for n in (0,2,4))
         print("Number of (offdiag) operators:", self.nops)
@@ -132,8 +126,6 @@ class Phi4():
                         col.append(j)
                     except LookupError:
                         pass
-
-                # offdiag_V.addColumn(newcolumn)
 
                 for op in diagOps[n]:
                     try:
