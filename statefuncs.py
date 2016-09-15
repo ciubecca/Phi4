@@ -46,20 +46,13 @@ class State():
     def __repr__(self):
         return str(self.occs)
 
-    def __eq__(self, other):
-        """ Compares two states
-        NB: doesn't take into account spatial parity  """
-        return (self.occs == other).all()
-
-    def __hash__(self):
-        return hash(tuple(self.occs))
 
     def __getitem__(self, wn):
         """ Returns the occupation number corresponding to a wave number """
         return self.occs[wn+self.occs.size-self.nmax-1]
 
     def Preversed(self):
-        return State(self.occs[::-1],self.nmax)
+        return State(self.occs[::-1],self.nmax,atRest=False)
 
 
 class Basis():
@@ -71,8 +64,12 @@ class Basis():
         self.size = len(self.stateList)
 
         # Contains also the P-reversed states
-        self.statePos = {**{state:i for i, state in enumerate(self.stateList)},
-                    **{state.Preversed():i for i, state in enumerate(self.stateList)}}
+        # NOTE: For some reason using arrays is much less efficient!
+        self.statePos = {
+                **{tuple(state.occs.tolist()):i for i, state in enumerate(self.stateList)},
+                **{tuple(state.Preversed().occs.tolist()):i for i, state in
+                        enumerate(self.stateList) if not state.isPeigenstate}
+                }
 
     @classmethod
     def fromScratch(self, LL, mm, Emax, k, occmax=None):
@@ -116,8 +113,8 @@ class Basis():
         return self.stateList[index]
 
     def lookup(self, state):
-        """ Looks up the index of a state. """
-        return self.statePos[state]
+        """ Looks up the index of a state (list of occupation numbers) """
+        return self.statePos[tuple(state)]
 
 
     def genRMlist(self, RMstate, n):

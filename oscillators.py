@@ -51,10 +51,10 @@ class Operator():
             for dlist,clists in self.oscillators.items()}
 
 
-
         #XXX Define oscillators in the "1" representation
 
 
+    @profile
     def computeMatrixElements(self, state, lookupbasis):
         # List of columns indices of generated basis elements
         col = []
@@ -95,7 +95,7 @@ class Operator():
                 # print(coeff)
 
                 # XXX Can this be optimized using a table and a difference of vectors?
-                newstate = scipy.copy(occs)
+                newstate = occs.tolist()
 
                 for d in dlist:
                     coeff *= sqrt(newstate[d+nmax])
@@ -104,7 +104,8 @@ class Operator():
                     coeff *= sqrt(newstate[c+nmax]+1)
                     newstate[c+nmax] += 1
 
-                j = lookup(tuple(newstate))
+                j = lookup(newstate)
+                # j = lookupdict[tuple(newstate)]
 
                 # parity factors XXX check
                 if p:
