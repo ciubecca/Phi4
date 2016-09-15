@@ -21,13 +21,17 @@ def main(argv):
     except IndexError:
         occmax = None
 
-    a = phi4.Phi4()
+    a = phi4.Phi4(m,L)
 
     a.buildBasis(k=k, Emax=Emax, m=m, L=L, occmax=occmax)
     print("basis size :", a.basis[k].size)
 
+    # print(a.basis[k])
+
     a.buildMatrix(k=k)
-    a.saveMatrix(k=k)
+    # a.saveMatrix(k=k)
+
+    # print(a.V[k][4].M.todense())
 
 if __name__ == "__main__":
     main(sys.argv)

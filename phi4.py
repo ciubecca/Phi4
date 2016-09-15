@@ -2,28 +2,25 @@ import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 import math
-import gc
 from math import factorial
 from statefuncs import Basis, omega, State
-from oscillators import NormalOrderedOperator as NOO
+from oscillators import Phi4Operators
 from collections import Counter
 from operator import attrgetter
 import renorm
 from matrix import Matrix
 from scipy import exp, pi, array
-from sortedcontainers import SortedList
 
-
-
-
-def comb(*x):
-    """ computes combinatorial factor for list of elements """
-    return factorial(len(x))/scipy.prod(list(map(factorial,Counter(x).values())))
 
 
 class Phi4():
     """ main FVHT class """
-    def __init__(self):
+    def __init__(self, mm, LL):
+        global L
+        global m
+        L = LL
+        m = mm
+
         self.basis = {}
         self.h0 = {}
         self.V = {k:{} for k in {-1,1}}
@@ -39,119 +36,52 @@ class Phi4():
 
     def buildBasis(self, k, L, m, Emax, occmax=None):
         """ Builds the full Hilbert space basis """
-        self.L = L
-        self.m = m
-
         self.basis[k] = Basis.fromScratch(LL=L, mm=m, Emax=Emax, k=k, occmax=occmax)
+
 
     def buildMatrix(self, k):
         """ Builds the full hamiltonian in the basis of the free hamiltonian.
         This is computationally intensive.
         It can be skipped by loading the matrix from file """
-        L=self.L
-        m=self.m
 
         basis = self.basis[k]
-        lookupBasis = self.basis[k]
+        lookupbasis = self.basis[k]
         Emax = basis.Emax
         nmax = basis.nmax
 
-        diagOps = {0: None, 2:None, 4:None}
-        offdiagOps = {0: None, 2:None, 4:None}
-        diagOps[0] = [NOO([],[],L,m,nmax)]
-        offdiagOps[0] = []
-        diagOps[2] = [NOO([a],[a],L,m,nmax,extracoeff=2.) for a in range(-nmax,nmax+1)]
-        offdiagOps[2] = [ NOO([a,-a],[],L,m,nmax,extracoeff=comb(a,-a))
-                for a in range(-nmax,nmax+1) if a<=-a<=nmax and
-                omega(a,L,m)+omega(-a,L,m) <= Emax]
-
-
-        # Take the diagonal operators from the 4-particles basis states
-
-        diagOps[4] = \
-                [ NOO([a,b],[c,a+b-c],L,m,nmax, extracoeff = 6.*comb(a,b)*comb(c,a+b-c))
-                for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
-                for c in range(-nmax,nmax+1) if
-                ( c<=a+b-c<=nmax
-                and (a,b) == (c,a+b-c)
-                and -Emax <=omega(a,L,m)+omega(b,L,m)-omega(c,L,m)-omega(a+b-c,L,m) <=Emax)]
-
-        offdiagOps[4] = \
-              [ NOO([a,b,c,-a-b-c],[],L,m,nmax,extracoeff=comb(a,b,c,-a-b-c))
-                for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
-                for c in range(b,nmax+1) if c<=-a-b-c<=nmax and
-                omega(a,L,m)+omega(b,L,m) + omega(c,L,m)+omega(-a-b-c,L,m)<= Emax] \
-            + [ NOO([a,b,c],[a+b+c],L,m,nmax, extracoeff = 4*comb(a,b,c))
-                for a in range(-nmax, nmax+1) for b in range (a,nmax+1)
-                for c in range(b,nmax+1) if
-                (-nmax<=a+b+c<=nmax
-                and -Emax <= omega(a,L,m)+omega(b,L,m)+ omega(c,L,m)-omega(a+b+c,L,m)
-                    <=Emax)] \
-            + [ NOO([a,b],[c,a+b-c],L,m,nmax, extracoeff = 6*comb(a,b)*comb(c,a+b-c))
-                for a in range(-nmax,nmax+1) for b in range (a,nmax+1)
-                for c in range(-nmax,nmax+1) if
-                ( c<=a+b-c<=nmax
-                and (a,b) != (c,a+b-c)
-                and sorted([abs(a),abs(b)]) < sorted([abs(c),abs(a+b-c)])
-                and -Emax <= omega(a,L,m)+omega(b,L,m)- omega(c,L,m)-omega(a+b-c,L,m)
-                    <=Emax)]
-
-        # Sort with respect to total energy of oscillators
-        for n in offdiagOps.keys():
-            offdiagOps[n] = SortedList(offdiagOps[n], key=attrgetter("deltaE"))
-
-        self.nops = sum(len(offdiagOps[n]) for n in (0,2,4))
-        print("Number of (offdiag) operators:", self.nops)
 
         self.h0[k] = Matrix(basis, basis,
                 scipy.sparse.spdiags([v.energy for v in basis],
-                    0,basis.size,basis.size)).to("coo")
+                    0,basis.size,basis.size)).to('coo')
 
-        # XXX Cycle only through relevant operators (or relevant basis elements?)
-        for n in offdiagOps.keys():
-            data = []
-            row = []
-            col = []
-            diagonal = scipy.zeros(basis.size)
 
-            for j,v in enumerate(basis):
+        # Will construct the sparse matrix in the COO format
+        data = []
+        row = []
+        col = []
 
-                for op in offdiagOps[n].irange_key(-v.energy, Emax-v.energy):
-                    try:
-                        (x,i) = op.apply(v,lookupBasis)
-                        # if(i != None):
-                        # newcolumn[i]+=x
-                        data.append(x)
-                        row.append(i)
-                        col.append(j)
-                    except LookupError:
-                        pass
+        for V in Phi4Operators(lookupbasis, L, m, nmax):
+            f = lambda v: V.computeMatrixElements(v, lookupbasis)
+            for i, state in enumerate(basis):
+                colpart, datapart = f(state)
+                data += datapart
+                col += colpart
+                row += [i]*len(colpart)
 
-                for op in diagOps[n]:
-                    try:
-                        (x,i) = op.apply(v,lookupBasis)
-                        # It should be j=i
-                        # if i != j:
-                            # raise RuntimeError('Non-diagonal operator')
-                        diagonal[i] += x
-                    except LookupError:
-                        pass
 
-            # XXX Remove duplicates??
-            offdiag_V = scipy.sparse.coo_matrix((data,(row,col)),
-                                            shape=(basis.size,basis.size))
-            diag_V = scipy.sparse.spdiags(diagonal,0,basis.size,basis.size)
+        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
 
-            self.V[k][n] = Matrix(basis,basis,
-                    offdiag_V+offdiag_V.transpose()+diag_V).to('coo')*self.L
+        diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
+        # This should resum elements in the same coordinate
+        self.V[k][4] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
 
 
     def setCouplings(self, g0, g2, g4):
         self.g0 = g0
         self.g2 = g2
         self.g4 = g4
-        c = 2.*sum([1/(2.*pi)*scipy.special.kn(0,n*self.m*self.L) for n in range(1,10)])
-        self.m1 = self.m*exp(-2.*pi*c)
+        c = 2.*sum([1/(2.*pi)*scipy.special.kn(0,n*m*L) for n in range(1,10)])
+        self.m1 = m*exp(-2.*pi*c)
 
     def renlocal(self, Emax, Er):
         self.g0r, self.g2r, self.g4r = \
@@ -214,8 +144,8 @@ class Phi4():
 
     def saveMatrix(self, k):
         """ Saves the potential and free hamiltonian to file """
-        fname = self.matrixfname(self.L, self.basis[k].Emax, k, self.basis[k].occmax)
-        t = (fname, self.L, self.m, k, \
+        fname = self.matrixfname(L, self.basis[k].Emax, k, self.basis[k].occmax)
+        t = (fname, L, m, k, \
             self.basis[k].Emax, self.basis[k].occmax, \
             self.h0[k].M.data,self.h0[k].M.row,self.h0[k].M.col, \
             self.V[k][0].M.data,self.V[k][0].M.row,self.V[k][0].M.col, \
@@ -228,14 +158,14 @@ class Phi4():
         """ Loads the potential and free hamiltonian from file """
         fname = self.matrixfname(L, Emax, k, occmax)+".npz"
         f = scipy.load(fname)
-        self.L = f['arr_0'].item()
-        self.m = f['arr_1'].item()
+        L = f['arr_0'].item()
+        m = f['arr_1'].item()
 
         k = f['arr_2'].item()
         Emax = f['arr_3'].item()
         occmax = f['arr_4'].item()
 
-        self.buildBasis(L=self.L, Emax=Emax, m=self.m, k=k, occmax=occmax)
+        self.buildBasis(L=L, Emax=Emax, m=m, k=k, occmax=occmax)
         basis = self.basis[k]
 
         z = 5

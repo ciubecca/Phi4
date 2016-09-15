@@ -3,6 +3,7 @@ from scipy import array, pi, sqrt
 import math
 from operator import attrgetter
 import itertools
+import numpy as np
 
 # Global variables
 L = None
@@ -17,26 +18,29 @@ def k(n):
 
 
 class State():
-    def __init__(self, occs, nmax, checkAtRest=True):
+    def __init__(self, occs, nmax, atRest=True):
         """ occs: occupation number list
             nmax: wave number of the last element in occs """
         self.occs = occs
-        self.nmax = nmax
-        self.size = occs.size
 
-        wavenums = array(range(self.size))-self.size+self.nmax+1
+        self.nmax = nmax
+        wavenums = array(range(self.occs.size))-self.occs.size+self.nmax+1
         self.energy = (self.occs*omega(k(wavenums))).sum()
         self.totalWN = (wavenums*self.occs).sum()
         self.occn = self.occs.sum()
-        self.kparity = (-1)**self.occn
 
-        if checkAtRest and self.totalWN != 0:
-            raise ValueError("State not at rest")
+        if atRest:
+            if self.totalWN != 0:
+                raise ValueError("State not at rest")
 
-        if (self.occs == self.occs[::-1]).all():
-            self.parityEigenstate = True
-        else:
-            self.parityEigenstate = False
+            self.kparity = (-1)**self.occn
+            self.isPeigenstate = (self.occs == self.occs[::-1]).all()
+
+            # Alternative representation of the state: ordered list of
+            # occupied wavenumbers (can contain duplicates)
+            self.wnlist = []
+            for n in wavenums:
+                self.wnlist += [n]*self[n]
 
 
     def __repr__(self):
@@ -45,15 +49,14 @@ class State():
     def __eq__(self, other):
         """ Compares two states
         NB: doesn't take into account spatial parity  """
-        return (self.occs == other.occs).all()
-        # return (self.occs == other.occs) or (self.occs == other.occs[::-1])
+        return (self.occs == other).all()
 
     def __hash__(self):
         return hash(tuple(self.occs))
 
     def __getitem__(self, wn):
         """ Returns the occupation number corresponding to a wave number """
-        return self.occs[wn+self.size-self.nmax-1]
+        return self.occs[wn+self.occs.size-self.nmax-1]
 
     def Preversed(self):
         return State(self.occs[::-1],self.nmax)
@@ -134,7 +137,7 @@ class Basis():
         for N in range(maxN+1):
             newoccs = scipy.copy(RMstate.occs)
             newoccs[n-1] = N
-            newstate = State(newoccs, self.nmax, checkAtRest=False)
+            newstate = State(newoccs, self.nmax, atRest=False)
             ret += self.genRMlist(self,newstate,n+1)
         return ret
 
@@ -142,7 +145,9 @@ class Basis():
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states """
 
-        RMlist = self.genRMlist(self, RMstate=State(scipy.zeros(self.nmax),self.nmax), n=1)
+        RMlist = self.genRMlist(self,
+                RMstate=State(scipy.zeros(self.nmax,dtype=np.int8),self.nmax,atRest=False),
+                n=1)
 
         # divides the list of RMstates into a list of lists,
         # so that two states in each list have a fixed total RM wavenumber,
@@ -182,6 +187,6 @@ class Basis():
                         if (-1)**(N0+OLM+ORM) == self.k:
                             state = scipy.concatenate((LMstate.occs[::-1],array([N0]),
                                     RMstate.occs))
-                            statelist.append(State(state, self.nmax, checkAtRest=True))
+                            statelist.append(State(state, self.nmax))
 
         return statelist
