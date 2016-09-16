@@ -2,32 +2,34 @@ import scipy
 from scipy import array, pi, sqrt
 import math
 from operator import attrgetter
+from collections import Counter
 import itertools
 import numpy as np
 
-# Global variables
-L = None
-m = None
 
+# TODO We could save this as a vector
 def omega(k):
     """ computes one particle energy from momentum"""
-    return sqrt(m**2.+k**2.)
+    return sqrt(m**2+k**2)
 def k(n):
     """ computes momentum from wavenumber"""
     return (2*pi/L)*n
 
 
 class State():
+    # @profile
     def __init__(self, occs, nmax, atRest=True):
         """ occs: occupation number list
             nmax: wave number of the last element in occs """
         self.occs = occs
-
         self.nmax = nmax
-        wavenums = array(range(self.occs.size))-self.occs.size+self.nmax+1
-        self.energy = (self.occs*omega(k(wavenums))).sum()
-        self.totalWN = (wavenums*self.occs).sum()
-        self.occn = self.occs.sum()
+
+        size = self.occs.size
+
+        wavenums = array(range(size))-size+self.nmax+1
+        self.energy = sum(self.occs*omega(k(wavenums)))
+        self.totalWN = sum(wavenums*self.occs)
+        self.occn = sum(self.occs)
 
         if atRest:
             if self.totalWN != 0:
@@ -36,11 +38,13 @@ class State():
             self.kparity = (-1)**self.occn
             self.isPeigenstate = (self.occs == self.occs[::-1]).all()
 
+
+            # Representation 1 of the state as in Slava's notes, but as a dictionary
+            self.repr1 = Counter({wavenums[i]:occs[i] for i in range(size) if occs[i]!= 0})
+
             # Alternative representation of the state: ordered list of
             # occupied wavenumbers (can contain duplicates)
-            self.wnlist = []
-            for n in wavenums:
-                self.wnlist += [n]*self[n]
+            self.wnlist = tuple(sorted(self.repr1.elements()))
 
 
     def __repr__(self):
@@ -113,8 +117,8 @@ class Basis():
         return self.stateList[index]
 
     def lookup(self, state):
-        """ Looks up the index of a state (list of occupation numbers) """
-        return self.statePos[tuple(state)]
+        """ Looks up the index of a state (array of occupation numbers) """
+        return self.statePos[tuple(state.tolist())]
 
 
     def genRMlist(self, RMstate, n):
