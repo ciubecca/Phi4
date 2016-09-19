@@ -32,45 +32,47 @@ class Phi4():
         scipy.set_printoptions(precision=15)
 
 
-    def buildBasis(self, k, Emax, occmax=None):
+    def buildBasis(self, Emax, occmax=None):
         """ Builds the full Hilbert space basis """
-        self.basis[k] = Basis.fromScratch(Emax=Emax, k=k, info=self.info, occmax=occmax)
+        self.basis = Basis.fromScratch(Emax=Emax, info=self.info, occmax=occmax)
 
 
-    def buildMatrix(self, k):
+    def buildMatrix(self):
         """ Builds the full hamiltonian in the basis of the free hamiltonian.
         This is computationally intensive.
         It can be skipped by loading the matrix from file """
 
-        basis = self.basis[k]
-        lookupbasis = self.basis[k]
-        Emax = basis.Emax
+        Vlist = Phi4Operators(self.info)
         L = self.info.L
 
-        self.h0[k] = Matrix(basis, basis,
-                scipy.sparse.spdiags([self.info.energy(v) for v in basis],
-                    0,basis.size,basis.size)).to('coo')
+        for k in (-1,1):
+            basis = self.basis[k]
+            lookupbasis = self.basis[k]
+            Emax = basis.Emax
+
+            self.h0[k] = Matrix(basis, basis,
+                    scipy.sparse.spdiags([self.info.energy(v) for v in basis],
+                        0,basis.size,basis.size)).to('coo')
+
+            # Will construct the sparse matrix in the COO format
+            data = []
+            row = []
+            col = []
+
+            for V in Vlist:
+                computeME = V.computeMatrixElements
+                for i in range(basis.size):
+                    colpart, datapart = computeME(basis,i,lookupbasis)
+                    data += datapart
+                    col += colpart
+                    row += [i]*len(colpart)
 
 
-        # Will construct the sparse matrix in the COO format
-        data = []
-        row = []
-        col = []
+            V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
 
-        for V in Phi4Operators(basis, self.info):
-            f = lambda v: V.computeMatrixElements(v, lookupbasis)
-            for i in range(basis.size):
-                colpart, datapart = f(i)
-                data += datapart
-                col += colpart
-                row += [i]*len(colpart)
-
-
-        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
-
-        diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
-        # This should resum elements in the same coordinate
-        self.V[k][4] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
+            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
+            # This should resum elements in the same coordinate
+            self.V[k][4] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
 
 
     def setCouplings(self, g0, g2, g4):

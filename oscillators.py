@@ -18,7 +18,7 @@ class Operator():
     """
 
     # @profile
-    def __init__(self, basis, oscillators, nd, nc, info):
+    def __init__(self, oscillators, nd, nc, info):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
         wavenumbers of annihilation operators, and the second element a list of
@@ -28,7 +28,6 @@ class Operator():
         nc: number of creation operators
         """
 
-        self.basis = basis
         self.nd = nd
         self.nc = nc
         omega = info.omega
@@ -51,8 +50,6 @@ class Operator():
 
         # self.stateDlists = [set(map(lambda x: tuple(sorted(x)),combinations(state,nd)))
                 # for state in basis.repr1List]
-        self.stateDlists = [set(map(lambda x: tuple(sorted(x)),combinations(state,nd)))
-                for state in basis.repr1List]
 
         for i, (dlist,clists) in enumerate(oscillators):
             clists = list(sorted(clists,key=info.oscEnergy))
@@ -84,16 +81,17 @@ class Operator():
 
 
     # @profile
-    def computeMatrixElements(self, i, lookupbasis):
+    def computeMatrixElements(self, basis, i, lookupbasis):
         # List of columns indices of generated basis elements
         col = []
         # List of partial matrix elements
         data = []
 
         # I define these local variables outside the loops for performance reasons
-        p = self.basis.parityList[i]
-        e = self.basis.energyList[i]
-        state = self.basis.stateList[i]
+        p = basis.parityList[i]
+        e = basis.energyList[i]
+        state = basis.stateList[i]
+        statePos = lookupbasis.statePos
         # print("state", state)
         parityList = lookupbasis.parityList
         Emax = lookupbasis.Emax
@@ -113,7 +111,7 @@ class Operator():
         # print("nd", self.nd)
         # print("dlists", dlists)
 
-        for dlist in self.stateDlists[i]:
+        for dlist in basis.stateDlists[self.nd][i]:
 
             # dlist = tuple(sorted(dlist))
             # print("dlist", dlist)
@@ -153,7 +151,8 @@ class Operator():
             # fv(state+diffRepr2)
             # print("newstateList", newstateList)
             # colpart = [lookup(x) for x in newstateList]
-            colpart = [lookup(state + diff) for diff in diffRepr2]
+            # colpart = [lookup(state + diff) for diff in diffRepr2]
+            colpart = [statePos[tuple(state + diff)] for diff in diffRepr2]
             # print("colpart", colpart)
             # print(lookupbasis[colpart[0]])
 
@@ -186,9 +185,9 @@ class Operator():
 
 
 # @profile
-def Phi4Operators(basis, info):
+def Phi4Operators(info):
 
-    Emax = basis.Emax
+    Emax = info.Emax
     nmax = info.nmax
 
     dlist = ()
@@ -205,7 +204,7 @@ def Phi4Operators(basis, info):
                 if info.oscEnergy(clist) <= Emax+tol:
                     V40[-1][1].append(clist)
 
-    V40 = Operator(basis, V40, 0, 4, info)
+    V40 = Operator(V40, 0, 4, info)
 
 
     V31 = []
@@ -226,7 +225,7 @@ def Phi4Operators(basis, info):
                     and info.oscEnergy(dlist) <= Emax+tol:
                     V31[-1][1].append(clist)
 
-    V31 = Operator(basis, V31, 1, 3, info)
+    V31 = Operator(V31, 1, 3, info)
 
 
     V22 = []
@@ -251,6 +250,6 @@ def Phi4Operators(basis, info):
 
                     # print(dlist,clist)
 
-    V22 = Operator(basis, V22, 2, 2, info)
+    V22 = Operator(V22, 2, 2, info)
 
     return V40, V31, V22

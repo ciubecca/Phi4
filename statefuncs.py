@@ -2,6 +2,7 @@ import scipy
 from scipy import array, pi, sqrt
 from math import floor, factorial
 from collections import Counter
+from itertools import combinations
 import itertools
 import numpy as np
 
@@ -10,6 +11,7 @@ class phi4Info():
     def __init__(self,m,L,Emax,noscmax=4):
         self.L = L
         self.m = m
+        self.Emax = Emax
         self.nmax = int(floor(sqrt((Emax/2.)**2.-m**2.)*L/(2*pi)))
         self.occmax = int(floor(Emax/m))
         self.wnList = array(range(-self.nmax,self.nmax+1))
@@ -103,15 +105,17 @@ class Basis():
                 # **{tuple(state.tolist()):i for i, state in enumerate(self.stateList)},
                 # **{tuple(state[::-1].tolist()):i for i, state in enumerate(self.stateList)}}
 
+        self.stateDlists = {nd: [set(tuple(sorted(x)) for x in combinations(state,nd))
+                for state in self.repr1List] for nd in range(5)}
+
 
     @classmethod
-    def fromScratch(self, Emax, k, info, occmax=None):
+    def fromScratch(self, Emax, info, occmax=None):
         """ Builds the truncated Hilbert space up to cutoff Emax """
 
         self.info = info
 
         self.Emax = Emax
-        self.k = k
         m = info.m
         L = info.L
 
@@ -126,7 +130,8 @@ class Basis():
         # self.nmax is the actual maximum occupied wavenumber of the states
         self.nmax = int(floor(sqrt((Emax/2.)**2.-m**2.)*L/(2*pi)))
 
-        return self(k, self.buildBasis(self))
+        bases = self.buildBasis(self)
+        return {k:self(k,bases[k]) for k in (-1,1)}
 
     @classmethod
     def fromBasis(self, basis, filterFun):
@@ -140,10 +145,12 @@ class Basis():
     def __getitem__(self,index):
         return self.stateList[index]
 
+    # @profile
     def lookup(self, state):
         """ Looks up the index of a state (array of occupation numbers) """
         # return self.statePos[tuple(state.tolist())]
-        return self.statePos[tuple(state)]
+        x = tuple(state)
+        return self.statePos[x]
 
 
     def genRMlist(self, RMstate, n):
@@ -182,7 +189,7 @@ class Basis():
         sortedRMlist = sorted(RMlist, key=self.info.RMtotalWN)
         dividedRMlist = [sorted(l, key=self.info.RMenergy) for wn,l in
             itertools.groupby(sortedRMlist,key=self.info.RMtotalWN)]
-        statelist = []
+        statelist = {1:[], -1:[]}
 
         for RMwn, RMsublist in enumerate(dividedRMlist):
             for i, RMstate in enumerate(RMsublist):
@@ -211,9 +218,8 @@ class Basis():
                     # possible values for the occupation value at rest
                     for N0 in range(maxN0+1):
                         # Only states with correct parity
-                        if (-1)**(N0+OLM+ORM) == self.k:
-                            state = scipy.concatenate((LMstate[::-1],array([N0]),RMstate))
-                            statelist.append(state)
+                        state = scipy.concatenate((LMstate[::-1],array([N0]),RMstate))
+                        statelist[(-1)**(N0+OLM+ORM)].append(state)
 
         return statelist
 
