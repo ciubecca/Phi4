@@ -4,7 +4,7 @@ import scipy.sparse
 import math
 import time
 from operator import attrgetter
-from oscillators import Phi4Operators
+import gc
 import numpy as np
 import sys
 
@@ -329,7 +329,8 @@ class newPhi4():
         ########################
 
 
-        # Data structures of the matrix in the COO format
+        # Data structures of the matrix in the sparse COO format
+        # Constructing the matrices in this form is cheap both memory-wise and cpu-wise
         data = {K:[] for K in (-1,1)}
         row = {K:[] for K in (-1,1)}
         col = {K:[] for K in (-1,1)}
@@ -445,17 +446,9 @@ class newPhi4():
         oscFactor = [[ math.sqrt(np.prod([occ+1 for occ in range(occ0,occ0+Zn)])) for Zn in range(5)]
                      for occ0 in range(0,int(ET))]
 
-        # NOTA BENE: we constract matrices as dense ones and transform to sparse only later
-        ## Building as sparse takes longer (FYI: lil_matrix assigned row by row gives fastes results,
-        # vstack slower)
-        # I think our problem is time, not memory
-
-        # Phi4dense = {K: np.zeros((len(basis[K]),len(basis[K]))) for K in (1,-1)}
-        # Phi4part = {K: np.zeros((len(basis[K]),len(basis[K]))) for K in (1,-1)}
 
         ############################
         # Step 3a: act with V40 on every state
-        # store in Phi4part
         ################################
 
 
@@ -465,7 +458,7 @@ class newPhi4():
                 # oscilator is just an arithmetic operation like in line ***** below
                 # doing the same in Representation 1 would be a mess
                 en = energylist[K][i]
-                # newrow = scipy.zeros(len(basis[K]))
+
                 for numv, v in enumerate(V40):
                     if en + V40energy[numv] <= ET:
                         newState = State[:]
@@ -478,7 +471,6 @@ class newPhi4():
 
                         j = StatePos[K][tuple(newState)] # lookup the state
 
-                        # newrow[j] += factor * V40factor[numv] * efactor[Pinv[K][i], Pinv[K][j]]
                         row[K].append(i)
                         col[K].append(j)
                         data[K].append(1./L*factor * V40factor[numv] * efactor[Pinv[K][i], Pinv[K][j]])
@@ -487,20 +479,14 @@ class newPhi4():
                         # if j is not P-inv
                     else:
                         break #reached beyond the maximal energy
-                # Phi4part[K][i] = newrow
-
-        # for K in (1,-1):
-            # Phi4dense[K] += (Phi4part[K] + Phi4part[K].transpose())/L
 
         ##########################
         # Step 3b: act with V31 on every state
-        # store again in Phi4part (no need to reset it to zero as newrow stars as zero array)
         #########################
 
         for K in (1,-1):
             for i,State in enumerate(Basis[K]):
                 en = energylist[K][i]
-                # newrow = scipy.zeros(len(basis[K]))
                 for k4,Zk4 in basis[K][i]:
                     # NB: note how useful it is to have Representation 1 as well
                     # Indeed we can cycle now immediately only over the wavenumbers k4 for which Zk4 is nonzero
@@ -522,31 +508,23 @@ class newPhi4():
 
                             j = StatePos[K][tuple(newState)]
 
-                            # newrow[j] += (factor * V31factor[k4][numv] * efactor[Pinv[K][i],Pinv[K][j]])
                             row[K].append(i)
                             col[K].append(j)
                             data[K].append((4./L*factor * V31factor[k4][numv] * efactor[Pinv[K][i],Pinv[K][j]]))
 
                         else:
                             break #reached beyond the maximal energy for given initial state i
-                # Phi4part[K][i] = newrow
-
-        # for K in (1,-1):
-            # Phi4dense[K] += (4/L)*(Phi4part[K] + Phi4part[K].transpose())
 
 
         ##########################
         # Step 3c: act with V22 on every state
         # we generate simultaneously diagonal and offdiagonal part
-        # using Phi4part
         #########################
-
 
 
         for K in (1,-1):
             for i,State in enumerate(Basis[K]):
                 en = energylist[K][i]
-                # newrow = scipy.zeros(len(basis[K]))
                 ks =[kk for kk,Zkk in basis[K][i]]
                 for ii,k3 in enumerate(ks):
                     for k4 in ks[ii:]:
@@ -568,23 +546,20 @@ class newPhi4():
 
                                 j = StatePos[K][tuple(newState)]
 
-                                # newrow[j] += ( factor * V22factor[(k3,k4)][numv] * efactor[Pinv[K][i],Pinv[K][j]] )
                                 row[K].append(i)
                                 col[K].append(j)
                                 data[K].append(6./L* factor * V22factor[(k3,k4)][numv]*efactor[Pinv[K][i],Pinv[K][j]])
 
                             else:
                                 break #reached beyond the maximal energy
-                # Phi4part[K][i] = newrow
-
-        # for K in (1,-1):
-            # Phi4dense[K] += (6./L)*(Phi4part[K] + Phi4part[K].transpose() - np.diag(np.diag(Phi4part[K])))
 
         self.potential = {}
         for K in (-1,1):
+            # Construct the matrix in the COO format from the computed vectors
             M = scipy.sparse.coo_matrix((data[K],(row[K],col[K])),
                     shape=(len(basis[K]),len(basis[K])))
-            # Add transpose and subtract diagonal part once
+            # Add transpose and subtract diagonal part once.
+            # In this step the elements of the matrix with the same row and column indices should be resummed
             M = M + M.transpose() - scipy.sparse.spdiags(M.diagonal(),0,len(basis[K]),len(basis[K]))
 
 

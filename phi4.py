@@ -3,7 +3,7 @@ import scipy.sparse.linalg
 import scipy.sparse
 import math
 from math import factorial
-from statefuncs import Basis, omega, State
+from statefuncs import Basis, phi4Info
 from oscillators import Phi4Operators
 from collections import Counter
 from operator import attrgetter
@@ -15,11 +15,9 @@ from scipy import exp, pi, array
 
 class Phi4():
     """ main FVHT class """
-    def __init__(self, mm, LL):
-        global L
-        global m
-        L = LL
-        m = mm
+    def __init__(self, m, L, Emax):
+
+        self.info = phi4Info(m, L, Emax)
 
         self.basis = {}
         self.h0 = {}
@@ -34,9 +32,9 @@ class Phi4():
         scipy.set_printoptions(precision=15)
 
 
-    def buildBasis(self, k, L, m, Emax, occmax=None):
+    def buildBasis(self, k, Emax, occmax=None):
         """ Builds the full Hilbert space basis """
-        self.basis[k] = Basis.fromScratch(LL=L, mm=m, Emax=Emax, k=k, occmax=occmax)
+        self.basis[k] = Basis.fromScratch(Emax=Emax, k=k, info=self.info, occmax=occmax)
 
 
     def buildMatrix(self, k):
@@ -47,11 +45,10 @@ class Phi4():
         basis = self.basis[k]
         lookupbasis = self.basis[k]
         Emax = basis.Emax
-        nmax = basis.nmax
-
+        L = self.info.L
 
         self.h0[k] = Matrix(basis, basis,
-                scipy.sparse.spdiags([v.energy for v in basis],
+                scipy.sparse.spdiags([self.info.energy(v) for v in basis],
                     0,basis.size,basis.size)).to('coo')
 
 
@@ -60,10 +57,10 @@ class Phi4():
         row = []
         col = []
 
-        for V in Phi4Operators(lookupbasis, L, m, nmax):
+        for V in Phi4Operators(basis, self.info):
             f = lambda v: V.computeMatrixElements(v, lookupbasis)
-            for i, state in enumerate(basis):
-                colpart, datapart = f(state)
+            for i in range(basis.size):
+                colpart, datapart = f(i)
                 data += datapart
                 col += colpart
                 row += [i]*len(colpart)
@@ -99,13 +96,15 @@ class Phi4():
         H0 = self.h0[k]
         H = H0 + V
 
-        basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
-        basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
-        Hll = H.sub(basisL, basisL).M
-        gramL = scipy.sparse.eye(basisL.size)
+        self.compH = H
 
-        self.compH = Hll
-        self.gram = gramL
+        # basisL = Basis.fromBasis(self.basis[k], lambda v: v.energy <= Emax)
+        # basisH = Basis.fromBasis(self.basis[k], lambda v: v.energy > Emax)
+        # Hll = H.sub(basisL, basisL).M
+        # gramL = scipy.sparse.eye(basisL.size)
+
+        # self.compH = Hll
+        # self.gram = gramL
 
     def computeEigval(self, ren, k, sigma=0, neigs=10):
         """ Sets the internal variables self.eigenvalues
@@ -145,7 +144,7 @@ class Phi4():
     def saveMatrix(self, k):
         """ Saves the potential and free hamiltonian to file """
         fname = self.matrixfname(L, self.basis[k].Emax, k, self.basis[k].occmax)
-        t = (fname, L, m, k, \
+        t = (fname, self.info.L, self.info.m, k, \
             self.basis[k].Emax, self.basis[k].occmax, \
             self.h0[k].M.data,self.h0[k].M.row,self.h0[k].M.col, \
             self.V[k][0].M.data,self.V[k][0].M.row,self.V[k][0].M.col, \

@@ -21,12 +21,13 @@ def main(argv):
     except IndexError:
         occmax = None
 
-    a = phi4.Phi4(m,L)
+    a = phi4.Phi4(m,L,Emax)
 
-    a.buildBasis(k=k, Emax=Emax, m=m, L=L, occmax=occmax)
+    a.buildBasis(k=k, Emax=Emax, occmax=occmax)
     print("basis size :", a.basis[k].size)
 
     # print(a.basis[k])
+
 
     a.buildMatrix(k=k)
     # a.saveMatrix(k=k)

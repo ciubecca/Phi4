@@ -1,218 +1,177 @@
 import scipy
 from math import factorial, floor, sqrt
-from statefuncs import Basis, omega, State, k
+from statefuncs import Basis, phi4Info
 from collections import Counter
 from itertools import combinations
-from operator import attrgetter
-from matrix import Matrix
 from scipy import exp, pi, array
-from sortedcontainers import SortedList
 import bisect
 
-def energy(wnlist):
-    return sum(omega(k(n)) for n in wnlist)
 
 
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
     return factorial(len(x))/scipy.prod(list(map(factorial,Counter(x).values())))
 
-
-def repr1torepr2(state):
-    """ Transform state from repr1 to repr2 """
-    return array([state.get(n,0) for n in range(-nmax,nmax+1)])
-
-
-def subtractRepr3toRepr1(osc1, osc2):
-    ret = Counter(osc1)
-    ret.subtract(Counter(osc2))
-    return Counter({n:Zn for n,Zn in ret.items() if Zn!=0})
-
 class Operator():
     """
     Collection of oscillators with fixed number of creation and annihilation operators
     """
 
-    def __init__(self, oscillators, nd, nc, basis):
+    # @profile
+    def __init__(self, basis, oscillators, nd, nc, info):
         """
-        oscillators: dict where each key is a SORTED tuple of wavenumbers of
-        annihilation operators, and each value is a list of tuples of wavenumbers
-        of creation operators
+        oscillators: list of tuples. The first element of the tuple is a tuple of
+        wavenumbers of annihilation operators, and the second element a list of
+        tuples of wavenumbers of creation operators
+        basis: basis on which the operator will act
         nd: number of annihilation operators
         nc: number of creation operators
         """
 
+        self.basis = basis
         self.nd = nd
         self.nc = nc
-
-        # TODO we could define just one dict of indices instead of many dicts
-
-        # Sort the lists of creation operator in energy for performance reasons
-        self.oscillators = {dlist: list(sorted(clists,key=energy))
-            for dlist,clists in oscillators.items()}
+        omega = info.omega
+        L = info.L
+        m = info.m
+        self.info = info
 
 
-        # Store the values of the energies of the oscillators
-        self.oscEnergies = {dlist:
-                list(map(lambda clist: -energy(dlist)+energy(clist), clists))
-            for dlist,clists in self.oscillators.items()}
+        self.dlistPos = {}
+        self.doscRepr2 = []
+        self.coscRepr2 = []
+        self.diffRepr2 = []
+        self.oscEnergies = []
+        self.oscFactors = []
+        self.doscRepr1 = []
+        self.coscRepr1 = []
+        # self.oscRepr4 = []
+
+        # self.fv = scipy.vectorize(self.info.computeNorm)
+
+        self.stateDlists = [set(combinations(state,nd)) for state in basis.repr1List]
+
+        for i, (dlist,clists) in enumerate(oscillators):
+            clists = list(sorted(clists,key=info.oscEnergy))
+
+            # self.doscRepr1.append(list(Counter(dlist).items()))
+
+            # self.coscRepr1.append([list(Counter(clist).items()) for clist in clists])
 
 
-        # Multiply by Bose factors, the factor coming normal ordering
-        # and "phase space" factor
-        self.oscFactors = {dlist:
-                list(map(lambda clist: bose(clist)*bose(dlist)\
-                    *scipy.special.binom(nc+nd,nc)\
-                    *scipy.prod([1/sqrt(2*omega(k(n))*L) for n in clist+dlist]), clists))
-            for dlist,clists in self.oscillators.items()}
+            # self.oscRepr4.append()
 
-#         # Store the "difference" states of the oscillators in repr "1"
-        # self.doscRepr1 = {dlist: Counter(dlist) for dlist in self.oscillators.keys()}
+            self.dlistPos[dlist] = i
+            self.doscRepr2.append(info.repr1torepr2(Counter(dlist)))
 
-        # # Store the "difference" states of the oscillators in repr "1"
-        # self.coscRepr1 = {dlist:
-                # list(map(Counter, clists))
-            # for dlist,clists in self.oscillators.items()}
+            self.coscRepr2.append(array([info.repr1torepr2(Counter(clist))
+                for clist in clists]))
 
-        self.doscRepr2 = {dlist: repr1torepr2(Counter(dlist))
-                for dlist in self.oscillators.keys()}
+            self.diffRepr2.append(self.coscRepr2[-1]-self.doscRepr2[-1])
 
-        self.coscRepr2 = {dlist: array(list(map(lambda clist:
-            repr1torepr2(Counter(clist)), clists)))
-                for dlist,clists in self.oscillators.items()}
+            # XXX Check
+            self.oscEnergies.append(array([info.oscEnergy(clist)-info.oscEnergy(dlist)
+                for clist in clists]))
+
+            # XXX Check
+            self.oscFactors.append(
+                    array([bose(clist)*bose(dlist)*scipy.special.binom(nc+nd,nc)\
+                    *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
+                    for clist in clists]))
 
 
-
-        # Store the "difference" states of the oscillators in repr "1"
-        self.oscRepr1 = {dlist:
-                list(map(lambda clist: subtractRepr3toRepr1(clist,dlist), clists))
-           for dlist,clists in self.oscillators.items()}
-
-
-        # Store the "difference" states of the oscillators in repr "2"
-        self.oscRepr2 = {dlist:
-                array(list(map(repr1torepr2, states))) for dlist,states in self.oscRepr1.items()}
-
-
-
-        # Precompute normalization factors
-        maxocc = 30
-        # c, d, n
-        self.normFactors = scipy.zeros(shape=(nc+1,nd+1,maxocc+1))
-        for c in range(nc+1):
-            for d in range(nd+1):
-                for n in range(maxocc+1):
-                    if d <= n:
-                        self.normFactors[c,d,n] = \
-                            sqrt(factorial(n)*factorial(n-d+c)/factorial(n-d)**2)
-                    else:
-                        self.normFactors[c,d,n] = scipy.nan
-
-        # Precompute parity factors
-        # XXX check
-        self.parityFactors = scipy.array([[1,sqrt(2)],[1/sqrt(2),1]])
-
-        self.P = array([int(state.isPeigenstate) for state in basis.stateList])
-
-    # @profile
-    def computeMatrixElements(self, state, lookupbasis):
+    @profile
+    def computeMatrixElements(self, i, lookupbasis):
         # List of columns indices of generated basis elements
         col = []
-        col2 = []
-        data2 = []
         # List of partial matrix elements
         data = []
 
-        # I define these local variables for performance reasons
-        p = state.isPeigenstate
-        e = state.energy
+        # I define these local variables outside the loops for performance reasons
+        p = self.basis.parityList[i]
+        e = self.basis.energyList[i]
+        state = self.basis.stateList[i]
+        # print("state", state)
+        parityList = lookupbasis.parityList
         Emax = lookupbasis.Emax
-        occs = state.occs
+        nmax = self.info.nmax
         lookup = lookupbasis.lookup
 
-        # print("state", state)
-        # print("state wnlist", state.wnlist)
+        normFactors = self.info.normFactors[:,:,state]
+        # print("shape(normFactors)", normFactors.shape)
+        # normFactors2 = self.info.normFactors
+        parityFactors = self.info.parityFactors[p]
 
-        # Select all the possible groups of particles in the state than can be annihilated
+        # List of all the groups of momenta of the state that can be annihilated
         # Call to set() is needed to eliminate duplicates
-        for dlist in set(combinations(state.wnlist, self.nd)):
+        # dlists = set(combinations(self.info.repr2torepr1(state), self.nd))
 
+        # print("nd", self.nd)
+        # print("dlists", dlists)
 
+        for dlist in self.stateDlists[i]:
+
+            dlist = tuple(sorted(dlist))
             # print("dlist", dlist)
+            k = self.dlistPos[dlist]
 
-            imax = bisect.bisect_left(self.oscEnergies[dlist], Emax-e+(10**-10))
+            imax = bisect.bisect_left(self.oscEnergies[k], Emax-e+(10**-10))
             if imax==0:
                 continue
 
-            oscFactors = self.oscFactors[dlist][:imax]
-            oscRepr2 = self.oscRepr2[dlist][:imax]
-            # oscillators = self.oscillators[dlist][:imax]
-            # coscRepr1 = self.coscRepr1[dlist][:imax]
-            # doscRepr1 = self.doscRepr1[dlist]
-            coscRepr2 = self.coscRepr2[dlist][:imax]
-            doscRepr2 = self.doscRepr2[dlist]
+            oscFactors = self.oscFactors[k][:imax]
+            coscRepr2 = array(self.coscRepr2[k][:imax])
+            doscRepr2 = array(self.doscRepr2[k])
+            diffRepr2 = self.diffRepr2[k][:imax]
 
+            # coscRepr1 = self.coscRepr1[k][:imax]
+            # doscRepr1 = self.doscRepr1[k]
 
-            newstateList = oscRepr2 + occs
-            colpart = array([lookup(state) for state in newstateList])
-            # colpart = lookup(newstateList)
-            # print("nmax", nmax)
-            # print("n osc", len(oscRepr2))
-            # print("data shape", fv(occs, coscRepr2, doscRepr2).shape)
-            # print(scipy.prod(fv(occs, coscRepr2, doscRepr2)))
-            normFactors = self.normFactors[coscRepr2,doscRepr2,newstateList]
-            datapart = scipy.prod(normFactors, axis=1).tolist()
-            # data2 += scipy.prod(fv(occs, coscRepr2, doscRepr2), axis=1).tolist()
-            # print(data2.shape)
+            # print("oscEnergies", self.oscEnergies[k][:imax])
+            # print("coscRepr2", coscRepr2)
+            # print("doscRepr2", doscRepr2)
+            # print("diffRepr2", diffRepr2)
 
-            datapart *= self.parityFactors[int(p),self.P[colpart]]
+            # coscRepr2 = self.coscRepr2[k][:imax]
+            # doscRepr2 = self.doscRepr2[k]
 
-            col2 += colpart.tolist()
-            data2 += datapart.tolist()
+            # x = scipy.full(len(coscRepr1),
+                    # scipy.prod([normFactors2[Zn, 0, state[n+nmax]] for n,Zn in doscRepr1]))
+            # halfstateList = state - doscRepr2
+            # newstateList2 = halfstateList + coscRepr2
 
-#             for i,clist in enumerate(oscillators):
-                # # XXX Can be optimized with SortedList
-                # # if e + oscEnergies[i] > Emax:
-                    # # break
+            # for j,cosc in enumerate(coscRepr1):
+                # x[j] *= scipy.prod([normFactors2[0,Zn,halfstateList[n+nmax]]
+                    # for (n,Zn) in cosc])
 
-                # # print("dlist", dlist)
-                # # print("clist", clist)
-                # # print("e", e)
-                # # print("oscE", oscEnergies[i])
+            newstateList = state + diffRepr2
+            # print("newstateList", newstateList)
+            colpart = [lookup(x) for x in newstateList]
+            # print("colpart", colpart)
+            # print(lookupbasis[colpart[0]])
 
+            # XXX Can this be optimized?
+            # print("normFactors", normFactors)
+            # print("shape", normFactors[:,doscRepr2].shape)
+            # print("normFactors", normFactors[coscRepr2,doscRepr2])
+            # datapart = scipy.prod(normFactors[coscRepr2,doscRepr2], axis=(1,2))
 
-                # coeff = oscFactors[i]
-                # # print(coeff)
+            # print(normFactors[:,doscRepr2].shape)
+            x = normFactors[:,doscRepr2].diagonal(axis1=1,axis2=2)
+            # print(x.shape)
+            datapart = x[coscRepr2].diagonal(axis1=1,axis2=2).prod(axis=1)
+            # print(datapart)
 
-                # newstate2 = occs-oscRepr2[i]
+            # datapart = scipy.prod(self.fv(coscRepr2, doscRepr2, state), axis=1)
+            # print("datapart", datapart)
+            datapart *= oscFactors*parityFactors[parityList[colpart]]
+            # print(datapart)
 
+            col += colpart
+            data += datapart.tolist()
 
-                # # XXX Can this be optimized using a table and a difference of vectors?
-                # newstate = occs.tolist()
-                # for d in dlist:
-                    # coeff *= sqrt(newstate[d+nmax])
-                    # newstate[d+nmax] -= 1
-                # for c in clist:
-                    # coeff *= sqrt(newstate[c+nmax]+1)
-                    # newstate[c+nmax] += 1
+        return col, data
 
-                # j = lookup(newstate)
-                # # j = lookupdict[tuple(newstate)]
-
-                # # parity factors XXX check
-                # if p:
-                    # coeff *= 1/sqrt(2)
-                # if lookupbasis[j].isPeigenstate:
-                    # coeff *= sqrt(2)
-
-
-                # # print(coeff)
-                # col.append(j)
-                # data.append(coeff)
-
-        # print(len(data2)==len(data))
-
-        return col2, data2
 
     # TODO Generate high energy Hilbert space Hh from low energy Hilbert space Hl
     # as Hh = V*Hl
@@ -220,17 +179,14 @@ class Operator():
         return
 
 
-def Phi4Operators(lookupbasis, LL, mm, nmaxx):
+# @profile
+def Phi4Operators(basis, info):
 
-    global L, m, nmax
-    L = LL
-    m = mm
-    nmax = nmaxx
-
-    Emax = lookupbasis.Emax
+    Emax = basis.Emax
+    nmax = info.nmax
 
     dlist = ()
-    V40 = {dlist: []}
+    V40 = [(dlist, [])]
     for k1 in range(-nmax,nmax+1):
         for k2 in range(k1,nmax+1):
             # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
@@ -240,16 +196,16 @@ def Phi4Operators(lookupbasis, LL, mm, nmaxx):
                 k4 = -k1-k2-k3
                 clist = (k1,k2,k3,k4)
 
-                if energy(clist) <= Emax:
-                    V40[dlist].append(clist)
+                if info.oscEnergy(clist) <= Emax:
+                    V40[-1][1].append(clist)
 
-    V40 = Operator(V40, 0, 4, lookupbasis)
+    V40 = Operator(basis, V40, 0, 4, info)
 
 
-    V31 = {}
+    V31 = []
     for k1 in range(-nmax,nmax+1):
         dlist = (k1,)
-        V31[dlist] = []
+        V31.append((dlist,[]))
 
         for k2 in range(-nmax,nmax+1):
             for k3 in range(max(-nmax+k1-k2,k2),
@@ -260,17 +216,17 @@ def Phi4Operators(lookupbasis, LL, mm, nmaxx):
 
                 # NOTE The check on dlist is useless here but it'ŝ needed
                 # if we generalize the code to other operators
-                if energy(clist) <= Emax and energy(dlist) <= Emax:
-                    V31[dlist].append(clist)
+                if info.oscEnergy(clist) <= Emax and info.oscEnergy(dlist) <= Emax:
+                    V31[-1][1].append(clist)
 
-    V31 = Operator(V31, 1, 3, lookupbasis)
+    V31 = Operator(basis, V31, 1, 3, info)
 
 
-    V22 = {}
+    V22 = []
     for k1 in range(-nmax,nmax+1):
         for k2 in range(k1,nmax+1):
             dlist = (k1,k2)
-            V22[dlist] = []
+            V22.append((dlist,[]))
 
             for k3 in range(max(-nmax+k1+k2,-nmax),
                     min(int(floor((k1+k2)/2)),nmax)+1):
@@ -278,13 +234,13 @@ def Phi4Operators(lookupbasis, LL, mm, nmaxx):
                 k4 = k1+k2-k3
                 clist = (k3,k4)
 
-                if energy(dlist) <= Emax and energy(clist) <= Emax and\
+                if info.oscEnergy(dlist) <= Emax and info.oscEnergy(clist) <= Emax and\
                     sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
                     # only consider lexicographically ordered part of V22
                     # but also including diagonal part which will be separated below
 
-                    V22[dlist].append(clist)
+                    V22[-1][1].append(clist)
 
-    V22 = Operator(V22, 2, 2, lookupbasis)
+    V22 = Operator(basis, V22, 2, 2, info)
 
     return V40, V31, V22
