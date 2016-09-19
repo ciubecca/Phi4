@@ -24,7 +24,7 @@ def main(argv):
     a = phi4.Phi4(m,L,Emax)
 
     a.buildBasis(k=k, Emax=Emax, occmax=occmax)
-    print("basis size :", a.basis[k].size)
+    # print("basis size :", a.basis[k].size)
 
     # print(a.basis[k])
 
@@ -32,7 +32,7 @@ def main(argv):
     a.buildMatrix(k=k)
     # a.saveMatrix(k=k)
 
-    # print(a.V[k][4].M.todense())
+    print(a.V[k][4].M.todense())
 
 if __name__ == "__main__":
     main(sys.argv)

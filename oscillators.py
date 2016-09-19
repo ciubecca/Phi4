@@ -2,11 +2,11 @@ import scipy
 from math import factorial, floor, sqrt
 from statefuncs import Basis, phi4Info
 from collections import Counter
-from itertools import combinations
+from itertools import combinations, islice
 from scipy import exp, pi, array
 import bisect
 
-
+tol = 10**(-10)
 
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
@@ -49,7 +49,10 @@ class Operator():
 
         # self.fv = scipy.vectorize(self.info.computeNorm)
 
-        self.stateDlists = [set(combinations(state,nd)) for state in basis.repr1List]
+        # self.stateDlists = [set(map(lambda x: tuple(sorted(x)),combinations(state,nd)))
+                # for state in basis.repr1List]
+        self.stateDlists = [set(map(lambda x: tuple(sorted(x)),combinations(state,nd)))
+                for state in basis.repr1List]
 
         for i, (dlist,clists) in enumerate(oscillators):
             clists = list(sorted(clists,key=info.oscEnergy))
@@ -80,7 +83,7 @@ class Operator():
                     for clist in clists]))
 
 
-    @profile
+    # @profile
     def computeMatrixElements(self, i, lookupbasis):
         # List of columns indices of generated basis elements
         col = []
@@ -96,6 +99,7 @@ class Operator():
         Emax = lookupbasis.Emax
         nmax = self.info.nmax
         lookup = lookupbasis.lookup
+        # fv = scipy.vectorize(lookup)
 
         normFactors = self.info.normFactors[:,:,state]
         # print("shape(normFactors)", normFactors.shape)
@@ -111,11 +115,11 @@ class Operator():
 
         for dlist in self.stateDlists[i]:
 
-            dlist = tuple(sorted(dlist))
+            # dlist = tuple(sorted(dlist))
             # print("dlist", dlist)
             k = self.dlistPos[dlist]
 
-            imax = bisect.bisect_left(self.oscEnergies[k], Emax-e+(10**-10))
+            imax = bisect.bisect_left(self.oscEnergies[k], Emax-e+tol)
             if imax==0:
                 continue
 
@@ -123,6 +127,7 @@ class Operator():
             coscRepr2 = array(self.coscRepr2[k][:imax])
             doscRepr2 = array(self.doscRepr2[k])
             diffRepr2 = self.diffRepr2[k][:imax]
+            # diffRepr2 = islice(self.diffRepr2[k],imax)
 
             # coscRepr1 = self.coscRepr1[k][:imax]
             # doscRepr1 = self.doscRepr1[k]
@@ -144,9 +149,11 @@ class Operator():
                 # x[j] *= scipy.prod([normFactors2[0,Zn,halfstateList[n+nmax]]
                     # for (n,Zn) in cosc])
 
-            newstateList = state + diffRepr2
+            # newstateList = state + diffRepr2
+            # fv(state+diffRepr2)
             # print("newstateList", newstateList)
-            colpart = [lookup(x) for x in newstateList]
+            # colpart = [lookup(x) for x in newstateList]
+            colpart = [lookup(state + diff) for diff in diffRepr2]
             # print("colpart", colpart)
             # print(lookupbasis[colpart[0]])
 
@@ -156,11 +163,10 @@ class Operator():
             # print("normFactors", normFactors[coscRepr2,doscRepr2])
             # datapart = scipy.prod(normFactors[coscRepr2,doscRepr2], axis=(1,2))
 
+
             # print(normFactors[:,doscRepr2].shape)
             x = normFactors[:,doscRepr2].diagonal(axis1=1,axis2=2)
-            # print(x.shape)
             datapart = x[coscRepr2].diagonal(axis1=1,axis2=2).prod(axis=1)
-            # print(datapart)
 
             # datapart = scipy.prod(self.fv(coscRepr2, doscRepr2, state), axis=1)
             # print("datapart", datapart)
@@ -196,7 +202,7 @@ def Phi4Operators(basis, info):
                 k4 = -k1-k2-k3
                 clist = (k1,k2,k3,k4)
 
-                if info.oscEnergy(clist) <= Emax:
+                if info.oscEnergy(clist) <= Emax+tol:
                     V40[-1][1].append(clist)
 
     V40 = Operator(basis, V40, 0, 4, info)
@@ -216,7 +222,8 @@ def Phi4Operators(basis, info):
 
                 # NOTE The check on dlist is useless here but it'ŝ needed
                 # if we generalize the code to other operators
-                if info.oscEnergy(clist) <= Emax and info.oscEnergy(dlist) <= Emax:
+                if info.oscEnergy(clist) <= Emax+tol\
+                    and info.oscEnergy(dlist) <= Emax+tol:
                     V31[-1][1].append(clist)
 
     V31 = Operator(basis, V31, 1, 3, info)
@@ -234,12 +241,15 @@ def Phi4Operators(basis, info):
                 k4 = k1+k2-k3
                 clist = (k3,k4)
 
-                if info.oscEnergy(dlist) <= Emax and info.oscEnergy(clist) <= Emax and\
+                if info.oscEnergy(dlist) <= Emax+tol and\
+                    info.oscEnergy(clist) <= Emax+tol and\
                     sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
                     # only consider lexicographically ordered part of V22
                     # but also including diagonal part which will be separated below
 
                     V22[-1][1].append(clist)
+
+                    # print(dlist,clist)
 
     V22 = Operator(basis, V22, 2, 2, info)
 

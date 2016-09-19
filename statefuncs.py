@@ -4,8 +4,6 @@ from math import floor, factorial
 from collections import Counter
 import itertools
 import numpy as np
-# from hashlib import sha1
-# from xxhash import xxh32
 
 
 class phi4Info():
@@ -83,7 +81,8 @@ class Basis():
         self.stateList = list(sorted(stateList, key=energy))
         self.size = len(self.stateList)
 
-        self.repr1List = [self.info.repr2torepr1(state) for state in self.stateList]
+        self.repr1List = [tuple(self.info.repr2torepr1(state).elements())
+                for state in self.stateList]
 
         # 1 if the state is P invariant, 0 if it's not
         self.parityList = array([int((state == state[::-1]).all())
