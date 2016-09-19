@@ -2,11 +2,22 @@ import scipy
 from math import factorial, floor, sqrt
 from statefuncs import Basis, phi4Info
 from collections import Counter
+import itertools
 from itertools import combinations, islice
 from scipy import exp, pi, array
 import bisect
 
 tol = 10**(-10)
+
+class State(scipy.ndarray):
+    def __new__(cls, *args, **kwargs):
+        return scipy.ndarray.__new__(cls, *args, **kwargs)
+    def __hash__(self):
+        return hash(tuple(self))
+    def __eq__(self,other):
+        return (self==other).all()
+    def Pinv(self):
+        return State(self[::-1])
 
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
@@ -147,11 +158,6 @@ class Operator():
                 # x[j] *= scipy.prod([normFactors2[0,Zn,halfstateList[n+nmax]]
                     # for (n,Zn) in cosc])
 
-            # newstateList = state + diffRepr2
-            # fv(state+diffRepr2)
-            # print("newstateList", newstateList)
-            # colpart = [lookup(x) for x in newstateList]
-            # colpart = [lookup(state + diff) for diff in diffRepr2]
             colpart = [statePos[tuple(state + diff)] for diff in diffRepr2]
             # print("colpart", colpart)
             # print(lookupbasis[colpart[0]])
@@ -180,15 +186,42 @@ class Operator():
 
     # TODO Generate high energy Hilbert space Hh from low energy Hilbert space Hl
     # as Hh = V*Hl
-    def genBasis(self):
-        return
+    def genBasis(self, basis, Emin, Emax):
+
+        stateset = set()
+
+        for i, state in enumerate(basis):
+
+            e = basis.energyList[i]
+
+            for dlist in basis.stateDlists[self.nd][i]:
+                k = self.dlistPos[dlist]
 
 
-# @profile
-def Phi4Operators(info):
+                # XXX Check
+                imin = bisect.bisect_left(self.oscEnergies[k], Emin-e+tol)
+                imax = bisect.bisect_left(self.oscEnergies[k], Emax-e+tol)
+                if imax <= imin:
+                    continue
 
-    Emax = info.Emax
-    nmax = info.nmax
+                oscFactors = self.oscFactors[k][imin:imax]
+                diffRepr2 = self.diffRepr2[k][imin:imax]
+
+
+                for diff in diffRepr2:
+                    newstate = state + diff
+                    t1 = tuple(newstate)
+                    t2 = tuple(newstate[::-1])
+                    if (t1 not in stateset) and (t2 not in stateset):
+                        stateset.add(t1)
+
+        # Eliminate states related by parity inversion
+        return stateset
+
+
+def Phi4Operators(info, basis):
+
+    nmax = basis.nmax
 
     dlist = ()
     V40 = [(dlist, [])]
@@ -240,6 +273,8 @@ def Phi4Operators(info):
                 k4 = k1+k2-k3
                 clist = (k3,k4)
 
+                # NOTE The check on dlist is useless here but it'ŝ needed
+                # if we generalize the code to other operators
                 if info.oscEnergy(dlist) <= Emax+tol and\
                     info.oscEnergy(clist) <= Emax+tol and\
                     sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
@@ -251,5 +286,83 @@ def Phi4Operators(info):
                     # print(dlist,clist)
 
     V22 = Operator(V22, 2, 2, info)
+
+    return V40, V31, V22
+
+
+
+def Phi4OperatorsLH(info, basis, Emin, Emax):
+
+    nmax = info.Emaxtonmax(Emax)
+
+    dlist = ()
+    V40 = [(dlist, [])]
+    for k1 in range(-nmax,nmax+1):
+        for k2 in range(k1,nmax+1):
+            # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
+            for k3 in range(max(-nmax-k1-k2,k2),
+                    min(int(floor((-k1-k2)/2)),nmax)+1):
+
+                k4 = -k1-k2-k3
+                clist = (k1,k2,k3,k4)
+
+                if info.oscEnergy(clist) <= Emax+tol:
+                    V40[-1][1].append(clist)
+
+    V40 = Operator(V40, 0, 4, info)
+
+
+    V31 = []
+    dlists = set()
+    for s in basis.stateDlists[1]:
+        dlists.update(s)
+    # dlists = set(itertools.chain(s for s in basis.stateDlists[1]))
+    for dlist in dlists:
+        k1 = dlist[0]
+        V31.append((dlist,[]))
+
+        for k2 in range(-nmax,nmax+1):
+            for k3 in range(max(-nmax+k1-k2,k2),
+                           min(int(floor((k1-k2)/2)),nmax)+1):
+
+                k4 = k1-k2-k3
+                clist = (k2,k3,k4)
+
+                if info.oscEnergy(clist) <= Emax+tol\
+                    and info.oscEnergy(clist)+tol > info.oscEnergy(dlist):
+                    # We always want to increase the energy
+                    V31[-1][1].append(clist)
+
+    V31 = Operator(V31, 1, 3, info)
+
+
+    V22 = []
+    dlists = set()
+    for s in basis.stateDlists[2]:
+        dlists.update(s)
+    # dlists = set(itertools.chain(basis.stateDlists[2]))
+    for dlist in dlists:
+        (k1,k2) = dlist
+        V22.append((dlist,[]))
+
+        for k3 in range(max(-nmax+k1+k2,-nmax),
+                min(int(floor((k1+k2)/2)),nmax)+1):
+
+            k4 = k1+k2-k3
+            clist = (k3,k4)
+
+            # We always want to increase the energy
+            if info.oscEnergy(clist) >= info.oscEnergy(dlist) and\
+                    info.oscEnergy(clist) <= Emax+tol:
+
+                V22[-1][1].append(clist)
+
+                # print(dlist,clist)
+
+    V22 = Operator(V22, 2, 2, info)
+
+
+    # NOTE V13 and V04 cannot increase the energy
+
 
     return V40, V31, V22

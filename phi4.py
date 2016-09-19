@@ -4,7 +4,7 @@ import scipy.sparse
 import math
 from math import factorial
 from statefuncs import Basis, phi4Info
-from oscillators import Phi4Operators
+from oscillators import Phi4Operators, Phi4OperatorsLH
 from collections import Counter
 from operator import attrgetter
 import renorm
@@ -15,13 +15,16 @@ from scipy import exp, pi, array
 
 class Phi4():
     """ main FVHT class """
-    def __init__(self, m, L, Emax):
+    def __init__(self, m, L, Ebar):
 
-        self.info = phi4Info(m, L, Emax)
+        self.info = phi4Info(m, L, Ebar)
 
         self.basis = {}
         self.h0 = {}
         self.V = {k:{} for k in {-1,1}}
+        self.DeltaH2 = {}
+        self.VLH = {}
+        self.basisH = {}
 
         self.eigenvalues = {"raw":{}, "renlocal":{}}
         self.eigenvectors = {"raw":{}, "renlocal":{}}
@@ -44,6 +47,8 @@ class Phi4():
 
         Vlist = Phi4Operators(self.info)
         L = self.info.L
+
+
 
         for k in (-1,1):
             basis = self.basis[k]
@@ -75,12 +80,27 @@ class Phi4():
             self.V[k][4] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
 
 
+    def computeDH2(self, k, subbasis, Emin, Emax):
+
+        L = self.info.L
+
+        # Generate the high-energy basis
+        Vlist = Phi4OperatorsLH(self.info, subbasis, Emin, Emax)
+        vectorset = set()
+
+        for V in Vlist:
+            vectorset.update(V.genBasis(subbasis, Emin, Emax))
+
+        self.basisH[k] = Basis(k, (array(v) for v in vectorset))
+        self.VLH[k] = None
+
     def setCouplings(self, g0, g2, g4):
         self.g0 = g0
         self.g2 = g2
         self.g4 = g4
         c = 2.*sum([1/(2.*pi)*scipy.special.kn(0,n*m*L) for n in range(1,10)])
         self.m1 = m*exp(-2.*pi*c)
+
 
     def renlocal(self, Emax, Er):
         self.g0r, self.g2r, self.g4r = \

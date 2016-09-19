@@ -11,8 +11,7 @@ class phi4Info():
     def __init__(self,m,L,Emax,noscmax=4):
         self.L = L
         self.m = m
-        self.Emax = Emax
-        self.nmax = int(floor(sqrt((Emax/2.)**2.-m**2.)*L/(2*pi)))
+        self.nmax = self.Emaxtonmax(Emax)
         self.occmax = int(floor(Emax/m))
         self.wnList = array(range(-self.nmax,self.nmax+1))
         self.RMwnList = array(range(1,self.nmax+1))
@@ -62,6 +61,8 @@ class phi4Info():
         return Counter({self.wnList[i]:state[i] for i in range(2*self.nmax+1)
             if state[i]!= 0})
 
+    def Emaxtonmax(self, Emax):
+        return int(floor(sqrt((Emax/2.)**2.-self.m**2.)*self.L/(2*pi)))
 
 
 def isPinv(state):
@@ -74,13 +75,13 @@ def occn(state):
 
 class Basis():
     # @profile
-    def __init__(self, k, stateList):
+    def __init__(self, k, stateset):
         self.k = k
 
         energy = self.info.energy
 
         # Order the states in energy
-        self.stateList = list(sorted(stateList, key=energy))
+        self.stateList = list(sorted(stateset, key=energy))
         self.size = len(self.stateList)
 
         self.repr1List = [tuple(self.info.repr2torepr1(state).elements())
@@ -94,6 +95,7 @@ class Basis():
 
         self.Emax = self.energyList[-1]
         self.Emin = self.energyList[0]
+        self.nmax = self.info.Emaxtonmax(self.Emax)
 
         # Contains also the P-reversed states
         # NOTE: using arrays is much less efficient!
@@ -117,7 +119,6 @@ class Basis():
 
         self.Emax = Emax
         m = info.m
-        L = info.L
 
         # This can be "None"
         self.occmax = occmax
@@ -128,20 +129,21 @@ class Basis():
             self._occmax = occmax
 
         # self.nmax is the actual maximum occupied wavenumber of the states
-        self.nmax = int(floor(sqrt((Emax/2.)**2.-m**2.)*L/(2*pi)))
+        self.nmax = info.Emaxtonmax(Emax)
 
         bases = self.buildBasis(self)
         return {k:self(k,bases[k]) for k in (-1,1)}
 
-    @classmethod
-    def fromBasis(self, basis, filterFun):
+
+    def sub(self, filterFun):
         """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
-        stateList = [v for v in basis.stateList if filterFun(v) == True]
-        return self(basis.k, stateList)
+        return Basis(self.k, filter(filterFun, self.stateList))
 
 
     def __repr__(self):
-        return str(self.stateList)
+        return str([state.tolist() for state in self.stateList])
+
+
     def __getitem__(self,index):
         return self.stateList[index]
 
