@@ -7,14 +7,13 @@ import itertools
 import numpy as np
 
 
-class phi4Info():
+class helper():
     def __init__(self,m,L,Emax,noscmax=4):
         self.L = L
         self.m = m
         self.nmax = self.Emaxtonmax(Emax)
-        self.occmax = int(floor(Emax/m))
         self.wnList = array(range(-self.nmax,self.nmax+1))
-        self.RMwnList = array(range(1,self.nmax+1))
+        occmax = int(floor(Emax/m))
 
         self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,self.occmax+1))
         for c in range(noscmax+1):
@@ -26,26 +25,16 @@ class phi4Info():
                     else:
                         self.normFactors[c,d,n] = scipy.nan
 
-        # XXX check
-        self.parityFactors = scipy.array([[1,sqrt(2)],[1/sqrt(2),1]])
-
         self.omegaList = self._omega(self.wnList)
-        self.omegaRMList = self._omega(self.RMwnList)
-
-    def computeNorm(self, c, d, n):
-        return self.normFactors[c,d,n]
 
     def energy(self, state):
-        return scipy.sum(self.omegaList*state)
+        return sum(Zn*self.omega(n) for n,Zn in state.items())
 
-    def RMenergy(self, state):
-        return scipy.sum(self.omegaRMList*state)
-
-    def RMtotalWN(self, state):
-        return sum(self.RMwnList*state)
+    def totalWN(self, state):
+        return sum(Zn*n for n,Zn in state.items())
 
     def oscEnergy(self, wnlist):
-        return sum([self.omega(n) for n in wnlist])
+        return sum(self.omega(n) for n in wnlist)
 
     def _omega(self, n):
         return sqrt(self.m**2+((2*pi/self.L)*n)**2)
@@ -53,72 +42,67 @@ class phi4Info():
     def omega(self, n):
         return self.omegaList[n+self.nmax]
 
-    def repr1torepr2(self, state):
+    def torepr2(self, state):
         """ Transform state from repr1 to repr2 """
-        return array([state.get(n,0) for n in self.wnList])
+        ret = [0]*(2*self.nmax+1)
+        for n,Zn in state:
+            ret[n] = Zn
+        return ret
 
-    def repr2torepr1(self, state):
-        return Counter({self.wnList[i]:state[i] for i in range(2*self.nmax+1)
-            if state[i]!= 0})
+    def torepr1(self, state):
+        return [(self.wnList[i],state[i]) for i in range(2*self.nmax+1)
+            if state[i]!= 0]
 
     def Emaxtonmax(self, Emax):
         return int(floor(sqrt((Emax/2.)**2.-self.m**2.)*self.L/(2*pi)))
 
-
-def isPinv(state):
-    return (state[::-1]==state).all()
-
+# Mantains the ordering of wavenumbers
+def reverse(state):
+    return [(-n,Zn) for n,Zn in state[::-1]]
 
 def occn(state):
-    return sum(state)
+    return sum(state.values())
 
 
 class Basis():
-    # @profile
     def __init__(self, k, stateset):
         self.k = k
-
-        energy = self.info.energy
+        energy = self.helper.energy
 
         # Order the states in energy
         self.stateList = list(sorted(stateset, key=energy))
         self.size = len(self.stateList)
 
-        self.repr1List = [tuple(self.info.repr2torepr1(state).elements())
-                for state in self.stateList]
-
-        # 1 if the state is P invariant, 0 if it's not
-        self.parityList = array([int((state == state[::-1]).all())
-            for state in self.stateList])
-        self.energyList = array([energy(state) for state in self.stateList])
-        self.occnList = array([sum(state) for state in self.stateList])
+        self.energyList = [energy(state) for state in self.stateList]
+        self.occnList = [occn(state) for state in self.stateList]
+        self.parityList = [int(state==reverse(state)) for state in state.stateList]
 
         self.Emax = self.energyList[-1]
         self.Emin = self.energyList[0]
-        self.nmax = self.info.Emaxtonmax(self.Emax)
 
         # Contains also the P-reversed states
         # NOTE: using arrays is much less efficient!
         self.statePos = {}
         for i,state in enumerate(self.stateList):
-            self.statePos[tuple(state)] = i
-            self.statePos[tuple(state[::-1])] = i
-        # self.statePos = {
-                # **{tuple(state.tolist()):i for i, state in enumerate(self.stateList)},
-                # **{tuple(state[::-1].tolist()):i for i, state in enumerate(self.stateList)}}
+            self.statePos[tuple(helper.torepr2(state))] = i
+            self.statePos[tuple(helper.torepr2(state)[::-1])] = i
 
-        self.stateDlists = {nd: [set(tuple(sorted(x)) for x in combinations(state,nd))
-                for state in self.repr1List] for nd in range(5)}
-
+        # Create a structure containing all the possible set of momenta that can be
+        # annihilated
+        self.stateDlists = {nd:[] for nd in range(3)}
+        for state in self.stateList:
+            x = itertools.chain.from_iterables([[n]*Zn for n,Zn in state])
+            for nd in range(3):
+                self.stateDlists[nd].append(
+                        set(tuple(sorted(x)) for x in combinations(x,nd)))
 
     @classmethod
-    def fromScratch(self, Emax, info, occmax=None):
+    def fromScratch(self, Emax, helper, occmax=None):
         """ Builds the truncated Hilbert space up to cutoff Emax """
 
-        self.info = info
-
+        self.helper = helper
         self.Emax = Emax
-        m = info.m
+        m = helper.m
 
         # This can be "None"
         self.occmax = occmax
@@ -141,38 +125,32 @@ class Basis():
 
 
     def __repr__(self):
-        return str([state.tolist() for state in self.stateList])
-
+        return str(self.stateList)
 
     def __getitem__(self,index):
         return self.stateList[index]
 
-    # @profile
     def lookup(self, state):
-        """ Looks up the index of a state (array of occupation numbers) """
-        # return self.statePos[tuple(state.tolist())]
-        x = tuple(state)
-        return self.statePos[x]
+        """ Looks up the index of a state (list of occupation numbers) """
+        return self.statePos[tuple(x)]
 
 
-    def genRMlist(self, RMstate, n):
+    def genRMlist(self, RMstate=[], n=1):
         """ Recursive function generating all the states starting from RMstate, by adding
         any number of particles with wavenumber n.
         It starts from the seed state with 0 particles and wavenumber 1 """
-
-        omega = self.info.omega
 
         if n > self.nmax:
             return [RMstate]
 
         maxN = int(floor(min(
                 self._occmax-occn(RMstate),
-                (self.nmax-self.info.RMtotalWN(RMstate))/n,
-                (self.Emax-self.info.RMenergy(RMstate))/self.info.omega(n))))
+                (self.nmax-self.helper.totalWN(RMstate))/n,
+                (self.Emax-self.helper.energy(RMstate))/self.helper.omega(n))))
         ret = []
-        for N in range(maxN+1):
-            newstate = scipy.copy(RMstate)
-            newstate[n-1] = N
+        for Zn in range(maxN+1):
+            newstate = RMstate[:]
+            newstate.append((n,Zn))
             ret += self.genRMlist(self,newstate,n+1)
         return ret
 
@@ -180,17 +158,17 @@ class Basis():
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states """
 
-        omega = self.info.omega
-        m = self.info.m
+        omega = self.helper.omega
+        m = self.helper.m
 
-        RMlist = self.genRMlist(self, scipy.zeros(self.info.nmax,dtype=np.int8), n=1)
+        RMlist = self.genRMlist()
 
         # divides the list of RMstates into a list of lists,
         # so that two states in each list have a fixed total RM wavenumber,
         # and sort each sublist in energy
-        sortedRMlist = sorted(RMlist, key=self.info.RMtotalWN)
-        dividedRMlist = [sorted(l, key=self.info.RMenergy) for wn,l in
-            itertools.groupby(sortedRMlist,key=self.info.RMtotalWN)]
+        sortedRMlist = sorted(RMlist, key=self.info.totalWN)
+        dividedRMlist = [sorted(l, key=self.helper.energy) for wn,l in
+            itertools.groupby(sortedRMlist,key=self.helper.totalWN)]
         statelist = {1:[], -1:[]}
 
         for RMwn, RMsublist in enumerate(dividedRMlist):
@@ -203,7 +181,7 @@ class Basis():
                 # to the position of RMstate
                 for LMstate in RMsublist[i:]:
                     # we will just have to reverse it
-                    ELM = self.info.RMenergy(LMstate)
+                    ELM = self.info.energy(LMstate)
                     OLM = occn(LMstate)
                     deltaE = self.Emax - ERM - ELM
                     deltaOcc = self._occmax - ORM - OLM
@@ -220,7 +198,7 @@ class Basis():
                     # possible values for the occupation value at rest
                     for N0 in range(maxN0+1):
                         # Only states with correct parity
-                        state = scipy.concatenate((LMstate[::-1],array([N0]),RMstate))
+                        state = LMstate.reverse()+[(0,N0)]+RMstate
                         statelist[(-1)**(N0+OLM+ORM)].append(state)
 
         return statelist
