@@ -17,5 +17,5 @@ a.buildBasisAndMatrix(L=L, ET=ET, m=m)
 
 # print "basis size", len(a.basis[k])
 
-# print a.potential[k].todense()
+print a.potential[k].todense()
 # print a.potential[-1].todense()

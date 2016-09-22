@@ -15,10 +15,10 @@ class helper():
         self.wnList = array(range(-self.nmax,self.nmax+1))
         occmax = int(floor(Emax/m))
 
-        self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,self.occmax+1))
+        self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,occmax+1))
         for c in range(noscmax+1):
             for d in range(noscmax+1):
-                for n in range(self.occmax+1):
+                for n in range(occmax+1):
                     if d <= n:
                         self.normFactors[c,d,n] = \
                             sqrt(factorial(n)*factorial(n-d+c)/factorial(n-d)**2)
@@ -28,10 +28,10 @@ class helper():
         self.omegaList = self._omega(self.wnList)
 
     def energy(self, state):
-        return sum(Zn*self.omega(n) for n,Zn in state.items())
+        return sum(Zn*self.omega(n) for n,Zn in state)
 
     def totalWN(self, state):
-        return sum(Zn*n for n,Zn in state.items())
+        return sum(Zn*n for n,Zn in state)
 
     def oscEnergy(self, wnlist):
         return sum(self.omega(n) for n in wnlist)
@@ -46,7 +46,7 @@ class helper():
         """ Transform state from repr1 to repr2 """
         ret = [0]*(2*self.nmax+1)
         for n,Zn in state:
-            ret[n] = Zn
+            ret[n+self.nmax] = Zn
         return ret
 
     def torepr1(self, state):
@@ -56,18 +56,20 @@ class helper():
     def Emaxtonmax(self, Emax):
         return int(floor(sqrt((Emax/2.)**2.-self.m**2.)*self.L/(2*pi)))
 
+
 # Mantains the ordering of wavenumbers
 def reverse(state):
     return [(-n,Zn) for n,Zn in state[::-1]]
 
 def occn(state):
-    return sum(state.values())
+    return sum(Zn for n,Zn in state)
 
 
 class Basis():
-    def __init__(self, k, stateset):
+    def __init__(self, k, stateset, helper, gendlist=False):
         self.k = k
-        energy = self.helper.energy
+        self.helper = helper
+        energy = helper.energy
 
         # Order the states in energy
         self.stateList = list(sorted(stateset, key=energy))
@@ -75,7 +77,7 @@ class Basis():
 
         self.energyList = [energy(state) for state in self.stateList]
         self.occnList = [occn(state) for state in self.stateList]
-        self.parityList = [int(state==reverse(state)) for state in state.stateList]
+        self.parityList = [int(state==reverse(state)) for state in self.stateList]
 
         self.Emax = self.energyList[-1]
         self.Emin = self.energyList[0]
@@ -89,12 +91,13 @@ class Basis():
 
         # Create a structure containing all the possible set of momenta that can be
         # annihilated
-        self.stateDlists = {nd:[] for nd in range(3)}
-        for state in self.stateList:
-            x = itertools.chain.from_iterables([[n]*Zn for n,Zn in state])
-            for nd in range(3):
-                self.stateDlists[nd].append(
-                        set(tuple(sorted(x)) for x in combinations(x,nd)))
+        if gendlist:
+            self.stateDlists = {nd:[] for nd in range(3)}
+            for state in self.stateList:
+                x = list(itertools.chain.from_iterable([[n]*Zn for n,Zn in state]))
+                for nd in range(3):
+                    self.stateDlists[nd].append(
+                        set(tuple(sorted(y)) for y in combinations(x,nd)))
 
     @classmethod
     def fromScratch(self, Emax, helper, occmax=None):
@@ -113,15 +116,15 @@ class Basis():
             self._occmax = occmax
 
         # self.nmax is the actual maximum occupied wavenumber of the states
-        self.nmax = info.Emaxtonmax(Emax)
+        self.nmax = self.helper.Emaxtonmax(Emax)
 
         bases = self.buildBasis(self)
-        return {k:self(k,bases[k]) for k in (-1,1)}
+        return {k:self(k,bases[k],helper,True) for k in (-1,1)}
 
 
     def sub(self, filterFun):
         """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
-        return Basis(self.k, filter(filterFun, self.stateList))
+        return Basis(self.k, filter(filterFun, self.stateList), self.helper, True)
 
 
     def __repr__(self):
@@ -150,7 +153,8 @@ class Basis():
         ret = []
         for Zn in range(maxN+1):
             newstate = RMstate[:]
-            newstate.append((n,Zn))
+            if Zn>0:
+                newstate.append((n,Zn))
             ret += self.genRMlist(self,newstate,n+1)
         return ret
 
@@ -161,19 +165,19 @@ class Basis():
         omega = self.helper.omega
         m = self.helper.m
 
-        RMlist = self.genRMlist()
+        RMlist = self.genRMlist(self)
 
         # divides the list of RMstates into a list of lists,
         # so that two states in each list have a fixed total RM wavenumber,
         # and sort each sublist in energy
-        sortedRMlist = sorted(RMlist, key=self.info.totalWN)
+        sortedRMlist = sorted(RMlist, key=self.helper.totalWN)
         dividedRMlist = [sorted(l, key=self.helper.energy) for wn,l in
             itertools.groupby(sortedRMlist,key=self.helper.totalWN)]
         statelist = {1:[], -1:[]}
 
         for RMwn, RMsublist in enumerate(dividedRMlist):
             for i, RMstate in enumerate(RMsublist):
-                ERM = self.info.RMenergy(RMstate)
+                ERM = self.helper.energy(RMstate)
                 ORM = occn(RMstate)
 
                 # LM part of the state will come from the same sublist.
@@ -181,7 +185,7 @@ class Basis():
                 # to the position of RMstate
                 for LMstate in RMsublist[i:]:
                     # we will just have to reverse it
-                    ELM = self.info.energy(LMstate)
+                    ELM = self.helper.energy(LMstate)
                     OLM = occn(LMstate)
                     deltaE = self.Emax - ERM - ELM
                     deltaOcc = self._occmax - ORM - OLM
@@ -198,7 +202,10 @@ class Basis():
                     # possible values for the occupation value at rest
                     for N0 in range(maxN0+1):
                         # Only states with correct parity
-                        state = LMstate.reverse()+[(0,N0)]+RMstate
+                        if N0==0:
+                            state = reverse(LMstate)+RMstate
+                        else:
+                            state = reverse(LMstate)+[(0,N0)]+RMstate
                         statelist[(-1)**(N0+OLM+ORM)].append(state)
 
         return statelist

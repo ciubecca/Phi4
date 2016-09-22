@@ -3,7 +3,7 @@ import scipy.sparse.linalg
 import scipy.sparse
 import math
 from math import factorial
-from statefuncs import Basis, phi4Info
+from statefuncs import Basis, helper
 from oscillators import Phi4Operators, Phi4OperatorsLH
 from collections import Counter
 from operator import attrgetter
@@ -15,9 +15,10 @@ from scipy import exp, pi, array
 
 class Phi4():
     """ main FVHT class """
-    def __init__(self, m, L, Ebar):
+    def __init__(self, m, L):
 
-        self.info = phi4Info(m, L, Ebar)
+        self.m = m
+        self.L = L
 
         self.basis = {}
         self.h0 = {}
@@ -37,7 +38,9 @@ class Phi4():
 
     def buildBasis(self, Emax, occmax=None):
         """ Builds the full Hilbert space basis """
-        self.basis = Basis.fromScratch(Emax=Emax, info=self.info, occmax=occmax)
+        self.helper = helper(self.m, self.L, Emax)
+
+        self.basis = Basis.fromScratch(Emax=Emax, helper=self.helper, occmax=occmax)
 
 
     def buildMatrix(self):
@@ -45,9 +48,8 @@ class Phi4():
         This is computationally intensive.
         It can be skipped by loading the matrix from file """
 
-        Vlist = Phi4Operators(self.info)
-        L = self.info.L
-
+        Vlist = Phi4Operators(self.helper, self.basis)
+        L = self.helper.L
 
 
         for k in (-1,1):
@@ -56,7 +58,7 @@ class Phi4():
             Emax = basis.Emax
 
             self.h0[k] = Matrix(basis, basis,
-                    scipy.sparse.spdiags([self.info.energy(v) for v in basis],
+                    scipy.sparse.spdiags([self.helper.energy(v) for v in basis],
                         0,basis.size,basis.size)).to('coo')
 
             # Will construct the sparse matrix in the COO format
@@ -80,18 +82,19 @@ class Phi4():
             self.V[k][4] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
 
 
-    def computeDH2(self, k, subbasis, Emin, Emax):
+    def computeDH2(self, k, subbasis, Emin, ET):
 
-        L = self.info.L
+        params = helper(self.helper.m, self.helper.L,ET)
+        L = self.helper.L
 
         # Generate the high-energy basis
-        Vlist = Phi4OperatorsLH(self.info, subbasis, Emin, Emax)
+        Vlist = Phi4OperatorsLH(params, subbasis, Emin, ET)
         vectorset = set()
 
         for V in Vlist:
-            vectorset.update(V.genBasis(subbasis, Emin, Emax))
+            vectorset.update(V.genBasis(subbasis, Emin, ET))
 
-        self.basisH[k] = Basis(k, (array(v) for v in vectorset))
+        self.basisH[k] = Basis(k, (params.torepr1(v) for v in vectorset), params)
         self.VLH[k] = None
 
     def setCouplings(self, g0, g2, g4):
@@ -166,7 +169,7 @@ class Phi4():
     def saveMatrix(self, k):
         """ Saves the potential and free hamiltonian to file """
         fname = self.matrixfname(L, self.basis[k].Emax, k, self.basis[k].occmax)
-        t = (fname, self.info.L, self.info.m, k, \
+        t = (fname, self.helper.L, self.helper.m, k, \
             self.basis[k].Emax, self.basis[k].occmax, \
             self.h0[k].M.data,self.h0[k].M.row,self.h0[k].M.col, \
             self.V[k][0].M.data,self.V[k][0].M.row,self.V[k][0].M.col, \
