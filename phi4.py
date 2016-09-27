@@ -91,10 +91,27 @@ class Phi4():
         Vlist = Phi4OperatorsLH(params, subbasis, Emin, ET)
         vectorset = set()
 
-        for V in Vlist:
-            vectorset.update(V.genBasis(subbasis, Emin, ET))
 
-        self.basisH[k] = Basis(k, (params.torepr1(v) for v in vectorset), params)
+        for V in Vlist:
+            for v in V.genBasis(subbasis, Emin, ET):
+                if v not in vectorset and v[::-1] not in vectorset:
+                    vectorset.add(v)
+
+        # print(len(vectorset))
+
+        # for v in vectorset:
+            # print(v)
+            # print(params.torepr1(v))
+
+        # vectorlist = list(sorted(vectorset))
+        # for v in vectorlist:
+            # print(v)
+
+
+        self.basisH[k] = Basis(k, [params.torepr1(v) for v in vectorset], params)
+
+        # for v in self.basisH[k].stateList:
+            # print(v)
         self.VLH[k] = None
 
     def setCouplings(self, g0, g2, g4):

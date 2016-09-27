@@ -79,8 +79,12 @@ class Basis():
         self.occnList = [occn(state) for state in self.stateList]
         self.parityList = [int(state==reverse(state)) for state in self.stateList]
 
-        self.Emax = self.energyList[-1]
-        self.Emin = self.energyList[0]
+        try:
+            self.Emax = self.energyList[-1]
+            self.Emin = self.energyList[0]
+        except IndexError:
+            self.Emax = None
+            self.Emin = None
 
         # Contains also the P-reversed states
         # NOTE: using arrays is much less efficient!
@@ -134,8 +138,9 @@ class Basis():
         return self.stateList[index]
 
     def lookup(self, state):
+        statevec = self.helper.torepr2(state)
         """ Looks up the index of a state (list of occupation numbers) """
-        return self.statePos[tuple(x)]
+        return self.statePos[tuple(statevec)]
 
 
     def genRMlist(self, RMstate=[], n=1):
