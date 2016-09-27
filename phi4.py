@@ -97,22 +97,28 @@ class Phi4():
                 if v not in vectorset and v[::-1] not in vectorset:
                     vectorset.add(v)
 
-        # print(len(vectorset))
-
-        # for v in vectorset:
-            # print(v)
-            # print(params.torepr1(v))
-
-        # vectorlist = list(sorted(vectorset))
-        # for v in vectorlist:
-            # print(v)
-
-
         self.basisH[k] = Basis(k, [params.torepr1(v) for v in vectorset], params)
 
-        # for v in self.basisH[k].stateList:
-            # print(v)
-        self.VLH[k] = None
+
+        # Generate the matrix
+        basis = subbasis
+        lookupbasis = self.basisH[k]
+
+        data = []
+        row = []
+        col = []
+
+        for V in Vlist:
+            computeME = V.computeMatrixElements
+            for i in range(basis.size):
+                colpart, datapart = computeME(basis,i,lookupbasis)
+                data += datapart
+                col += colpart
+                row += [i]*len(colpart)
+
+        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,lookupbasis.size))
+        self.VLH[k] = Matrix(basis,lookupbasis,V).to('coo')*L
+
 
     def setCouplings(self, g0, g2, g4):
         self.g0 = g0
