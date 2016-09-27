@@ -106,14 +106,6 @@ class Operator():
             if imax <= imin:
                 continue
 
-            # print("imin, imax", imin, imax)
-
-            # print(self.oscEnergies[k][imin], self.oscEnergies[k][imax-1])
-
-            # imax = bisect.bisect_left(self.oscEnergies[k], Emax-e+tol)
-            # if imax==0:
-                # continue
-
             # XXX need to copy the array?
             datapart = (self.oscFactors[k][imin:imax])[:]
 
@@ -167,7 +159,7 @@ class Operator():
         return stateset
 
 
-def Phi4Operators(helper, basis):
+def V4Operators(helper, basis):
 
     nmax = max(basis[1].nmax, basis[-1].nmax)
     Emax = max(basis[1].Emax, basis[-1].Emax)
@@ -238,7 +230,41 @@ def Phi4Operators(helper, basis):
 
 
 
-def Phi4OperatorsLH(helper, basis, Emin, Emax):
+def V2Operators(helper, basis):
+
+    nmax = max(basis[1].nmax, basis[-1].nmax)
+    Emax = max(basis[1].Emax, basis[-1].Emax)
+
+    dlist = ()
+    V20 = [(dlist, [])]
+    for k1 in range(-nmax,1):
+        k2 = -k1
+        clist = (k1,k2)
+
+        # NOTE not needed
+        if helper.oscEnergy(clist) <= Emax+tol:
+            V20[-1][1].append(clist)
+
+    V20 = Operator(V20, 0, 2, helper)
+
+
+    V11 = []
+    for k1 in range(-nmax,nmax+1):
+        dlist = (k1,)
+        V11.append((dlist,[]))
+
+        k2 = k1
+        clist = (k2,)
+        # NOTE Not needed
+        if helper.oscEnergy(clist) <= Emax+tol and helper.oscEnergy(dlist) <= Emax+tol:
+            V11[-1][1].append(clist)
+
+    V11 = Operator(V11, 1, 1, helper)
+
+    return V20, V11
+
+
+def V4OperatorsLH(helper, basis, Emin, Emax):
 
     nmax = helper.nmax
 

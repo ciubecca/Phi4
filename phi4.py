@@ -4,7 +4,7 @@ import scipy.sparse
 import math
 from math import factorial
 from statefuncs import Basis, helper
-from oscillators import Phi4Operators, Phi4OperatorsLH
+from oscillators import V2Operators, V4Operators, V4OperatorsLH
 from collections import Counter
 from operator import attrgetter
 import renorm
@@ -48,7 +48,9 @@ class Phi4():
         This is computationally intensive.
         It can be skipped by loading the matrix from file """
 
-        Vlist = Phi4Operators(self.helper, self.basis)
+
+        Vlist = {2:V2Operators(self.helper, self.basis),
+                    4:V4Operators(self.helper, self.basis)}
         L = self.helper.L
 
 
@@ -61,26 +63,32 @@ class Phi4():
                     scipy.sparse.spdiags([self.helper.energy(v) for v in basis],
                         0,basis.size,basis.size)).to('coo')
 
-            # Will construct the sparse matrix in the COO format
-            data = []
-            row = []
-            col = []
+            # Construct the quadratic and quartic potential matrices
+            for n in (2,4):
+                # Will construct the sparse matrix in the COO format
+                data = []
+                row = []
+                col = []
 
-            for V in Vlist:
-                computeME = V.computeMatrixElements
-                for i in range(basis.size):
-                    colpart, datapart = computeME(basis,i,lookupbasis)
-                    data += datapart
-                    col += colpart
-                    row += [i]*len(colpart)
+                for V in Vlist[n]:
+                    computeME = V.computeMatrixElements
+                    for i in range(basis.size):
+                        colpart, datapart = computeME(basis,i,lookupbasis)
+                        data += datapart
+                        col += colpart
+                        row += [i]*len(colpart)
 
 
-            V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
+                V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
 
-            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
-            # This should resum elements in the same coordinate
-            self.V[k][4] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
+                diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
+                # This should resum elements in the same coordinate
+                self.V[k][n] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
 
+
+            # Construct the identity potential matrix
+            idM = scipy.sparse.eye(basis.size)
+            self.V[k][0] = Matrix(basis, basis, idM).to('coo')*L
 
     def computeDH2(self, k, subbasis, Emin, ET):
 
@@ -88,7 +96,7 @@ class Phi4():
         L = self.helper.L
 
         # Generate the high-energy basis
-        Vlist = Phi4OperatorsLH(params, subbasis, Emin, ET)
+        Vlist = V4OperatorsLH(params, subbasis, Emin, ET)
         vectorset = set()
 
 
@@ -187,13 +195,16 @@ class Phi4():
 
     @staticmethod
     def matrixfname(L, Emax, k, occmax):
-        return "matrices/L={0:}_Emax={1:}_k={2:}_nmax={3:}".format(L,Emax,k,occmax)
+        return "matrices/L={0:}_Emax={1:}_k={2:}_occmax={3:}".format(L,Emax,k,occmax)
 
-    def saveMatrix(self, k):
+    def saveMatrix(self, k, Emax):
         """ Saves the potential and free hamiltonian to file """
-        fname = self.matrixfname(L, self.basis[k].Emax, k, self.basis[k].occmax)
-        t = (fname, self.helper.L, self.helper.m, k, \
-            self.basis[k].Emax, self.basis[k].occmax, \
+        L = self.helper.L
+        m = self.helper.m
+
+        fname = self.matrixfname(L, Emax, k, self.basis[k].occmax)
+        t = (fname, L, m, k, \
+            Emax, self.basis[k].occmax, \
             self.h0[k].M.data,self.h0[k].M.row,self.h0[k].M.col, \
             self.V[k][0].M.data,self.V[k][0].M.row,self.V[k][0].M.col, \
             self.V[k][2].M.data,self.V[k][2].M.row,self.V[k][2].M.col, \

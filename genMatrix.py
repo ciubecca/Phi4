@@ -49,3 +49,6 @@ a.computeDH2(k, subbasis, Emax, Ebar)
 
 
 print("HE basis size", a.basisH[k].size)
+
+
+a.saveMatrix(k=k, Emax=Emax)
