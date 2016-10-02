@@ -31,18 +31,20 @@ a.buildBasis(Emax=Emax, occmax=occmax)
 # print(a.basis[k])
 print("basis size :", a.basis[k].size)
 
-a.buildMatrix()
+a.buildMatrix(k)
 
-vset = [
-[],
-[(0, 2)],
-[(-1, 1), (1, 1)],
-[(-1, 1), (0, 2), (1, 1)],
-[(-2, 1), (-1, 1), (1, 1), (2, 1)]
-]
+# vset = [
+# [],
+# [(0, 2)],
+# [(-1, 1), (1, 1)],
+# [(-1, 1), (0, 2), (1, 1)],
+# [(-2, 1), (-1, 1), (1, 1), (2, 1)]
+# ]
+# subbasis = Basis(k, vset, a.helper, gendlist=True)
 
 
-subbasis = Basis(k, vset, a.helper, gendlist=True)
+subbasis = Basis(k, a.basis[k].stateList[:50], a.helper)
+
 print("subbasis size:", subbasis.size)
 
 a.computeDH2(k, subbasis, Emax, Ebar)
@@ -51,4 +53,4 @@ a.computeDH2(k, subbasis, Emax, Ebar)
 print("HE basis size", a.basisH[k].size)
 
 
-a.saveMatrix(k=k, Emax=Emax)
+# a.saveMatrix(k=k, Emax=Emax)

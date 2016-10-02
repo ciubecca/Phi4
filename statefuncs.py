@@ -40,6 +40,7 @@ class helper():
         return sqrt(self.m**2+((2*pi/self.L)*n)**2)
 
     def omega(self, n):
+        # return self._omega(n)
         return self.omegaList[n+self.nmax]
 
     def torepr2(self, state):
@@ -66,7 +67,7 @@ def occn(state):
 
 
 class Basis():
-    def __init__(self, k, stateset, helper, gendlist=False):
+    def __init__(self, k, stateset, helper):
         self.k = k
         self.helper = helper
         energy = helper.energy
@@ -93,15 +94,6 @@ class Basis():
             self.statePos[tuple(helper.torepr2(state))] = i
             self.statePos[tuple(helper.torepr2(state)[::-1])] = i
 
-        # Create a structure containing all the possible set of momenta that can be
-        # annihilated
-        if gendlist:
-            self.stateDlists = {nd:[] for nd in range(3)}
-            for state in self.stateList:
-                x = list(itertools.chain.from_iterable([[n]*Zn for n,Zn in state]))
-                for nd in range(3):
-                    self.stateDlists[nd].append(
-                        set(tuple(sorted(y)) for y in combinations(x,nd)))
 
     @classmethod
     def fromScratch(self, Emax, helper, occmax=None):
@@ -123,12 +115,12 @@ class Basis():
         self.nmax = self.helper.Emaxtonmax(Emax)
 
         bases = self.buildBasis(self)
-        return {k:self(k,bases[k],helper,True) for k in (-1,1)}
+        return {k:self(k,bases[k],helper) for k in (-1,1)}
 
 
     def sub(self, filterFun):
         """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
-        return Basis(self.k, filter(filterFun, self.stateList), self.helper, True)
+        return Basis(self.k, filter(filterFun, self.stateList), self.helper)
 
 
     def __repr__(self):

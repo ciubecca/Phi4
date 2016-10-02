@@ -9,6 +9,15 @@ import bisect
 
 tol = 10**(-10)
 
+# @profile
+def gendlists(state, nd):
+    x = list(itertools.chain.from_iterable([[n]*Zn for n,Zn in state]))
+    if nd==4:
+        ret = set(tuple(y) for y in combinations(x,nd))
+        return set(dlist for dlist in ret if sum(dlist)==0)
+    else:
+        ret = set(tuple(y) for y in combinations(x,nd))
+        return ret
 
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
@@ -71,32 +80,39 @@ class Operator():
                     for clist in clists])
 
 
-
     # @profile
-    def computeMatrixElements(self, basis, i, lookupbasis):
+    def computeMatrixElements(self, basis, i, lookupbasis, statePos=None):
         # List of columns indices of generated basis elements
         col = []
         # List of partial matrix elements
         data = []
 
+
         # I define these local variables outside the loops for performance reasons
         e = basis.energyList[i]
         p = basis.parityList[i]
         state = basis.stateList[i]
-        statevec = self.helper.torepr2(state)
-        statePos = lookupbasis.statePos
+        # statevec = self.helper.torepr2(state)
+        if basis.helper.nmax > lookupbasis.helper.nmax:
+            helper = basis.helper
+        else:
+            helper = lookupbasis.helper
+
+        statevec = helper.torepr2(state)
         parityList = lookupbasis.parityList
         Emin = lookupbasis.Emin
         Emax = lookupbasis.Emax
-        # print("state", state)
-        # print("Emin", Emin)
-        # print("Emax", Emax)
-        nmax = self.helper.nmax
+        nmax = helper.nmax
+
+
+        if statePos == None:
+            statePos = lookupbasis.statePos
+
 
         normFactors = self.helper.normFactors
 
-        # List of all the groups of momenta of the state that can be annihilated
-        for dlist in basis.stateDlists[self.nd][i]:
+        # cycle over all the sets of momenta that can be annihilated
+        for dlist in gendlists(state, self.nd):
 
             k = self.dlistPos[dlist]
 
@@ -106,7 +122,6 @@ class Operator():
             if imax <= imin:
                 continue
 
-            # XXX need to copy the array?
             datapart = (self.oscFactors[k][imin:imax])[:]
 
             # This cycle could be moved to C
@@ -116,7 +131,23 @@ class Operator():
                 for n,Zc,Zd in osc:
                     newstatevec[n+nmax] += Zc-Zd
                     datapart[i] *= normFactors[Zc, Zd, statevec[n+nmax]]
-                j = statePos[tuple(newstatevec)]
+                try:
+                    j = statePos[tuple(newstatevec)]
+                except KeyError as err:
+                    try:
+                        newstate = helper.torepr1(newstatevec)
+                        print(newstate)
+                        print(helper.energy(newstate))
+                        raise err
+                    except IndexError as err:
+                        newstate = helper.torepr1(newstatevec)
+                        print("oscillator", osc)
+                        # print("osc energy", basis.helper.oscEnergy(osc))
+                        print("state", state)
+                        print("newstate", newstate)
+                        print("state energy", helper.energy(state))
+                        print("newstate energy", helper.energy(newstate))
+                        raise err
 
                 datapart[i] *= parityFactors[p][parityList[j]]
                 col.append(j)
@@ -138,7 +169,7 @@ class Operator():
             statevec = self.helper.torepr2(state)
             e = basis.energyList[i]
 
-            for dlist in basis.stateDlists[self.nd][i]:
+            for dlist in gendlists(state, self.nd):
                 k = self.dlistPos[dlist]
 
                 # XXX Check
@@ -157,6 +188,7 @@ class Operator():
                         stateset.add(t1)
 
         return stateset
+
 
 
 def V4Operators(helper, basis):
@@ -231,7 +263,9 @@ def V4Operators(helper, basis):
 
 
 def V2Operators(helper, basis):
-
+    """
+    basis: set of states on which the operators act
+    """
     nmax = max(basis[1].nmax, basis[-1].nmax)
     Emax = max(basis[1].Emax, basis[-1].Emax)
 
@@ -265,7 +299,11 @@ def V2Operators(helper, basis):
 
 
 def V4OperatorsLH(helper, basis, Emin, Emax):
-
+    """
+    basis: set of states on which the operators act
+    Emin: minimum energy of the states corresponding to columns indices of the matrix
+    Emax: maximal energy of the states corresponding to columns indices of the matrix
+    """
     nmax = helper.nmax
 
     dlist = ()
@@ -286,9 +324,10 @@ def V4OperatorsLH(helper, basis, Emin, Emax):
 
 
     V31 = []
+
     dlists = set()
-    for s in basis.stateDlists[1]:
-        dlists.update(s)
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 1))
 
     for dlist in dlists:
         k1 = dlist[0]
@@ -308,11 +347,11 @@ def V4OperatorsLH(helper, basis, Emin, Emax):
 
     V31 = Operator(V31, 1, 3, helper)
 
-
     V22 = []
+
     dlists = set()
-    for s in basis.stateDlists[2]:
-        dlists.update(s)
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 2))
 
     for dlist in dlists:
         (k1,k2) = dlist
@@ -337,3 +376,75 @@ def V4OperatorsLH(helper, basis, Emin, Emax):
     # NOTE V13 and V04 cannot increase the energy
 
     return V40, V31, V22
+
+
+# Generate all the oscillators between the "selected" high-energy basis and the
+# low-energy basis
+def V4OperatorsHL(helper, basis, Emax):
+    """
+    basis: set of states on which the operators act
+    Emax: maximal energy of the states corresponding to columns indices of the matrix
+    """
+
+    nmax = helper.nmax
+
+    V04 = []
+
+    dlists = set()
+    for state in basis.stateList:
+    # This has to be implemented differently
+        dlists.update(gendlists(state, 4))
+
+    for dlist in dlists:
+        V04.append((dlist,[()]))
+
+    V04 = Operator(V04, 4, 0, helper)
+
+
+    V13 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 3))
+
+    for dlist in dlists:
+        k1, k2, k3 = dlist
+
+        k4 = k1+k2+k3
+        clist = (k4,)
+
+        V13.append((dlist,[clist]))
+
+
+    V13 = Operator(V13, 3, 1, helper)
+
+
+    V22 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 2))
+
+    for dlist in dlists:
+        (k1,k2) = dlist
+        V22.append((dlist,[]))
+
+        for k3 in range(max(-nmax+k1+k2,-nmax),
+                min(int(floor((k1+k2)/2)),nmax)+1):
+
+            k4 = k1+k2-k3
+            clist = (k3,k4)
+
+            # We always want to decrease the energy
+            if helper.oscEnergy(clist) <= helper.oscEnergy(dlist) and\
+                    helper.oscEnergy(clist) <= Emax+tol:
+
+                V22[-1][1].append(clist)
+
+
+    V22 = Operator(V22, 2, 2, helper)
+
+
+    # NOTE V31 and V40 cannot increase the energy
+
+    return V04, V13, V22
