@@ -7,7 +7,7 @@ import itertools
 import numpy as np
 
 
-class helper():
+class Helper():
     def __init__(self,m,L,Emax,noscmax=4):
         self.L = L
         self.m = m
@@ -40,7 +40,6 @@ class helper():
         return sqrt(self.m**2+((2*pi/self.L)*n)**2)
 
     def omega(self, n):
-        # return self._omega(n)
         return self.omegaList[n+self.nmax]
 
     def torepr2(self, state):
@@ -87,19 +86,13 @@ class Basis():
             self.Emax = None
             self.Emin = None
 
-        # Contains also the P-reversed states
-        # NOTE: using arrays is much less efficient!
-        self.statePos = {}
-        for i,state in enumerate(self.stateList):
-            self.statePos[tuple(helper.torepr2(state))] = i
-            self.statePos[tuple(helper.torepr2(state)[::-1])] = i
-
 
     @classmethod
-    def fromScratch(self, Emax, helper, occmax=None):
+    def fromScratch(self, m, L, Emax, occmax=None):
         """ Builds the truncated Hilbert space up to cutoff Emax """
 
-        self.helper = helper
+        self.helper = Helper(m, L, Emax)
+        helper = self.helper
         self.Emax = Emax
         m = helper.m
 
@@ -112,7 +105,7 @@ class Basis():
             self._occmax = occmax
 
         # self.nmax is the actual maximum occupied wavenumber of the states
-        self.nmax = self.helper.Emaxtonmax(Emax)
+        self.nmax = helper.nmax
 
         bases = self.buildBasis(self)
         return {k:self(k,bases[k],helper) for k in (-1,1)}
@@ -128,11 +121,6 @@ class Basis():
 
     def __getitem__(self,index):
         return self.stateList[index]
-
-    def lookup(self, state):
-        statevec = self.helper.torepr2(state)
-        """ Looks up the index of a state (list of occupation numbers) """
-        return self.statePos[tuple(statevec)]
 
 
     def genRMlist(self, RMstate=[], n=1):

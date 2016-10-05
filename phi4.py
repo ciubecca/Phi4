@@ -3,7 +3,7 @@ import scipy.sparse.linalg
 import scipy.sparse
 import math
 from math import factorial
-from statefuncs import Basis, helper
+from statefuncs import Basis, Helper
 from oscillators import *
 from collections import Counter
 from operator import attrgetter
@@ -23,9 +23,10 @@ class Phi4():
         self.basis = {}
         self.h0 = {}
         self.V = {k:{} for k in {-1,1}}
-        self.DeltaH2 = {}
-        self.VLH = {}
-        self.VHL = {}
+        self.DeltaH = {}
+        self.VLh = {}
+        self.Vhl = {}
+        self.Vhh = {}
         self.basisH = {}
 
         self.eigenvalues = {"raw":{}, "renlocal":{}}
@@ -39,78 +40,92 @@ class Phi4():
 
     def buildBasis(self, Emax, occmax=None):
         """ Builds the full Hilbert space basis """
-        self.helper = helper(self.m, self.L, Emax)
-
-        self.basis = Basis.fromScratch(Emax=Emax, helper=self.helper, occmax=occmax)
+        self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
 
+    def buildMatrix(self, Vlist, basis, lookupbasis, ignoreKeyError=False):
+        """
+        Compute a potential matrix from the operators in Vlist
+        between two bases
+        """
 
-    def buildMatrix(self, k):
-        """ Builds the full hamiltonian in the basis of the free hamiltonian.
-        This is computationally intensive.
-        It can be skipped by loading the matrix from file """
+        if basis.helper.nmax > lookupbasis.helper.nmax:
+            helper = basis.helper
+        else:
+            helper = lookupbasis.helper
+
+        # Contains also the P-reversed states
+        # NOTE: using arrays is much less efficient!
+        statePos = {}
+        for i,state in enumerate(lookupbasis.stateList):
+            statePos[tuple(helper.torepr2(state))] = i
+            statePos[tuple(helper.torepr2(state)[::-1])] = i
+
+        # Will construct the sparse matrix in the COO format
+        data = []
+        row = []
+        col = []
+
+        for V in Vlist:
+            for i in range(basis.size):
+                colpart, datapart = \
+                    V.computeMatrixElements(basis,i,lookupbasis,statePos,helper,
+                            ignoreKeyError)
+                data += datapart
+                col += colpart
+                row += [i]*len(colpart)
+
+        V = scipy.sparse.coo_matrix((data,(row,col)),
+                shape=(basis.size,lookupbasis.size))
+
+        if basis==lookupbasis:
+        # If the two bases are equal, assumes that only half of the matrix was computed
+            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
+            # This should resum duplicate entries
+            return (V+V.transpose()-diag_V).tocsc()
+        else:
+            # XXX This should resum duplicate entries
+            return V.tocsc()
 
 
-        Vlist = {2:V2Operators(self.helper, self.basis),
-                    4:V4Operators(self.helper, self.basis)}
-        L = self.helper.L
+
+    def computePotential(self, k):
+        """
+        Builds the potential matrices and the free Hamiltonian.
+        """
 
         basis = self.basis[k]
-        lookupbasis = self.basis[k]
-        Emax = basis.Emax
 
         self.h0[k] = Matrix(basis, basis,
-                scipy.sparse.spdiags([self.helper.energy(v) for v in basis],
-                    0,basis.size,basis.size)).to('coo')
+                scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size))
 
-        # Construct the quadratic and quartic potential matrices
+        Vlist = {2:V2Operators(basis), 4:V4Operators(basis)}
         for n in (2,4):
-            # Will construct the sparse matrix in the COO format
-            data = []
-            row = []
-            col = []
-
-            for V in Vlist[n]:
-
-                for i in range(basis.size):
-
-                    colpart, datapart = V.computeMatrixElements(basis,i,lookupbasis)
-                    data += datapart
-                    col += colpart
-                    row += [i]*len(colpart)
-
-
-            V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
-
-            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
-            # This should resum elements in the same coordinate
-            self.V[k][n] = Matrix(basis,basis,V+V.transpose()-diag_V).to('coo')*L
-
+            self.V[k][n] = Matrix(basis,basis,self.buildMatrix(Vlist[n], basis, basis))*self.L
 
         # Construct the identity potential matrix
         idM = scipy.sparse.eye(basis.size)
-        self.V[k][0] = Matrix(basis, basis, idM).to('coo')*L
+        self.V[k][0] = Matrix(basis, basis, idM)*self.L
 
 
-    def computeDH2(self, k, subbasis, Emin, ET):
-
-        params = helper(self.helper.m, self.helper.L,ET)
-        L = self.helper.L
-
-        ##############################
-        # Generate the high-energy basis
-        ##############################
-        Vlist = V4OperatorsLH(params, subbasis, Emin, ET)
+    def genHEBasis(self, k, subbasis, ET, EL):
+        Vlist = V4Operatorshl(subbasis, EL)
         vectorset = set()
 
 
         for V in Vlist:
-            for v in V.genBasis(subbasis, Emin, ET):
+            for v in V.genBasis(subbasis, ET, EL):
                 if v not in vectorset and v[::-1] not in vectorset:
                     vectorset.add(v)
 
-        self.basisH[k] = Basis(k, [params.torepr1(v) for v in vectorset], params)
+        helper = Vlist[0].helper
 
+        self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
+
+
+    def computeDH2(self, k, subbasis, ET, EL, eps):
+
+        # NOTE "l" denotes a selected low-energy state, while "L" a generic low-energy state
 
         ##############################
         # Generate the low-high matrix
@@ -118,20 +133,9 @@ class Phi4():
         basis = subbasis
         lookupbasis = self.basisH[k]
 
-        data = []
-        row = []
-        col = []
+        Vlist = V4Operatorshl(subbasis, EL)
 
-        for V in Vlist:
-            computeME = V.computeMatrixElements
-            for i in range(basis.size):
-                colpart, datapart = computeME(basis,i,lookupbasis)
-                data += datapart
-                col += colpart
-                row += [i]*len(colpart)
-
-        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,lookupbasis.size))
-        self.VLH[k] = Matrix(basis,lookupbasis,V).to('coo')*L
+        self.Vhl[k] = self.buildMatrix(Vlist, basis, lookupbasis)*self.L
 
 
         ##############################
@@ -139,29 +143,48 @@ class Phi4():
         ##############################
         basis = self.basisH[k]
         lookupbasis = self.basis[k]
-        Emax = lookupbasis.Emax
 
-        data = []
-        row = []
-        col = []
+        Vlist = V4OperatorsLh(basis, ET)
 
-        statePos = {}
-        for i,state in enumerate(lookupbasis.stateList):
-            statePos[tuple(basis.helper.torepr2(state))] = i
-            statePos[tuple(basis.helper.torepr2(state)[::-1])] = i
+        self.VLh[k] = self.buildMatrix(Vlist, basis, lookupbasis)*self.L
 
-        Vlist = V4OperatorsHL(basis.helper, basis, Emax)
 
-        for V in Vlist:
-            computeME = V.computeMatrixElements
-            for i in range(basis.size):
-                colpart, datapart = computeME(basis,i,lookupbasis,statePos)
-                data += datapart
-                col += colpart
-                row += [i]*len(colpart)
+        #############################
+        # Construct DH2
+        #############################
+        Vhl = self.Vhl[k]
+        Vlh = Vhl.transpose()
+        VLh = self.VLh[k]
+        VhL = VLh.transpose()
 
-        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,lookupbasis.size))
-        self.VHL[k] = Matrix(basis,lookupbasis,V).to('coo')*L
+        propagator = scipy.sparse.spdiags([1/(e-eps) for e in self.basisH[k].energyList],
+                0, self.basisH[k].size, self.basisH[k].size)
+
+
+        DH2Ll = Vhl*propagator*VLh
+        DH2lL = DH2Ll.transpose()
+        DH2ll = Vhl*propagator*Vlh
+
+        self.DeltaH[k] = DH2lL*scipy.sparse.linalg.inv(DH2ll)*DH2Ll
+
+
+    def computeVhh(self, k, subbasis, Emin, Emax):
+
+        ###############################
+        # Generate the high-high matrix
+        ###############################
+        basis = self.basisH[k]
+        lookupbasis = self.basisH[k]
+
+        Vlist = V4Operatorshh(basis)
+
+        # print("number of operators:",
+                # sum(len(osc) for V in Vlist for osc in V.oscList))
+
+        self.nops = sum(len(osc) for V in Vlist for osc in V.oscList)
+
+        # This should resum elements in the same coordinate
+        self.Vhh[k] = self.buildMatrix(Vlist, basis, basis, ignoreKeyError=True)*self.L
 
 
     def setCouplings(self, g0, g2, g4):

@@ -6,33 +6,85 @@ import math
 import scipy
 from statefuncs import *
 
+
+def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax):
+
+    Vred = matrix.todok()
+    Vfull = fullmatrix.todok()
+
+    helper = fullbasis.helper
+
+    statePosRed = {}
+    for i,state in enumerate(lookupbasis.stateList):
+        statePosRed[tuple(helper.torepr2(state))] = i
+        statePosRed[tuple(helper.torepr2(state)[::-1])] = i
+
+    statePosFull = {}
+    for I,state in enumerate(fullbasis.stateList):
+        statePosFull[tuple(helper.torepr2(state))] = I
+        statePosFull[tuple(helper.torepr2(state)[::-1])] = I
+
+
+    stateListRed = [tuple(helper.torepr2(vi)) for vi in basis]
+    stateListFull = [tuple(helper.torepr2(vJ)) for vJ in fullbasis]
+
+    nnz = 0
+
+    for i, vi in enumerate(basis):
+
+        I = statePosFull[stateListRed[i]]
+
+        for J,vJ in enumerate(fullbasis):
+
+            # The matrix entry is not null. Therefore we can compare with the reduced
+            # matrix
+            if Emin<helper.energy(vJ)<=Emax and Vfull[I,J] != 0:
+
+                j = statePosRed[stateListFull[J]]
+
+                if abs(Vfull[I,J]-Vred[i,j]) > 10**(-10):
+                    print("Numerical values don't match:")
+                    print(vi, vJ)
+                    raise ValueError
+
+                # Count the number of non-zero entries
+                nnz += 1
+
+            else:
+                try:
+                    j = statePosRed[stateListFull[J]]
+                    if Vred[i,j] != 0:
+                        print("This entry should be zero")
+                        print(vi, vJ)
+                        print(helper.energy(vi), helper.energy(vJ))
+                        raise ValueError
+                except KeyError:
+                    pass
+
+    if nnz != matrix.nnz:
+        print("Number of non-zero values don't match")
+        raise ValueError
+
+
 k = 1
 m = 1.
 
 argv = sys.argv
 
-args = "<L> <Emax> <Ebar> <?occmax>"
+args = "<L> <ET> <EL>"
 if len(argv) < 4:
     print("python", argv[0], args)
     sys.exit(-1)
 
 L = float(argv[1])
-Emax = float(argv[2])
-Ebar = float(argv[3])
-try:
-    occmax = int(argv[4])
-except IndexError:
-    occmax = None
+ET = float(argv[2])
+EL = float(argv[3])
 
 a = phi4.Phi4(m,L)
 
+a.buildBasis(Emax=ET)
 
-a.buildBasis(Emax=Emax, occmax=occmax)
-
-nmax =  a.helper.nmax
-
-a.buildMatrix(k)
-
+a.computePotential(k)
 
 vset = [
 [],
@@ -42,52 +94,40 @@ vset = [
 [(-2, 1), (-1, 1), (1, 1), (2, 1)]
 ]
 
-subbasis = Basis(k, vset, a.helper)
+# Build the reduced matrices VLh, Vhl
+subbasis = Basis(k, vset, a.basis[k].helper)
 print("subbasis size:", subbasis.size)
 
-a.computeDH2(k, subbasis, Emax, Ebar)
-
+a.genHEBasis(k, subbasis, ET, EL)
 print("HE basis size", a.basisH[k].size)
+
+# Check that the total momentum of the states is 0
+for v in a.basisH[k]:
+    if sum(n*Zn for n,Zn in v) != 0:
+        print("non-zero total momentum")
+        raise ValueError
+
+print("Emin, Emax = ", a.basisH[k].Emin, a.basisH[k].Emax)
+
+eps = -1
+a.computeDH2(k, subbasis, ET, EL, eps)
 
 
 # Build the full matrix up to cutoff ET
 b = phi4.Phi4(m,L)
-b.buildBasis(Emax=Ebar, occmax=occmax)
-b.buildMatrix(k)
+b.buildBasis(Emax=EL)
+print("Full basis size:", b.basis[k].size)
 
-# Full matrix up to cutoff ET
-Vfull = b.V[k][4].M.todok()
+b.computePotential(k)
 
-# Reduced low-high energy matrix
-Vred = a.VLH[k].M.todok()
+tol = 10**-10
 
-# Check that the numerical values of the reduced and full matrices correspond
-for i, vl in enumerate(vset):
-    for j, vh in enumerate(a.basisH[k]):
-        i2 = b.basis[k].lookup(vl)
-        j2 = b.basis[k].lookup(vh)
+print("Checking Vhl")
+checkMatrix(a.Vhl[k], subbasis, a.basisH[k], b.V[k][4].M, b.basis[k], ET, EL)
 
-        if abs(Vred[i,j]-Vfull[i2,j2]) > 10**(-10):
-            print("VLH difference:", i, j)
-            print("Values:", Vred[i,j], Vfull[i2,j2])
-            print("States:", vl, vh)
-            print("Energies:", b.basis[k].energyList[i2],b.basis[k].energyList[j2])
-            raise ValueError
+print("Checking VLh")
+checkMatrix(a.VLh[k], a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, ET-tol)
 
 
-# Reduced high-low energy matrix
-Vred = a.VHL[k].M.todok()
-
-# Check that the numerical values of the reduced and full matrices correspond
-for i, vh in enumerate(a.basisH[k]):
-    for j, vl in enumerate(a.basis[k]):
-        i2 = b.basis[k].lookup(vh)
-        j2 = b.basis[k].lookup(vl)
-
-        if abs(Vred[i,j]-Vfull[i2,j2]) > 10**(-10):
-            print("VHL difference:", i, j)
-            print("Values:", Vred[i,j], Vfull[i2,j2])
-            print("States:", vh, vl)
-            print("Energies:", b.basis[k].energyList[i2],b.basis[k].energyList[j2])
-            raise ValueError
-
+print("Checking Vhh")
+checkMatrix(a.VLh[k], a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, ET-tol)
