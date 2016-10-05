@@ -281,7 +281,7 @@ class newPhi4():
         ### compute dictionary of oscillator energies up to nmax, to reduce the number of arithmetic operators below
         Omega = {n: omega(n,L,m) for n in range(-nmax, nmax+1)}
 
-        print "nmax=",nmax, ", Basis sizes: ",len(basis[1]),len(basis[-1])
+        print("nmax=",nmax, ", Basis sizes: ",len(basis[1]),len(basis[-1]))
 
         ### create some lists of state attributes to avoid repeated operations below
         energylist = {}
@@ -338,7 +338,7 @@ class newPhi4():
 
         V40 = []
         for i,state in enumerate(basis[1]):
-            if totocc(state)<>4:
+            if totocc(state)!=4:
                 continue
             V40.append(state)
 
@@ -372,13 +372,13 @@ class newPhi4():
                         continue
 
                     # NB i<=j<=k
-                    if i<>j and j<>kk:
+                    if i!=j and j!=kk:
                         V31[k4].append([(i,1),(j,1),(kk,1)])
                         continue
-                    if i==j and j<>kk:
+                    if i==j and j!=kk:
                         V31[k4].append([(i,2),(kk,1)])
                         continue
-                    if i<>j and j==kk:
+                    if i!=j and j==kk:
                         V31[k4].append([(i,1),(kk,2)])
                         continue
                     if i==kk:
@@ -388,8 +388,8 @@ class newPhi4():
 
         # precompute various lists to use below
         V31factor = {k4: [f3([x[1] for x in state])/(4*math.sqrt(Omega[k4]*np.prod([Omega[n]**Zn for (n,Zn) in state])))
-                               for state in V31[k4]] for k4 in V31.keys()}
-        V31energy = {k4: [energy(state,L,m)- Omega[k4] for state in V31[k4]] for k4 in V31.keys()}
+                               for state in V31[k4]] for k4 in list(V31.keys())}
+        V31energy = {k4: [energy(state,L,m)- Omega[k4] for state in V31[k4]] for k4 in list(V31.keys())}
 
         ########################
         # Step 2c: build the V22 part consisting of a^+(k1) a^+(k2) a(k3) a(k4), k1+k2=k3+k4.
@@ -417,14 +417,15 @@ class newPhi4():
                         continue #only consider lexicographically ordered part of V22, in the sense of (A.4)
                         # but also including diagonal part which will be separated below
 
-                    if i<>j:
+                    if i!=j:
                         V22[(k3,k4)].append([(i,1),(j,1)])
                     else:
                         V22[(k3,k4)].append([(i,2)])
 
                 V22[(k3,k4)].sort(key= lambda x: energy(x,L,m))
 
-        def symfactor((k3,k4)):
+        def symfactor(xxx_todo_changeme):
+            (k3,k4) = xxx_todo_changeme
             if k3==k4:
                  return 1
             else:
@@ -433,8 +434,8 @@ class newPhi4():
         V22factor = {key: [symfactor(key)*f2([x[1] for x in state])/
                                 (4*math.sqrt(Omega[key[0]]*Omega[key[1]]*np.prod([Omega[n]**Zn for (n,Zn) in state])))
                                 for state in V22[key]]
-                                for key in V22.keys()}
-        V22energy = {key: [energy(state,L,m) - Omega[key[0]] - Omega[key[1]] for state in V22[key]] for key in V22.keys()}
+                                for key in list(V22.keys())}
+        V22energy = {key: [energy(state,L,m) - Omega[key[0]] - Omega[key[1]] for state in V22[key]] for key in list(V22.keys())}
 
         ###############################
         # Step 3: BUILDING PHI^4 matrix in the basis
@@ -565,8 +566,8 @@ class newPhi4():
 
             self.potential[K] = scipy.sparse.csr_matrix(M)
 
-        print "number of nonzero entries in the matrices:", self.potential[1].nnz, self.potential[-1].nnz
-        print "time taken to construct matrices:", time.clock()-t0
+        print("number of nonzero entries in the matrices:", self.potential[1].nnz, self.potential[-1].nnz)
+        print("time taken to construct matrices:", time.clock()-t0)
 
         for K in (1,-1):
                 self.totBasisSize[K] = len(self.basis[K])
@@ -628,7 +629,7 @@ class newPhi4():
             # Relatively quick method to calculate the eigenvalues closest to sigma in absolute value, for a symmetric matrix.
 
             gc.collect()
-            print "time elapsed:", time.clock()-t0
+            print("time elapsed:", time.clock()-t0)
 
     def vacuumE(self):
             return self.eigenvalues[1][0]

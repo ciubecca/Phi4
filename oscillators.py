@@ -446,7 +446,6 @@ def V4OperatorsLh(basis, Emax):
 
     V22 = Operator(V22, 2, 2, helper)
 
-
     # NOTE V31 and V40 cannot increase the energy
 
     return V04, V13, V22

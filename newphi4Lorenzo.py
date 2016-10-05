@@ -281,7 +281,7 @@ class newPhi4():
         ### compute dictionary of oscillator energies up to nmax, to reduce the number of arithmetic operators below
         Omega = {n: omega(n,L,m) for n in range(-nmax, nmax+1)}
 
-        print("nmax=",nmax, ", Basis sizes: ",len(basis[1]),len(basis[-1]))
+        print(("nmax=",nmax, ", Basis sizes: ",len(basis[1]),len(basis[-1])))
 
         ### create some lists of state attributes to avoid repeated operations below
         energylist = {}
@@ -566,8 +566,8 @@ class newPhi4():
 
             self.potential[K] = scipy.sparse.csr_matrix(M)
 
-        print("number of nonzero entries in the matrices:", self.potential[1].nnz, self.potential[-1].nnz)
-        print("time taken to construct matrices:", time.clock()-t0)
+        print(("number of nonzero entries in the matrices:", self.potential[1].nnz, self.potential[-1].nnz))
+        print(("time taken to construct matrices:", time.clock()-t0))
 
         for K in (1,-1):
                 self.totBasisSize[K] = len(self.basis[K])
@@ -629,7 +629,7 @@ class newPhi4():
             # Relatively quick method to calculate the eigenvalues closest to sigma in absolute value, for a symmetric matrix.
 
             gc.collect()
-            print("time elapsed:", time.clock()-t0)
+            print(("time elapsed:", time.clock()-t0))
 
     def vacuumE(self):
             return self.eigenvalues[1][0]

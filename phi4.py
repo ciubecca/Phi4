@@ -165,6 +165,9 @@ class Phi4():
         DH2lL = DH2Ll.transpose()
         DH2ll = Vhl*propagator*Vlh
 
+        # print(DH2lL.shape, DH2ll.shape, DH2Ll.shape)
+        # print(scipy.sparse.linalg.inv(DH2ll).shape)
+
         self.DeltaH[k] = DH2lL*scipy.sparse.linalg.inv(DH2ll)*DH2Ll
 
 

@@ -7,6 +7,22 @@ import scipy
 from statefuncs import *
 
 
+k = +1
+m = 1.
+
+
+# vset = [
+# [(0, 1)], [(0,3)]
+# ]
+
+vset = [
+[],
+[(-1, 1), (1, 1)],
+[(-1, 1), (0, 2), (1, 1)],
+[(-2, 1), (-1, 1), (1, 1), (2, 1)]
+]
+
+
 def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, Vhh=False):
 
     Vred = matrix.todok()
@@ -64,6 +80,7 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, V
                     j = statePosRed[stateListFull[J]]
                     if Vred[i,j] != 0:
                         print("This entry should be zero")
+                        print(Vfull[I,J], Vred[i,j])
                         print(vi, vJ)
                         print(helper.energy(vi), helper.energy(vJ))
                         raise ValueError
@@ -76,8 +93,6 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, V
         raise ValueError
 
 
-k = 1
-m = 1.
 
 argv = sys.argv
 
@@ -96,13 +111,7 @@ a.buildBasis(Emax=ET)
 
 a.computePotential(k)
 
-vset = [
-[],
-[(0, 2)],
-# [(-1, 1), (1, 1)],
-# [(-1, 1), (0, 2), (1, 1)],
-# [(-2, 1), (-1, 1), (1, 1), (2, 1)]
-]
+
 
 # Build the reduced matrices VLh, Vhl
 subbasis = Basis(k, vset, a.basis[k].helper)
@@ -139,7 +148,7 @@ print("Checking Vhl")
 checkMatrix(a.Vhl[k], subbasis, a.basisH[k], b.V[k][4].M, b.basis[k], ET, EL)
 
 print("Checking VLh")
-checkMatrix(a.VLh[k], a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, ET-tol)
+checkMatrix(a.VLh[k], a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, ET+tol)
 
 
 print("Checking Vhh")

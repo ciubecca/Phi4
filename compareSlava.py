@@ -8,7 +8,7 @@ import scipy
 m = 1.
 
 def main(argv):
-    args = "<L> <Emax> <k> <?occmax>"
+    args = "<L> <ET> <k>"
     if len(argv) < 4:
         print("python", argv[0], args)
         sys.exit(-1)
