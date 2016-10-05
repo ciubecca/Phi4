@@ -7,7 +7,7 @@ import scipy
 from statefuncs import *
 
 
-def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax):
+def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, Vhh=False):
 
     Vred = matrix.todok()
     Vfull = fullmatrix.todok()
@@ -40,12 +40,21 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax):
             # matrix
             if Emin<helper.energy(vJ)<=Emax and Vfull[I,J] != 0:
 
-                j = statePosRed[stateListFull[J]]
+                try:
+                    j = statePosRed[stateListFull[J]]
+                except KeyError as err:
+                    if Vhh==True:
+                        continue
+                    else:
+                        raise err
+
 
                 if abs(Vfull[I,J]-Vred[i,j]) > 10**(-10):
                     print("Numerical values don't match:")
+                    print(Vfull[I,J], Vred[i,j])
                     print(vi, vJ)
-                    raise ValueError
+                    print("Energies:", helper.energy(vi), helper.energy(vJ))
+                    # raise ValueError
 
                 # Count the number of non-zero entries
                 nnz += 1
@@ -62,7 +71,8 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax):
                     pass
 
     if nnz != matrix.nnz:
-        print("Number of non-zero values don't match")
+        print("Number of non-zero values don't match:")
+        print(nnz, matrix.nnz)
         raise ValueError
 
 
@@ -89,9 +99,9 @@ a.computePotential(k)
 vset = [
 [],
 [(0, 2)],
-[(-1, 1), (1, 1)],
-[(-1, 1), (0, 2), (1, 1)],
-[(-2, 1), (-1, 1), (1, 1), (2, 1)]
+# [(-1, 1), (1, 1)],
+# [(-1, 1), (0, 2), (1, 1)],
+# [(-2, 1), (-1, 1), (1, 1), (2, 1)]
 ]
 
 # Build the reduced matrices VLh, Vhl
@@ -110,8 +120,11 @@ for v in a.basisH[k]:
 print("Emin, Emax = ", a.basisH[k].Emin, a.basisH[k].Emax)
 
 eps = -1
+print("Computing DeltaH")
 a.computeDH2(k, subbasis, ET, EL, eps)
 
+print("Computing Vhh")
+a.computeVhh(k, subbasis)
 
 # Build the full matrix up to cutoff ET
 b = phi4.Phi4(m,L)
@@ -130,4 +143,5 @@ checkMatrix(a.VLh[k], a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, E
 
 
 print("Checking Vhh")
-checkMatrix(a.VLh[k], a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, ET-tol)
+checkMatrix(a.Vhh[k].M, a.basisH[k], a.basisH[k], b.V[k][4].M, b.basis[k],
+        ET+tol, EL+tol, Vhh=True)

@@ -168,7 +168,7 @@ class Phi4():
         self.DeltaH[k] = DH2lL*scipy.sparse.linalg.inv(DH2ll)*DH2Ll
 
 
-    def computeVhh(self, k, subbasis, Emin, Emax):
+    def computeVhh(self, k, subbasis):
 
         ###############################
         # Generate the high-high matrix
@@ -183,8 +183,8 @@ class Phi4():
 
         self.nops = sum(len(osc) for V in Vlist for osc in V.oscList)
 
-        # This should resum elements in the same coordinate
-        self.Vhh[k] = self.buildMatrix(Vlist, basis, basis, ignoreKeyError=True)*self.L
+        self.Vhh[k] = Matrix(self.basisH[k], self.basisH[k],
+                self.buildMatrix(Vlist, basis, basis, ignoreKeyError=True))*self.L
 
 
     def setCouplings(self, g0, g2, g4):

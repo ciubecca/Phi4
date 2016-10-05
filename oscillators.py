@@ -138,9 +138,10 @@ class Operator():
                         continue
                 else:
                     j = statePos[tuple(newstatevec)]
-                    x *= parityFactors[p][parityList[j]]
-                    data.append(x)
-                    col.append(j)
+
+                x *= parityFactors[p][parityList[j]]
+                data.append(x)
+                col.append(j)
 
                 # datapart[i] *= parityFactors[p][parityList[j]]
                 # col.append(j)
@@ -453,7 +454,8 @@ def V4OperatorsLh(basis, Emax):
 
 def V4Operatorshh(basis):
 
-    nmax = basis.helper.nmax
+    helper = basis.helper
+    nmax = helper.nmax
     Emin = basis.Emin
     Emax = basis.Emax
 
