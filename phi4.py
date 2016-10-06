@@ -125,7 +125,8 @@ class Phi4():
 
     def computeDH2(self, k, subbasis, ET, EL, eps):
 
-        # NOTE "l" denotes a selected low-energy state, while "L" a generic low-energy state
+        # NOTE "l" denotes a selected low-energy state, while "L" a
+        # generic low-energy state
 
         ##############################
         # Generate the low-high matrix
@@ -172,7 +173,6 @@ class Phi4():
 
 
     def computeVhh(self, k, subbasis):
-
         ###############################
         # Generate the high-high matrix
         ###############################

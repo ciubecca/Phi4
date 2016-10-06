@@ -10,12 +10,14 @@ import bisect
 
 tol = 10**(-10)
 
-def gendlists(state, nd):
+def gendlists(state, nd, ntot, nmax):
     x = list(itertools.chain.from_iterable([[n]*Zn for n,Zn in state]))
-    # TODO This can be sped up with the 4-SUM algorithm
-    if nd==4:
-        ret = set(tuple(y) for y in combinations(x,nd))
+    ret = set(tuple(y) for y in combinations(x,nd))
+    # TODO This can be sped up with the n-SUM algorithm
+    if nd==ntot:
         return set(dlist for dlist in ret if sum(dlist)==0)
+    else if nd==ntot-1:
+        return set(dlist for dlist in ret if abs(sum(dlist))<=nmax)
     else:
         ret = set(tuple(y) for y in combinations(x,nd))
         return ret
@@ -452,6 +454,86 @@ def V4OperatorsLh(basis, Emax):
 
 
 def V4Operatorshh(basis):
+
+    helper = basis.helper
+    nmax = helper.nmax
+    Emin = basis.Emin
+    Emax = basis.Emax
+
+    dlist = ()
+    V40 = [(dlist, [])]
+    for k1 in range(-nmax,nmax+1):
+        for k2 in range(k1,nmax+1):
+            # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
+            for k3 in range(max(-nmax-k1-k2,k2),
+                    min(int(floor((-k1-k2)/2)),nmax)+1):
+
+                k4 = -k1-k2-k3
+                clist = (k1,k2,k3,k4)
+
+                if helper.oscEnergy(clist) <= Emax-Emin+tol:
+                    V40[-1][1].append(clist)
+
+    V40 = Operator(V40, 0, 4, helper)
+
+
+    V31 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 1))
+
+    for dlist in dlists:
+        k1 = dlist[0]
+        V31.append((dlist,[]))
+
+        for k2 in range(-nmax,nmax+1):
+            for k3 in range(max(-nmax+k1-k2,k2),
+                           min(int(floor((k1-k2)/2)),nmax)+1):
+
+                k4 = k1-k2-k3
+                clist = (k2,k3,k4)
+
+                if helper.oscEnergy(clist) <= Emax+tol:
+                    V31[-1][1].append(clist)
+
+    V31 = Operator(V31, 1, 3, helper)
+
+
+    V22 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 2))
+
+    for dlist in dlists:
+        k1,k2 = dlist
+        V22.append((dlist,[]))
+
+        for k3 in range(max(-nmax+k1+k2,-nmax),
+                min(int(floor((k1+k2)/2)),nmax)+1):
+
+            k4 = k1+k2-k3
+            clist = (k3,k4)
+
+            # NOTE The check on dlist is useless here but it's needed
+            # if we generalize the code to other operators
+            if helper.oscEnergy(clist) <= Emax+tol and\
+                sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
+                # only consider lexicographically ordered part of V22
+                # but also including diagonal part which will be separated below
+
+                V22[-1][1].append(clist)
+
+
+    V22 = Operator(V22, 2, 2, helper)
+
+    return V40, V31, V22
+
+
+
+
+def V6Operatorshh(basis):
 
     helper = basis.helper
     nmax = helper.nmax

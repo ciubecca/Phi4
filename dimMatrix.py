@@ -4,6 +4,7 @@ import phi4
 import sys
 import math
 import scipy
+import time
 from statefuncs import *
 
 k = 1
@@ -11,33 +12,35 @@ m = 1.
 
 argv = sys.argv
 
-args = "<L> <Emax> <Ebarmax>"
+args = "<L> <ET> <ELmax>"
 if len(argv) < 4:
     print("python", argv[0], args)
     sys.exit(-1)
 
 L = float(argv[1])
-Emax = float(argv[2])
-Ebarmax = float(argv[3])
+ET = float(argv[2])
+ELmax = float(argv[3])
 
-Ebarlist = scipy.linspace(Emax+1, Ebarmax, int(Ebarmax-Emax))
+ELlist = scipy.linspace(ET+1, ELmax, int(ELmax-ET))
 
-print(Ebarlist)
+print(ELlist)
 
 a = phi4.Phi4(m,L)
-a.buildBasis(Emax=Emax)
-a.buildMatrix(k)
+a.buildBasis(Emax=ET)
 
+subbasis = Basis(k, a.basis[k].stateList[:50], a.basis[k].helper)
 
-nmax =  a.helper.nmax
+print("{Ebar, len(a.VHH[k].M.data), a.nops, a.basisH[k].size, time}")
 
-subbasis = Basis(k, a.basis[k].stateList[:50], a.helper)
+for EL in ELlist:
 
+    a.genHEBasis(k, subbasis, ET, EL)
 
-for Ebar in Ebarlist:
-
-    a.computeVHH(k, subbasis, Emax, Ebar)
+    start = time.time()
+    a.computeVhh(k, subbasis)
+    end = time.time()
 
     # print("HE basis size", a.basisH[k].size)
 
-    print("{",Ebar,",", len(a.VHH[k].M.data),",",a.nops,",",a.basisH[k].size,"},")
+    print("{",EL,",", len(a.Vhh[k].M.data),",",a.nops,",",a.basisH[k].size,",",
+            end-start,"},")
