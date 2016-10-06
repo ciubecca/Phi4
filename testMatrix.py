@@ -70,7 +70,7 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, V
                     print(Vfull[I,J], Vred[i,j])
                     print(vi, vJ)
                     print("Energies:", helper.energy(vi), helper.energy(vJ))
-                    # raise ValueError
+                    raise ValueError
 
                 # Count the number of non-zero entries
                 nnz += 1

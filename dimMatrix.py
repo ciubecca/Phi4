@@ -4,7 +4,7 @@ import phi4
 import sys
 import math
 import scipy
-import time
+from time import process_time
 from statefuncs import *
 
 k = 1
@@ -37,9 +37,9 @@ for EL in ELlist:
 
     a.genHEBasis(k, subbasis, ET, EL)
 
-    start = time.time()
+    start = process_time()
     a.computeVhh(k, subbasis)
-    end = time.time()
+    end = process_time()
 
     # print("HE basis size", a.basisH[k].size)
 

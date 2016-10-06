@@ -107,7 +107,7 @@ class Phi4():
         idM = scipy.sparse.eye(basis.size)
         self.V[k][0] = Matrix(basis, basis, idM)*self.L
 
-
+    # @profile
     def genHEBasis(self, k, subbasis, ET, EL):
         Vlist = V4Operatorshl(subbasis, EL)
         vectorset = set()
@@ -122,7 +122,7 @@ class Phi4():
 
         self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
-
+    # @profile
     def computeDH2(self, k, subbasis, ET, EL, eps):
 
         # NOTE "l" denotes a selected low-energy state, while "L" a
@@ -171,7 +171,7 @@ class Phi4():
 
         self.DeltaH[k] = DH2lL*scipy.sparse.linalg.inv(DH2ll)*DH2Ll
 
-
+    # @profile
     def computeVhh(self, k, subbasis):
         ###############################
         # Generate the high-high matrix
@@ -179,7 +179,8 @@ class Phi4():
         basis = self.basisH[k]
         lookupbasis = self.basisH[k]
 
-        Vlist = V4Operatorshh(basis)
+        # Vlist = V4Operatorshh(basis)
+        Vlist = V4OperatorshhAlternative(basis)
 
         # print("number of operators:",
                 # sum(len(osc) for V in Vlist for osc in V.oscList))

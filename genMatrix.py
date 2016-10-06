@@ -49,8 +49,11 @@ a.genHEBasis(k, subbasis, ET, EL)
 print("HE basis size", a.basisH[k].size)
 
 eps = -1
+
+print("Generating DH2")
 a.computeDH2(k, subbasis, ET, EL, eps)
 
-# a.computeVHH(k, subbasis, Emax, Ebar)
+print("Generating DH3")
+a.computeVhh(k, subbasis)
 
 # a.saveMatrix(k=k, Emax=Emax)
