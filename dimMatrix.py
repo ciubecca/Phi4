@@ -12,16 +12,17 @@ m = 1.
 
 argv = sys.argv
 
-args = "<L> <ET> <ELmax>"
-if len(argv) < 4:
+args = "<L> <ET> <ELmin> <ELmax>"
+if len(argv) < 5:
     print("python", argv[0], args)
     sys.exit(-1)
 
 L = float(argv[1])
 ET = float(argv[2])
-ELmax = float(argv[3])
+ELmin = float(argv[3])
+ELmax = float(argv[4])
 
-ELlist = scipy.linspace(ET+1, ELmax, int(ELmax-ET))
+ELlist = scipy.linspace(ELmin, ELmax, int(ELmax-ELmin+1))
 
 print(ELlist)
 

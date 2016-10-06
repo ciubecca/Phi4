@@ -16,10 +16,9 @@ def gendlists(state, nd, ntot, nmax):
     # TODO This can be sped up with the n-SUM algorithm
     if nd==ntot:
         return set(dlist for dlist in ret if sum(dlist)==0)
-    else if nd==ntot-1:
+    elif nd==ntot-1:
         return set(dlist for dlist in ret if abs(sum(dlist))<=nmax)
     else:
-        ret = set(tuple(y) for y in combinations(x,nd))
         return ret
 
 def bose(x):
@@ -104,7 +103,7 @@ class Operator():
         normFactors = helper.normFactors
 
         # cycle over all the sets of momenta that can be annihilated
-        for dlist in gendlists(state, self.nd):
+        for dlist in gendlists(state, self.nd, self.nd+self.nc, lookupbasis.helper.nmax):
 
             try:
                 k = self.dlistPos[dlist]
@@ -165,7 +164,7 @@ class Operator():
             statevec = self.helper.torepr2(state)
             e = basis.energyList[i]
 
-            for dlist in gendlists(state, self.nd):
+            for dlist in gendlists(state, self.nd, self.nd+self.nc, nmax):
                 k = self.dlistPos[dlist]
 
                 imin = bisect.bisect_left(self.oscEnergies[k], ET-e+tol)
@@ -324,7 +323,7 @@ def V4Operatorshl(basis, EL):
 
     dlists = set()
     for state in basis.stateList:
-        dlists.update(gendlists(state, 1))
+        dlists.update(gendlists(state, 1, 4, nmax))
 
     for dlist in dlists:
         k1 = dlist[0]
@@ -348,7 +347,7 @@ def V4Operatorshl(basis, EL):
 
     dlists = set()
     for state in basis.stateList:
-        dlists.update(gendlists(state, 2))
+        dlists.update(gendlists(state, 2, 4, nmax))
 
     for dlist in dlists:
         (k1,k2) = dlist
@@ -394,7 +393,7 @@ def V4OperatorsLh(basis, Emax):
     dlists = set()
     for state in basis.stateList:
     # This has to be implemented differently
-        dlists.update(gendlists(state, 4))
+        dlists.update(gendlists(state, 4, 4, nmax))
 
     for dlist in dlists:
         V04.append((dlist,[()]))
@@ -406,7 +405,7 @@ def V4OperatorsLh(basis, Emax):
 
     dlists = set()
     for state in basis.stateList:
-        dlists.update(gendlists(state, 3))
+        dlists.update(gendlists(state, 3, 4, nmax))
 
     for dlist in dlists:
         k1, k2, k3 = dlist
@@ -415,10 +414,11 @@ def V4OperatorsLh(basis, Emax):
         clist = (k4,)
 
         # This can be improved
-        if -nmax <= k4 <= nmax:
-            V13.append((dlist,[clist]))
-        else:
-            V13.append((dlist,[]))
+        # if -nmax <= k4 <= nmax:
+            # V13.append((dlist,[clist]))
+        # else:
+            # V13.append((dlist,[]))
+        V13.append((dlist,[clist]))
 
     V13 = Operator(V13, 3, 1, helper)
 
@@ -427,7 +427,7 @@ def V4OperatorsLh(basis, Emax):
 
     dlists = set()
     for state in basis.stateList:
-        dlists.update(gendlists(state, 2))
+        dlists.update(gendlists(state, 2, 4, nmax))
 
     for dlist in dlists:
         (k1,k2) = dlist
@@ -481,7 +481,7 @@ def V4Operatorshh(basis):
 
     dlists = set()
     for state in basis.stateList:
-        dlists.update(gendlists(state, 1))
+        dlists.update(gendlists(state, 1, 4, nmax))
 
     for dlist in dlists:
         k1 = dlist[0]
@@ -504,7 +504,7 @@ def V4Operatorshh(basis):
 
     dlists = set()
     for state in basis.stateList:
-        dlists.update(gendlists(state, 2))
+        dlists.update(gendlists(state, 2, 4, nmax))
 
     for dlist in dlists:
         k1,k2 = dlist
@@ -532,7 +532,7 @@ def V4Operatorshh(basis):
 
 
 
-
+# TODO
 def V6Operatorshh(basis):
 
     helper = basis.helper
@@ -561,7 +561,7 @@ def V6Operatorshh(basis):
 
     dlists = set()
     for state in basis.stateList:
-        dlists.update(gendlists(state, 1))
+        dlists.update(gendlists(state, 1, 6, nmax))
 
     for dlist in dlists:
         k1 = dlist[0]
