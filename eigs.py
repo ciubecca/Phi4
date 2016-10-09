@@ -14,18 +14,19 @@ neigs = 10
 argv = sys.argv
 
 if len(argv) < 5:
-    print(argv[0], " <L> <ET> <EL> <g>")
+    print(argv[0], " <L> <g> <ET> <EL>")
     sys.exit(-1)
 
 L = float(argv[1])
-ET = float(argv[2])
-EL = float(argv[3])
-g = float(argv[4])
+g = float(argv[2])
+ET = float(argv[3])
+EL = float(argv[4])
 
 if saveondb:
     db = database.Database()
 
 a = phi4.Phi4(m, L)
+a.buildBasis(Emax=ET)
 
 
 for k in klist:
@@ -40,7 +41,6 @@ for k in klist:
             print("Eigenvalues already present")
             continue
 
-    a.buildBasis(Emax=ET)
     print("Basis size: ", a.basis[k].size)
 
     # try:
@@ -70,18 +70,17 @@ for k in klist:
     a.genHEBasis(k, basisl, ET, EL)
 
     print("Computing DeltaH...")
-    a.computeDeltaH(k, ET, EL, eps)
+    a.computeHEVs(k, ET, EL)
 
-    a.computeEigval(k, ET, "ren", neigs=10)
+    a.computeEigval(k, ET, "ren", EL, eps, neigs=10)
     print("Renormalized vacuum:", a.vacuumE("ren"))
 
-    for ren in ("raw","ren"):
-        if saveondb:
-            # If Emaxbar == Emax it means there are no tails
-            db.insert(k=k, ET=ET, EL=EL, L=L, ren=ren, g=g,
-                    spec=a.eigenvalues[ren][k], eigv=a.eigenvectors[ren][k],
-                    basisSize=a.compSize[k], neigs=neigs)
-        else:
-            # print(a.eigenvalues[ren][k])
-            pass
+    if saveondb:
+        # If Emaxbar == Emax it means there are no tails
+        db.insert(k=k, ET=ET, EL=EL, L=L, ren="raw", g=g,
+                spec=a.eigenvalues["raw"][k], eigv=a.eigenvectors["raw"][k],
+                basisSize=a.compSize[k], neigs=neigs)
+        db.insert(k=k, ET=ET, EL=EL, L=L, ren="ren", g=g,
+                spec=a.eigenvalues["ren"][k], eigv=a.eigenvectors["ren"][k],
+                basisSize=a.compSize[k], neigs=neigs, ntails=ntails)
 

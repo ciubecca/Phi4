@@ -44,7 +44,7 @@ class Phi4():
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
 
-    def buildMatrix(self, Vlist, basis, lookupbasis, ignoreKeyError=False):
+    def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False):
         """
         Compute a potential matrix from the operators in Vlist
         between two bases
@@ -71,7 +71,7 @@ class Phi4():
             for i in range(basis.size):
                 colpart, datapart = \
                     V.computeMatrixElements(basis,i,lookupbasis,
-                            statePos=statePos, helper=helper, ignoreKeyError=ignoreKeyError)
+                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
                 data += datapart
                 col += colpart
                 row += [i]*len(colpart)
@@ -100,24 +100,27 @@ class Phi4():
         self.h0[k] = Matrix(basis, basis,
                 scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size))
 
-        Vlist = {2:V2Operators(basis), 4:V4Operators(basis)}
+        Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
-            self.V[k][n] = Matrix(basis,basis,self.buildMatrix(Vlist[n], basis, basis))*self.L
+            self.V[k][n] = Matrix(basis,basis,
+                    self.buildMatrix(Vlist[n], basis, basis))*self.L
 
         # Construct the identity potential matrix
         idM = scipy.sparse.eye(basis.size)
         self.V[k][0] = Matrix(basis, basis, idM)*self.L
 
     # @profile
-    def genHEBasis(self, k, basisl, ET, EL):
+    def genHEBasis(self, k, basisl, EL):
 
         self.basisl[k] = basisl
 
-        Vlist = V4Operatorshl(basisl, EL)
+        # Generate all the operators between the selected states and the states
+        # between in the range [0, EL]
+        Vlist = V4OpsSelectedFull(basisl, EL)
         vectorset = set()
 
         for V in Vlist:
-            for v in V.genBasis(basisl, ET, EL):
+            for v in V.genBasis(basisl, EL):
                 if v not in vectorset and v[::-1] not in vectorset:
                     vectorset.add(v)
 
@@ -126,7 +129,7 @@ class Phi4():
         self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
     # @profile
-    def computeDH(self, k, ET, EL, EL3=None):
+    def computeHEVs(self, k, EL, EL3=None):
         # NOTE "l" denotes a selected low-energy state, while "L" a
         # generic low-energy state
 
@@ -134,44 +137,48 @@ class Phi4():
         if EL3 == None:
             EL3 = EL
 
-        ##############################
-        # Generate the low-high matrix
-        ##############################
+
+        # NOTE Notation:
+        # SL : Selected Low
+        # SH : Selected High
+        # FL : Full Low
+
+        #################################
+        # Generate the SL-SH matrix
+        #################################
         basis = self.basisl[k]
         lookupbasis = self.basisH[k]
 
-        Vlist = V4Operatorshl(basis, EL)
+        Vlist = V4OpsSelectedFull(basis, EL)
 
         self.Vhl[k] = Matrix(basis, lookupbasis,
                 self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
         ##############################
-        # Generate the high-low matrix
+        # Generate the SH-FL matrix
         ##############################
         basis = self.basisH[k]
         lookupbasis = self.basis[k]
 
-        Vlist = V4OperatorsLh(basis, ET)
+        Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
 
         self.VLh[k] = Matrix(basis, lookupbasis,
                 self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
-        ###############################
-        # Generate the high-high matrix
-        ###############################
+        ##############################
+        # Generate the SH-SH matrix
+        ##############################
         basis = self.basisH[k]
 
-        Vlist = V4Operatorshh(basis)
+        Vlist = V4OpsSelectedHalf(basis)
 
         self.Vhh[k] = Matrix(basis, basis,
-                self.buildMatrix(Vlist, basis, basis, ignoreKeyError=True))*self.L
+                self.buildMatrix(Vlist, basis, basis, ignKeyErr=True)*self.L)
 
 
     def computeDeltaH(self, k, ET, EL, eps):
-
-        self.computeDH(k, ET, EL)
 
         helper = self.basisH[k].helper
 
@@ -180,7 +187,9 @@ class Phi4():
 
         # Subset of the selected low energy states
         subbasisl = self.basisl[k].sub(lambda v: helper.energy(v)<=ET)
+        self.ntails = subbasisl.size
 
+        # Subset of the selected high energy states
         subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=EL)
 
         #############################
@@ -229,7 +238,9 @@ class Phi4():
         # print(DH2lL.shape, DH2ll.shape, DH2Ll.shape)
         # print(scipy.sparse.linalg.inv(DH2ll).shape)
 
-        self.DeltaH[k] = DH2lL*(DH2ll-DH3ll).inverse()*DH2Ll
+        return DH2lL*(DH2ll-DH3ll).inverse()*DH2Ll
+
+
 
 
     def setCouplings(self, g0, g2, g4):
@@ -241,19 +252,21 @@ class Phi4():
 
 
 
-    def computeEigval(self, k, ET, ren, neigs=10):
+    def computeEigval(self, k, ET, ren, EL=None, eps=None, neigs=10):
 
         # Subset of low energy states
         helper = self.basis[k].helper
 
         subbasisL = self.basis[k].sub(lambda v: helper.energy(v)<=ET)
+        self.subbasisL = subbasisL
 
         Hraw = (self.h0[k] + self.g4*self.V[k][4]).sub(subbasisL, subbasisL)
 
         if ren=="raw":
             compH = Hraw.M
         elif ren=="ren":
-            compH = (Hraw + self.DeltaH[k]).M
+            DeltaH = self.computeDeltaH(k, ET, EL, eps)
+            compH = (Hraw + DeltaH).M
 
         self.compSize = compH.shape[0]
 

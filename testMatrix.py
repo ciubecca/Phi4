@@ -9,21 +9,13 @@ from statefuncs import *
 
 k = +1
 m = 1.
+g = .1
 
 
-# vset = [
-# [(0, 1)], [(0,3)]
-# ]
-
-vset = [
-[],
-[(-1, 1), (1, 1)],
-[(-1, 1), (0, 2), (1, 1)],
-[(-2, 1), (-1, 1), (1, 1), (2, 1)]
-]
+minoverlap = 10**-3
 
 
-def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, Vhh=False):
+def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emax, Vhh=False):
 
     Vred = matrix.todok()
     Vfull = fullmatrix.todok()
@@ -54,7 +46,7 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, V
 
             # The matrix entry is not null. Therefore we can compare with the reduced
             # matrix
-            if Emin<helper.energy(vJ)<=Emax and Vfull[I,J] != 0:
+            if helper.energy(vJ)<=Emax and Vfull[I,J] != 0:
 
                 try:
                     j = statePosRed[stateListFull[J]]
@@ -111,13 +103,16 @@ a.buildBasis(Emax=ET)
 
 a.computePotential(k)
 
+a.setCouplings(0,0,g)
+a.computeEigval(k, ET, "raw")
 
+vectorlist = [state for i,state in enumerate(a.basis[k])
+        if a.eigenvectors["raw"][1][0][i] > minoverlap]
+print(sorted(occn(state) for state in vectorlist))
+basisl = Basis(k, vectorlist, a.basis[k].helper)
+print("subbasis size:", basisl.size)
 
-# Build the reduced matrices VLh, Vhl
-subbasis = Basis(k, vset, a.basis[k].helper)
-print("subbasis size:", subbasis.size)
-
-a.genHEBasis(k, subbasis, ET, EL)
+a.genHEBasis(k, basisl, EL)
 print("HE basis size", a.basisH[k].size)
 
 # Check that the total momentum of the states is 0
@@ -128,12 +123,9 @@ for v in a.basisH[k]:
 
 print("Emin, Emax = ", a.basisH[k].Emin, a.basisH[k].Emax)
 
-eps = -1
-print("Computing DeltaH")
-a.computeDH2(k, subbasis, ET, EL, eps)
+print("Computing HE matrices")
+a.computeHEVs(k, EL)
 
-print("Computing Vhh")
-a.computeVhh(k, subbasis)
 
 # Build the full matrix up to cutoff ET
 b = phi4.Phi4(m,L)
@@ -145,12 +137,11 @@ b.computePotential(k)
 tol = 10**-10
 
 print("Checking Vhl")
-checkMatrix(a.Vhl[k], subbasis, a.basisH[k], b.V[k][4].M, b.basis[k], ET, EL)
+checkMatrix(a.Vhl[k].M, basisl, a.basisH[k], b.V[k][4].M, b.basis[k], EL)
 
 print("Checking VLh")
-checkMatrix(a.VLh[k], a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, ET+tol)
+checkMatrix(a.VLh[k].M, a.basisH[k], a.basis[k], b.V[k][4].M, b.basis[k], ET+tol)
 
 
 print("Checking Vhh")
-checkMatrix(a.Vhh[k].M, a.basisH[k], a.basisH[k], b.V[k][4].M, b.basis[k],
-        ET+tol, EL+tol, Vhh=True)
+checkMatrix(a.Vhh[k].M, a.basisH[k], a.basisH[k], b.V[k][4].M, b.basis[k], EL+tol, Vhh=True)

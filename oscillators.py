@@ -85,8 +85,7 @@ class Operator():
                     for clist in clists])
 
     # @profile
-    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
-                            ignoreKeyError=False):
+    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, ignKeyErr=False):
         # List of columns indices of generated basis elements
         col = []
         # List of partial matrix elements
@@ -136,7 +135,7 @@ class Operator():
                     x *= normFactors[Zc, Zd, statevec[n+nmax]]
 
                 # This is in case the lookup basis is "selected"
-                if ignoreKeyError:
+                if ignKeyErr:
                     try:
                         j = statePos[tuple(newstatevec)]
                     except KeyError:
@@ -154,7 +153,7 @@ class Operator():
 
     # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
     # as Hh = V*Hl
-    def genBasis(self, basis, ET, EL):
+    def genBasis(self, basis, EL):
 
         nmax = self.helper.nmax
         stateset = set()
@@ -167,12 +166,9 @@ class Operator():
             for dlist in gendlists(state, self.nd, self.nd+self.nc, nmax):
                 k = self.dlistPos[dlist]
 
-                imin = bisect.bisect_left(self.oscEnergies[k], ET-e+tol)
                 imax = bisect.bisect_left(self.oscEnergies[k], EL-e+tol)
-                if imax <= imin:
-                    continue
 
-                for i, osc in enumerate(self.oscList[k][imin:imax]):
+                for i, osc in enumerate(self.oscList[k][:imax]):
                     newstatevec = statevec[:]
                     for n,Zc,Zd in osc:
                         newstatevec[n+nmax] += Zc-Zd
@@ -185,7 +181,7 @@ class Operator():
 
 
 
-def V4Operators(basis):
+def V4OpsHalf(basis):
 
     nmax = basis.nmax
     Emax = basis.Emax
@@ -257,7 +253,7 @@ def V4Operators(basis):
 
 
 
-def V2Operators(basis):
+def V2OpsHalf(basis):
     """
     basis: set of states on which the operators act
     """
@@ -294,14 +290,19 @@ def V2Operators(basis):
     return V20, V11
 
 
-def V4Operatorshl(basis, EL):
+# Oscillators between the selected states in basis and all the states in the range [0,Emax]
+def V4OpsSelectedFull(basis, Emax):
     """
     basis: set of states on which the operators act
-    EL: maximal energy of the states corresponding to column indices of the matrix
+    Emax: maximal energy of the states corresponding to column indices of the matrix
     """
-    helper = Helper(basis.helper.m, basis.helper.L, EL)
+
+    helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
     nmax = helper.nmax
 
+    #############
+    # a^ a^ a^ a^
+    #############
     dlist = ()
     V40 = [(dlist, [])]
     for k1 in range(-nmax,nmax+1):
@@ -313,12 +314,14 @@ def V4Operatorshl(basis, EL):
                 k4 = -k1-k2-k3
                 clist = (k1,k2,k3,k4)
 
-                if helper.oscEnergy(clist) <= EL+tol:
+                if helper.oscEnergy(clist) <= Emax+tol:
                     V40[-1][1].append(clist)
 
     V40 = Operator(V40, 0, 4, helper)
 
-
+    #############
+    # a^ a^ a^ a
+    #############
     V31 = []
 
     dlists = set()
@@ -336,13 +339,14 @@ def V4Operatorshl(basis, EL):
                 k4 = k1-k2-k3
                 clist = (k2,k3,k4)
 
-                if helper.oscEnergy(clist) <= EL+tol\
-                    and helper.oscEnergy(clist) > helper.oscEnergy(dlist):
-                    # We always want to increase the energy
+                if helper.oscEnergy(clist) <= Emax+tol:
                     V31[-1][1].append(clist)
 
     V31 = Operator(V31, 1, 3, helper)
 
+    #############
+    # a^ a^ a a
+    #############
     V22 = []
 
     dlists = set()
@@ -359,35 +363,35 @@ def V4Operatorshl(basis, EL):
             k4 = k1+k2-k3
             clist = (k3,k4)
 
-            # We always want to increase the energy
-            if helper.oscEnergy(clist) > helper.oscEnergy(dlist) and\
-                    helper.oscEnergy(clist) <= EL+tol:
-
+            if helper.oscEnergy(clist) <= Emax+tol:
                 V22[-1][1].append(clist)
-
 
     V22 = Operator(V22, 2, 2, helper)
 
 
-    # NOTE V13 and V04 cannot increase the energy
+    #############
+    # a^ a a a
+    #############
+    V13 = []
 
-    return V40, V31, V22
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 3, 4, nmax))
+
+    for dlist in dlists:
+        k1, k2, k3 = dlist
+
+        k4 = k1+k2+k3
+        clist = (k4,)
+
+        V13.append((dlist,[clist]))
+
+    V13 = Operator(V13, 3, 1, helper)
 
 
-# Generate all the oscillators between the "selected" high-energy basis and the
-# low-energy basis
-def V4OperatorsLh(basis, Emax):
-    """
-    basis: set of states on which the operators act
-    Emax: maximal energy of the states corresponding to columns indices of the matrix
-    """
-
-    # These two lines of code are just used to compute nmax of the creation operators
-    helper = Helper(basis.helper.m, basis.helper.L, Emax)
-    nmax = helper.nmax
-
-    helper = basis.helper
-
+    ############
+    # a a a a
+    ###########
     V04 = []
 
     dlists = set()
@@ -401,76 +405,22 @@ def V4OperatorsLh(basis, Emax):
     V04 = Operator(V04, 4, 0, helper)
 
 
-    V13 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 3, 4, nmax))
-
-    for dlist in dlists:
-        k1, k2, k3 = dlist
-
-        k4 = k1+k2+k3
-        clist = (k4,)
-
-        # This can be improved
-        # if -nmax <= k4 <= nmax:
-            # V13.append((dlist,[clist]))
-        # else:
-            # V13.append((dlist,[]))
-        V13.append((dlist,[clist]))
-
-    V13 = Operator(V13, 3, 1, helper)
-
-
-    V22 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 2, 4, nmax))
-
-    for dlist in dlists:
-        (k1,k2) = dlist
-        V22.append((dlist,[]))
-
-        for k3 in range(max(-nmax+k1+k2,-nmax),
-                min(int(floor((k1+k2)/2)),nmax)+1):
-
-            k4 = k1+k2-k3
-            clist = (k3,k4)
-
-            # We always want to decrease the energy
-            if helper.oscEnergy(clist) <= helper.oscEnergy(dlist) and\
-                    helper.oscEnergy(clist) <= Emax+tol:
-
-                V22[-1][1].append(clist)
-
-
-    V22 = Operator(V22, 2, 2, helper)
-
-    # NOTE V31 and V40 cannot increase the energy
-
-    return V04, V13, V22
+    return V40, V31, V22, V13, V04
 
 
 
-# Generate all the oscillators between the "selected" high-energy basis and the
-# "selected" high-energy basis
+# Generate all the oscillators in between the "selected" basis
 # NOTE it uses the annihilation part of the operator (it should be more efficient
 # than using the creation part)
-# @profile
-def V4Operatorshh(basis):
+def V4OpsSelectedHalf(basis):
     """
     basis: set of states on which the operators act
-    Emax: maximal energy of the states corresponding to columns indices of the matrix
     """
 
     helper = basis.helper
     nmax = helper.nmax
     Emax = basis.Emax
-    Emin = basis.Emin
     oscEnergy = helper.oscEnergy
-
 
     V04 = []
 
@@ -497,12 +447,6 @@ def V4Operatorshh(basis):
         k4 = k1+k2+k3
         clist = (k4,)
 
-        # This can be improved
-        # if -nmax <= k4 <= nmax:
-            # V13.append((dlist,[clist]))
-        # else:
-            # V13.append((dlist,[]))
-
         # TODO Some of these elements can be excluded
         V13.append((dlist,[clist]))
 
@@ -525,7 +469,7 @@ def V4Operatorshh(basis):
             k4 = k1+k2-k3
             clist = (k3,k4)
 
-            if abs(oscEnergy(clist)-oscEnergy(dlist)) <= Emax-Emin + tol \
+            if oscEnergy(clist) <= Emax + tol \
                 and sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
                 V22[-1][1].append(clist)
 
@@ -542,7 +486,7 @@ def V4Operatorshh(basis):
 # Generate all the oscillators between the "selected" low-energy states
 # NOTE it uses the annihilation part of the operator (it should be more efficient
 # than using the creation part)
-def V6Operatorsll(basis):
+def V6OpsSelectedHalf(basis):
     """
     basis: set of states on which the operators act
     Emax: maximal energy of the states corresponding to columns indices of the matrix

@@ -1,4 +1,4 @@
-import finiteVolH
+import statefuncs
 import phi4
 import renorm
 import sys
@@ -6,96 +6,86 @@ import scipy
 import math
 import database
 
-addTails = True
 saveondb = False
-json = False
+m = 1
+neigs = 10
+klist = (1,)
+minoverlap = 10**(-2)
 
-# Hardcoded parameters
-m = 1.
-Emin = 5
-Elim = 20
-sigma = -30.
-neigs = 1
-k = 1
+argv = sys.argv
+if len(argv) < 6:
+    print(argv[0], "<L> <g> <ETmin> <ETmax> <EL-ET>")
+    sys.exit(-1)
 
-def main(argv):
-    if len(argv) < 5:
-        print(argv[0], "<L> <Emaxbar> <g> <k> <occmax>")
-        return -1
+L = float(argv[1])
+g = float(argv[2])
+ETmin = float(argv[3])
+ETmax = float(argv[4])
+ELETdiff = float(argv[5])
 
-    L = float(argv[1])
-    Emaxbar = float(argv[2])
-    g = float(argv[3])
-    k = int(argv[4])
-    try:
-        occmax = int(argv[5])
-    except IndexError:
-        occmax = None
-    print("occmax:", occmax)
+ETlist = scipy.linspace(ETmin, ETmax, ETmax-ETmin+1)
+print("ETlist:", ETlist)
 
-    Elist = scipy.linspace(Emin, Elim, Elim-Emin+1)
-    print("Elist:", Elist)
-    print("addTails:", addTails)
-    print("saveondb:", saveondb)
+if saveondb:
+    db = database.Database()
 
-    if saveondb:
-        if json == False:
-            db = database.Database()
-        else:
-            db = database.Database(dbname="spectraJson.db", useJson=True)
+a = phi4.Phi4(m, L)
+a.buildBasis(Emax=ETmax)
 
-    a = phi4.Phi4()
-    a.buildBasis(Emax=Emaxbar, L=L, m=m, k=k, occmax=occmax)
-    print("Basis size: ", a.basis[k].size)
+a.setCouplings(0,0,g)
 
-    try:
-        a.loadMatrix(L=L, Emax=Emaxbar, k=k, occmax=occmax)
-        print("matrix loaded")
-    except FileNotFoundError:
-        print("building matrix...")
-        a.buildMatrix(k=k)
+for k in klist:
 
-    a.setCouplings(0, 0, g)
-    # b = finiteVolH.FiniteVolH(a.L, m)
-    # g0, g2, g4 = b.directCouplings(g)
+    a.computePotential(k)
 
-    for Emax in Elist:
-        print("Emax: ", Emax)
+    print("k=", k)
+    print("Full basis size: ", a.basis[k].size)
 
-        if addTails:
-            cutoff = Emaxbar
-        else:
-            cutoff = Emax
+
+    print("Computing raw eigenvalues for highest cutoff")
+    a.computeEigval(k, ETmax, "raw", neigs=neigs)
+    eps = a.vacuumE("raw")
+
+    vectorlist = [state for i,state in enumerate(a.basis[k])
+        if a.eigenvectors["raw"][1][0][i] > minoverlap]
+    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
+    print("Total number of tails:", basisl.size)
+
+    ELmax = ETmax + ELETdiff
+
+    print("Generating high energy basis...")
+    a.genHEBasis(k, basisl, ELmax)
+    print("Size of HE basis:", a.basisH[k].size)
+
+    print("Computing high energy matrices...")
+    a.computeHEVs(k, ELmax)
+
+
+    for i,ET in enumerate(ETlist):
+        EL = ET + ELETdiff
+        print("ET={}, EL={}".format(ET,EL))
 
         if saveondb:
-            approxQuery = {"g":g, "L":L, "Emaxbar":cutoff, "Emax":Emax}
-            exactQuery = {"k":k, "occmax":occmax}
-            if db.getObjList('spec', approxQuery=approxQuery, exactQuery=exactQuery) != []:
+            # Emaxbar == Emax means there are no tails
+            approxQuery = {"g":g, "L":L, "ET":ET, "EL":EL}
+            exactQuery = {"k":k, "ntails":a.ntails}
+            if db.getObjList('spec', approxQuery=approxQuery,
+                    exactQuery=exactQuery) != []:
                 print("Eigenvalues already present")
                 continue
 
-        Er = 0
-        for ren in ("raw","renlocal"):
-            a.renlocal(Emax=cutoff, Er=Er)
-            a.computeHamiltonian(Emax=Emax, k=k, ren=ren, addTails=addTails)
+        a.computeEigval(k, ET, "raw", neigs=neigs)
+        print("Raw vacuum:", a.vacuumE("raw"))
 
-            compsize = a.compH.shape[0]
-            print("Comp basis size: ", a.compH.shape[0])
+        a.computeEigval(k, ET, "ren", EL, eps, neigs=neigs)
+        print("Renormalized vacuum:", a.vacuumE("ren"))
 
-            a.computeEigval(k=k, ren=ren, sigma=sigma, neigs=neigs)
-            Er = a.vacuumE(ren="raw")
+        if saveondb:
+            # If Emaxbar == Emax it means there are no tails
+            db.insert(k=k, ET=ET, EL=EL, L=L, ren="raw", g=g,
+                    spec=a.eigenvalues["raw"][k], eigv=a.eigenvectors["raw"][k],
+                    basisSize=a.compSize[k], neigs=neigs)
+            db.insert(k=k, ET=ET, EL=EL, L=L, ren="ren", g=g,
+                    spec=a.eigenvalues["ren"][k], eigv=a.eigenvectors["ren"][k],
+                    basisSize=a.compSize[k], neigs=neigs, ntails=ntails)
 
-            print("{} vacuum: ".format(ren), a.vacuumE(ren=ren))
-
-            if saveondb:
-                if addTails:
-                    Emaxbardb = Emaxbar
-                else:
-                    Emaxbardb = Emax
-                db.insert(k=k, Emax=Emax, L=a.L, ren=ren, g=g, spec=a.eigenvalues[ren][k],
-                        Emaxbar=cutoff, eigv=a.eigenvectors[ren][k],
-                        occmax=occmax, basisSize=compsize, neigs=neigs)
-
-
-if __name__ == "__main__":
-    main(sys.argv)
