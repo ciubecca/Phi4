@@ -14,9 +14,6 @@ rc('text', usetex=True)
 
 k = 1
 neigs = 10
-ETmin = 10
-ETmax = 15
-ELETdiff = 5
 
 def plotvsE(Elist, ELETdiff):
 
@@ -42,8 +39,8 @@ def plotvsE(Elist, ELETdiff):
 
     linewidth = 1
     dashes = [4,4]
-    marker = None
-    markersize = 1
+    marker = "."
+    markersize = 6
 
     data = E0["raw"]
     plt.plot(Elist, data, linewidth=linewidth, color="b", marker=marker,
@@ -84,7 +81,7 @@ plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L-E_T$={2:.1f}".format(g,L,ELETdiff))
 plt.xlabel(r"$E_{{\rm max}}$")
 plt.ylabel(r"$E_0$")
-plt.legend(loc="lower right")
+plt.legend(loc="upper right")
 
 plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_ELETdiff={2:.1f}.{3}"
         .format(g,L,ELETdiff,output))
