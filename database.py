@@ -12,7 +12,8 @@ class Database():
         self.table = self.db[tablename]
         self.useJson = useJson
 
-    def insert(self, k, L, ET, EL, g, spec, eigv, basisSize, neigs, ren, occmax=None):
+    def insert(self, k, L, ET, g, spec, eigv, basisSize, neigs, ren,
+                EL=None, ntails=None, occmax=None):
 
         if(basisSize*neigs != eigv.size):
             # print(eigv.size)
@@ -25,7 +26,7 @@ class Database():
             self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L,
                 ET=ET, g=g, ren=ren, eigv=json.dumps(eigv.tolist()),
                 EL=EL, spec=json.dumps(spec.tolist()), basisSize=basisSize,
-                neigs=neigs, occmax=occmax))
+                neigs=neigs, ntails=ntails, occmax=occmax))
         else:
             self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, ET=ET, EL=EL,
                 g=g, ren=ren, eigv=eigv.tostring(), spec=spec.tostring(),

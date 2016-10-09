@@ -5,122 +5,89 @@ import math
 from scipy import pi, log, log10, array, sqrt, stats
 from matplotlib import rc
 import database
-import finiteVolH
 
 output = "pdf"
-renlist = ("raw", "renlocal")
+renlist = ("raw", "ren")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-addTails = True
 k = 1
-neigs = 1
-Emin = 5
-Emax = 20
-Emaxbar = None
-occmax = None
-L = None
-g = None
+neigs = 10
+ETmin = 10
+ETmax = 15
+ELETdiff = 5
 
-def main(argv):
-    args = "<L> <Emaxbar> <g> <occmax>"
-    if len(argv) < 4:
-        print("{0} {1}".format(argv[0],args))
-        return -1
-
-    global L
-    global Emaxbar
-    global g
-    global occmax
-
-    L = float(argv[1])
-    Emaxbar = float(argv[2])
-    g = float(argv[3])
-    try:
-        occmax = int(argv[4])
-    except IndexError:
-        occmax = None
-
-    params = {'legend.fontsize': 8}
-    plt.rcParams.update(params)
-
-    Elist = scipy.linspace(Emin, Emax, Emax-Emin+1)
-    print(Elist)
-
-    plotvsE(Elist, tails=True)
-
-    plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    #plt.xlim(min(xList)-0.01, max(xList)+0.01)
-    plt.title(
-      r"$g$={0:.2f}, $L$={1:.2f}, $\bar{{E}}_{{\rm max}}$={2:.2f},$n_{{\rm max}}$={3:d}"
-        .format(g,L,Emaxbar,occmax))
-    plt.xlabel(r"$E_{{\rm max}}$")
-    plt.ylabel(r"$E_0$")
-    plt.legend(loc="lower right")
-
-    if addTails:
-        t = "tails"
-    else:
-        t = ""
-    plt.savefig("figs/fig_E0vsE{0}_g={1:.2f}_L={2:.2f}_nmax={3:d}.{4}"
-            .format(t,g,L,occmax,output))
-
-
-
-def plotvsE(Elist, tails):
+def plotvsE(Elist, ELETdiff):
 
     db = database.Database()
 
-    exactQuery = {"k":k, "occmax":occmax}
+    exactQuery = {"k":k}
     approxQuery = {"g":g, "L":L}
 
     E0 = {}
     for ren in renlist:
         E0[ren] = []
 
-        for Emax in Elist:
-            if tails==True:
-                cutoff = Emaxbar
-            else:
-                cutoff = Emax
-
+        for ET in ETlist:
             exactQuery["ren"] = ren
-            approxQuery["Emax"] = Emax
-            approxQuery["Emaxbar"] = cutoff
+            approxQuery["ET"] = ET
+            if ren=="ren":
+                approxQuery["EL"] = ET+ELETdiff
             E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
 
     # VACUUM ENERGY
     plt.figure(1)
 
-    if tails==True:
-        s = ""
-        linewidth = .8
-        dashes = [4,1]
-        marker = '+'
-        markersize = 4
-    else:
-        s = "o"
-        linewidth = 1
-        dashes = [4,4]
-        marker = None
-        markersize = None
+    linewidth = 1
+    dashes = [4,4]
+    marker = None
+    markersize = 1
 
     data = E0["raw"]
     plt.plot(Elist, data, linewidth=linewidth, color="b", marker=marker,
-            markersize=markersize, dashes = dashes, label="raw w/"+s+" tails")
+            markersize=markersize, dashes = dashes, label="raw")
 
-    if tails:
-        plt.axhline(y=data[-1], color='k')
+    # if tails:
+        # plt.axhline(y=data[-1], color='k')
         # plt.axhline(y=data[-1], xmin=min(Elist), xmax=max(Elist), linewidth=2, color = 'k')
 
-    data = E0["renlocal"]
+    data = E0["ren"]
     plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
-            markersize=markersize, dashes = dashes, label="ren w/"+s+" tails")
+            markersize=markersize, dashes = dashes, label="ren")
 
 
 
+argv = sys.argv
+if len(argv) < 6:
+    print(argv[0], "<L> <g> <ETmin> <ETmax> <EL-ET>")
+    sys.exit(-1)
 
-if __name__ == "__main__":
-    main(sys.argv)
+L = float(argv[1])
+g = float(argv[2])
+ETmin = float(argv[3])
+ETmax = float(argv[4])
+ELETdiff = float(argv[5])
+
+ETlist = scipy.linspace(ETmin, ETmax, ETmax-ETmin+1)
+print("ETlist:", ETlist)
+
+
+params = {'legend.fontsize': 8}
+plt.rcParams.update(params)
+
+plotvsE(ETlist, ELETdiff)
+
+plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+#plt.xlim(min(xList)-0.01, max(xList)+0.01)
+plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L-E_T$={2:.1f}".format(g,L,ELETdiff))
+plt.xlabel(r"$E_{{\rm max}}$")
+plt.ylabel(r"$E_0$")
+plt.legend(loc="lower right")
+
+plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_ELETdiff={2:.1f}.{3}"
+        .format(g,L,ELETdiff,output))
+
+
+

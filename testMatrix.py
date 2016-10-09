@@ -107,7 +107,7 @@ a.setCouplings(0,0,g)
 a.computeEigval(k, ET, "raw")
 
 vectorlist = [state for i,state in enumerate(a.basis[k])
-        if a.eigenvectors["raw"][1][0][i] > minoverlap]
+        if abs(a.eigenvectors["raw"][1][0][i]) > minoverlap]
 print(sorted(occn(state) for state in vectorlist))
 basisl = Basis(k, vectorlist, a.basis[k].helper)
 print("subbasis size:", basisl.size)

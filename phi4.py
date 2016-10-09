@@ -33,9 +33,6 @@ class Phi4():
         self.eigenvalues = {"raw":{}, "ren":{}}
         self.eigenvectors = {"raw":{}, "ren":{}}
 
-        self.compSize = {}
-        # Holds basis sizes used to actually compute the eigenvalues
-
         scipy.set_printoptions(precision=15)
 
 
@@ -220,9 +217,10 @@ class Phi4():
 
         # The first index in deltag denotes the order in V
         # The second index is a tuple denoting the type of local operators
-        DH2Ll = Vhl*propagator*VLh*self.g4**2 \
+        DH2Ll = Vhl*propagator*VLh*self.g4**2. \
                 + deltag[2][0]*VLl[0]+deltag[2][2]*VLl[2]+deltag[2][4]*VLl[4]
         DH2lL = DH2Ll.transpose()
+        # XXX can we take the tails states above ET?
         DH2ll = DH2Ll.sub(subbasisl, subbasisl)
 
         # The first index in deltag denotes the order in V
@@ -238,12 +236,12 @@ class Phi4():
         # print(DH2lL.shape, DH2ll.shape, DH2Ll.shape)
         # print(scipy.sparse.linalg.inv(DH2ll).shape)
 
-        return DH2lL*(DH2ll-DH3ll).inverse()*DH2Ll
+        return DH2lL*((DH2ll-DH3ll).inverse())*DH2Ll
 
 
 
 
-    def setCouplings(self, g0, g2, g4):
+    def setCouplings(self, g0=0, g2=0, g4=0):
         self.g0 = g0
         self.g2 = g2
         self.g4 = g4
