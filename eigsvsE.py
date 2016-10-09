@@ -7,7 +7,7 @@ import math
 import database
 
 addTails = True
-saveondb = True
+saveondb = False
 json = False
 
 # Hardcoded parameters

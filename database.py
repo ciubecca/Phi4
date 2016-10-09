@@ -3,19 +3,19 @@ import json
 import dataset
 import datetime
 
-rentypes = ["raw","renlocal"]
+rentypes = ["raw","ren"]
 
 #FIXME Feature needed: forbid merging json and non-json data
 class Database():
     def __init__(self, dbname="data/spectra.db", tablename="spectra", useJson=False):
         self.db = dataset.connect('sqlite:///'+dbname)
-        self.table=self.db[tablename]
+        self.table = self.db[tablename]
         self.useJson = useJson
 
-    def insert(self, k, L, Emax, g, spec, eigv, basisSize,
-            occmax, neigs, ren, Emaxbar):
+    def insert(self, k, L, ET, EL, g, spec, eigv, basisSize, neigs, ren, occmax=None):
+
         if(basisSize*neigs != eigv.size):
-            print(eigv.size)
+            # print(eigv.size)
             raise ValueError("basisSize, neigs and eigv dimension don't match")
 
         if ren not in rentypes:
@@ -23,12 +23,12 @@ class Database():
 
         if self.useJson==True:
             self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L,
-                Emax=Emax, g=g, ren=ren, eigv=json.dumps(eigv.tolist()),
-                Emaxbar=Emaxbar, spec=json.dumps(spec.tolist()), basisSize=basisSize,
+                ET=ET, g=g, ren=ren, eigv=json.dumps(eigv.tolist()),
+                EL=EL, spec=json.dumps(spec.tolist()), basisSize=basisSize,
                 neigs=neigs, occmax=occmax))
         else:
-            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, Emax=Emax,
-                g=g, ren=ren, eigv=eigv.tostring(), Emaxbar=Emaxbar, spec=spec.tostring(),
+            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, ET=ET, EL=EL,
+                g=g, ren=ren, eigv=eigv.tostring(), spec=spec.tostring(),
                 basisSize=basisSize, neigs=neigs, occmax=occmax))
 
     # Get a list of all objects satisfying the query
@@ -42,7 +42,8 @@ class Database():
                     if self.useJson == True:
                         listRes.append(json.loads(e[obj]))
                     else:
-                        listRes.append(scipy.fromstring(e[obj]).reshape(e['neigs'], e['basisSize']))
+                        listRes.append(
+                                scipy.fromstring(e[obj]).reshape(e['neigs'], e['basisSize']))
                 elif obj=='spec':
                     if self.useJson == True:
                         listRes.append(json.loads(e[obj]))

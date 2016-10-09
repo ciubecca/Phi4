@@ -32,16 +32,6 @@ print("basis size :", a.basis[k].size)
 
 a.computePotential(k)
 
-# vset = [
-# [],
-# [(0, 2)],
-# [(-1, 1), (1, 1)],
-# [(-1, 1), (0, 2), (1, 1)],
-# [(-2, 1), (-1, 1), (1, 1), (2, 1)]
-# ]
-# subbasis = Basis(k, vset, a.helper, gendlist=True)
-
-
 subbasis = Basis(k, a.basis[k].stateList[:50], a.basis[k].helper)
 
 a.genHEBasis(k, subbasis, ET, EL)

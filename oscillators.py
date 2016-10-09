@@ -85,12 +85,13 @@ class Operator():
                     for clist in clists])
 
     # @profile
-    def computeMatrixElements(self, basis, i, lookupbasis, statePos, helper,
-            ignoreKeyError=False):
+    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
+                            ignoreKeyError=False):
         # List of columns indices of generated basis elements
         col = []
         # List of partial matrix elements
         data = []
+
 
         # I define these local variables outside the loops for performance reasons
         e = basis.energyList[i]
@@ -147,10 +148,6 @@ class Operator():
                 data.append(x)
                 col.append(j)
 
-                # datapart[i] *= parityFactors[p][parityList[j]]
-                # col.append(j)
-
-            # data += datapart
 
         return col, data
 
@@ -456,92 +453,13 @@ def V4OperatorsLh(basis, Emax):
     return V04, V13, V22
 
 
-# @profile
-def V4Operatorshh(basis):
-
-    helper = basis.helper
-    nmax = helper.nmax
-    Emin = basis.Emin
-    Emax = basis.Emax
-
-    dlist = ()
-    V40 = [(dlist, [])]
-    for k1 in range(-nmax,nmax+1):
-        for k2 in range(k1,nmax+1):
-            # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
-            for k3 in range(max(-nmax-k1-k2,k2),
-                    min(int(floor((-k1-k2)/2)),nmax)+1):
-
-                k4 = -k1-k2-k3
-                clist = (k1,k2,k3,k4)
-
-                if helper.oscEnergy(clist) <= Emax-Emin+tol:
-                    V40[-1][1].append(clist)
-
-    V40 = Operator(V40, 0, 4, helper)
-
-
-    V31 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 1, 4, nmax))
-
-    for dlist in dlists:
-        k1 = dlist[0]
-        V31.append((dlist,[]))
-
-        for k2 in range(-nmax,nmax+1):
-            for k3 in range(max(-nmax+k1-k2,k2),
-                           min(int(floor((k1-k2)/2)),nmax)+1):
-
-                k4 = k1-k2-k3
-                clist = (k2,k3,k4)
-
-                if helper.oscEnergy(clist) <= Emax+tol:
-                    V31[-1][1].append(clist)
-
-    V31 = Operator(V31, 1, 3, helper)
-
-
-    V22 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 2, 4, nmax))
-
-    for dlist in dlists:
-        k1,k2 = dlist
-        V22.append((dlist,[]))
-
-        for k3 in range(max(-nmax+k1+k2,-nmax),
-                min(int(floor((k1+k2)/2)),nmax)+1):
-
-            k4 = k1+k2-k3
-            clist = (k3,k4)
-
-            # NOTE The check on dlist is useless here but it's needed
-            # if we generalize the code to other operators
-            if helper.oscEnergy(clist) <= Emax+tol and\
-                sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
-                # only consider lexicographically ordered part of V22
-                # but also including diagonal part which will be separated below
-
-                V22[-1][1].append(clist)
-
-
-    V22 = Operator(V22, 2, 2, helper)
-
-    return V40, V31, V22
-
-
 
 # Generate all the oscillators between the "selected" high-energy basis and the
 # "selected" high-energy basis
 # NOTE it uses the annihilation part of the operator (it should be more efficient
 # than using the creation part)
 # @profile
-def V4OperatorshhAlternative(basis):
+def V4Operatorshh(basis):
     """
     basis: set of states on which the operators act
     Emax: maximal energy of the states corresponding to columns indices of the matrix
@@ -617,4 +535,108 @@ def V4OperatorshhAlternative(basis):
     # NOTE V31 and V40 cannot increase the energy
 
     return V04, V13, V22
+
+
+
+
+# Generate all the oscillators between the "selected" low-energy states
+# NOTE it uses the annihilation part of the operator (it should be more efficient
+# than using the creation part)
+def V6Operatorsll(basis):
+    """
+    basis: set of states on which the operators act
+    Emax: maximal energy of the states corresponding to columns indices of the matrix
+    """
+
+    helper = basis.helper
+    nmax = helper.nmax
+    Emax = basis.Emax
+    oscEnergy = helper.oscEnergy
+
+
+    V06 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 6, 6, nmax))
+
+    for dlist in dlists:
+        # TODO Some of these elements can be excluded
+        V06.append((dlist,[()]))
+
+    V06 = Operator(V06, 6, 0, helper)
+
+
+    V15 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 5, 6, nmax))
+
+    for dlist in dlists:
+        k1, k2, k3, k4, k5 = dlist
+
+        k6 = k1+k2+k3+k4+k5
+        clist = (k6,)
+
+        # TODO Some of these elements can be excluded
+        V13.append((dlist,[clist]))
+
+    V15 = Operator(V15, 5, 1, helper)
+
+
+    V24 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 2, 6, nmax))
+
+    for dlist in dlists:
+        (k1,k2,k3,k4) = dlist
+        V24.append((dlist,[]))
+
+        for k5 in range(max(-nmax+k1+k2+k3+k4,-nmax),
+                min(int(floor((k1+k2+k3+k4)/2)),nmax)+1):
+
+            k6 = k1+k2+k3+k4-k5
+            clist = (k5,k6)
+
+            if oscEnergy(clist) <= Emax+ tol \
+                and sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
+                V22[-1][1].append(clist)
+
+
+    V24 = Operator(V24, 4, 2, helper)
+
+
+
+    V33 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 3, 6, nmax))
+
+    for dlist in dlists:
+        (k1,k2,k3) = dlist
+        V33.append((dlist,[]))
+
+        for k4 in range(-nmax, nmax+1):
+
+            for k5 in range(max(-nmax+k1+k2+k3-k4,-nmax),
+                min(int(floor((k1+k2+k3-k4)/2)),nmax)+1):
+
+                k6 = k1+k2+k3-k4-k5
+                clist = (k4,k5,k6)
+
+                if oscEnergy(clist) <= Emax+ tol \
+                    and sorted([abs(min(dlist)),abs(max(dlist))]) <= \
+                        sorted([abs(min(clist)),abs(max(clist))]):
+                    V33[-1][1].append(clist)
+
+
+    V33 = Operator(V33, 3, 3, helper)
+
+
+
+    return V06, V15, V24, V33
 

@@ -86,6 +86,11 @@ class Basis():
             self.Emax = None
             self.Emin = None
 
+        self.statePos = {}
+        for i,state in enumerate(self.stateList):
+            self.statePos[tuple(helper.torepr2(state))] = i
+            self.statePos[tuple(helper.torepr2(state)[::-1])] = i
+
 
     @classmethod
     def fromScratch(self, m, L, Emax, occmax=None):
@@ -114,6 +119,11 @@ class Basis():
     def sub(self, filterFun):
         """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
         return Basis(self.k, filter(filterFun, self.stateList), self.helper)
+
+
+    # This is slow. Not to be used in intensive cycles
+    def lookup(self, state):
+        return self.statePos[tuple(self.helper.torepr2(state))]
 
 
     def __repr__(self):

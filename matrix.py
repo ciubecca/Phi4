@@ -1,9 +1,7 @@
 import scipy
 import scipy.sparse.linalg
 import scipy.sparse
-import scipy.interpolate
 
-# TODO use metaclasses?
 class Matrix():
     """ Matrix with specified state bases for row and column indexes.
     This class is useful to easily extract submatrices """
@@ -45,8 +43,8 @@ class Matrix():
         """ This extracts a submatrix given a subspace of
         the initial vector space, both for rows and columns
         """
-        rows = [self.basisI.lookup(state)[1]  for state in subBasisI]
-        columns = [self.basisJ.lookup(state)[1]  for state in subBasisJ]
+        rows = [self.basisI.lookup(state) for state in subBasisI]
+        columns = [self.basisJ.lookup(state) for state in subBasisJ]
         return Matrix(subBasisI, subBasisJ,
                 self.M.tocsr()[scipy.array(rows),].
                 tocsc()[:,scipy.array(columns)])
