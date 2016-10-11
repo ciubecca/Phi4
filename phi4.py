@@ -30,8 +30,8 @@ class Phi4():
         self.basisH = {}
         self.basisl = {}
 
-        self.eigenvalues = {"raw":{}, "ren":{}}
-        self.eigenvectors = {"raw":{}, "ren":{}}
+        self.eigenvalues = {"raw":{}, "renloc":{}, "rentails":{}}
+        self.eigenvectors = {"raw":{}, "renloc":{}, "rentails":{}}
 
         scipy.set_printoptions(precision=15)
 
@@ -177,66 +177,68 @@ class Phi4():
 
     def computeDeltaH(self, k, ET, EL, eps):
 
-        helper = self.basisH[k].helper
-
+        helper = self.basis[k].helper
         # Subset of the full low energy states
         subbasisL = self.basis[k].sub(lambda v: helper.energy(v)<=ET)
 
-        # Subset of the selected low energy states
-        subbasisl = self.basisl[k].sub(lambda v: helper.energy(v)<=ET)
-        self.ntails = subbasisl.size
+        # Dictionary of local renormalization coefficients
+        VV2 = renorm.renlocal(g4=self.g4, EL=EL, m=self.m, eps=eps).VV2
 
-        # Subset of the selected high energy states
-        subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=EL)
+        # Local + non-local
+        if (EL != ET):
+            helper = self.basisH[k].helper
 
-        #############################
-        # Construct DH
-        #############################
-        Vhl = self.Vhl[k].sub(subbasisl, subbasisH)
-        Vlh = Vhl.transpose()
-        VLh = self.VLh[k].sub(subbasisH, subbasisL)
-        VhL = VLh.transpose()
-        Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
+            # Subset of the selected low energy states
+            subbasisl = self.basisl[k].sub(lambda v: helper.energy(v)<=ET)
+            self.ntails = subbasisl.size
 
-        propagator = Matrix(subbasisH, subbasisH,
+            # Subset of the selected high energy states
+            subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=EL)
+
+            #############################
+            # Construct DH
+            #############################
+            Vhl = self.Vhl[k].sub(subbasisl, subbasisH)
+            Vlh = Vhl.transpose()
+            VLh = self.VLh[k].sub(subbasisH, subbasisL)
+            VhL = VLh.transpose()
+            Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
+
+            propagator = Matrix(subbasisH, subbasisH,
                 scipy.sparse.spdiags([1/(eps-e) for e in subbasisH.energyList],
                 0, subbasisH.size, subbasisH.size))
 
-        # Dictionary of local renormalization coefficients
-        deltag = renorm.renlocal(g4=self.g4, EL=EL, m=self.m, eps=eps)
 
-        VLl = {}
-        for n in (0,2,4):
-            VLl[n] = self.V[k][n].sub(subbasisl, subbasisL)
+            VLl = {}
+            for n in (0,2,4):
+                VLl[n] = self.V[k][n].sub(subbasisl, subbasisL)
 
-        Vll = {}
-        # for n in (0,2,4,6,8):
-        for n in (0,2,4):
-            Vll[n] = self.V[k][n].sub(subbasisl, subbasisl)
+            Vll = {}
+            # for n in (0,2,4,6,8):
+            for n in (0,2,4):
+                Vll[n] = self.V[k][n].sub(subbasisl, subbasisl)
 
 
-        # The first index in deltag denotes the order in V
-        # The second index is a tuple denoting the type of local operators
-        DH2Ll = Vhl*propagator*VLh*self.g4**2. \
-                + deltag[2][0]*VLl[0]+deltag[2][2]*VLl[2]+deltag[2][4]*VLl[4]
-        DH2lL = DH2Ll.transpose()
-        # XXX can we take the tails states above ET?
-        DH2ll = DH2Ll.sub(subbasisl, subbasisl)
+            # The first index in deltag denotes the order in V
+            # The second index is a tuple denoting the type of local operators
+            DH2Ll = Vhl*propagator*VLh*self.g4**2. \
+                    + VV2[0]*VLl[0] + VV2[2]*VLl[2] + VV2[4]*VLl[4]
+            DH2lL = DH2Ll.transpose()
+            # XXX can we take the tails states above ET?
+            DH2ll = DH2Ll.sub(subbasisl, subbasisl)
 
-        # The first index in deltag denotes the order in V
-        # The second index is a tuple denoting the type of local operators
-        # TODO Add bi-local operators. Do these operators need to be generated separately?
-        # DH3ll = Vhl*propagator*Vhh*propagator*Vlh*self.g4**3 +
-                # + deltag[3][0]*Vll[0]+deltag[3][2]*Vll[2]+deltag[3][4]*Vll[4]
-                # + deltag[3][6]*Vll[6]+deltag[3][8]*Vll[8]
+            # TODO Add the local parts
+            DH3ll = Vhl*propagator*Vhh*propagator*Vlh*self.g4**3
 
-        # TODO Add the local parts
-        DH3ll = Vhl*propagator*Vhh*propagator*Vlh*self.g4**3
+            return DH2lL*((DH2ll-DH3ll).inverse())*DH2Ll
 
-        # print(DH2lL.shape, DH2ll.shape, DH2Ll.shape)
-        # print(scipy.sparse.linalg.inv(DH2ll).shape)
+        # Only local
+        elif EL==ET:
+            VLL = {}
+            for n in (0,2,4):
+                VLL[n] = self.V[k][n].sub(subbasisL, subbasisL)
 
-        return DH2lL*((DH2ll-DH3ll).inverse())*DH2Ll
+            return VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 
 
 
@@ -245,8 +247,6 @@ class Phi4():
         self.g0 = g0
         self.g2 = g2
         self.g4 = g4
-        # c = 2.*sum([1/(2.*pi)*scipy.special.kn(0,n*m*L) for n in range(1,10)])
-        # self.m1 = m*exp(-2.*pi*c)
 
 
 
@@ -262,7 +262,7 @@ class Phi4():
 
         if ren=="raw":
             compH = Hraw.M
-        elif ren=="ren":
+        else:
             DeltaH = self.computeDeltaH(k, ET, EL, eps)
             compH = (Hraw + DeltaH).M
 

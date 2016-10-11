@@ -13,43 +13,30 @@ class Database():
         self.useJson = useJson
 
     def insert(self, k, L, ET, g, spec, eigv, basisSize, neigs, ren,
-                EL=None, ntails=None, occmax=None):
+                eps=0., EL=-1., ntails=-1, occmax=-1):
 
         if(basisSize*neigs != eigv.size):
             # print(eigv.size)
             raise ValueError("basisSize, neigs and eigv dimension don't match")
 
-        if ren not in rentypes:
-            raise ValueError("ren argument must be in {}".format(", ".join(rentypes)))
 
-        if self.useJson==True:
-            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L,
-                ET=ET, g=g, ren=ren, eigv=json.dumps(eigv.tolist()),
-                EL=EL, spec=json.dumps(spec.tolist()), basisSize=basisSize,
-                neigs=neigs, ntails=ntails, occmax=occmax))
-        else:
-            self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, ET=ET, EL=EL,
-                g=g, ren=ren, eigv=eigv.tostring(), spec=spec.tostring(),
-                basisSize=basisSize, neigs=neigs, occmax=occmax))
+        self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, ET=ET, EL=EL,
+                g=g, ren=ren, eigv=eigv.tostring(), spec=spec.tostring(), eps=eps,
+                basisSize=basisSize, neigs=neigs, occmax=occmax, ntails=ntails))
 
     # Get a list of all objects satisfying the query
     def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={}, orderBy=None):
         t1 = [e for e in self.table.find(**exactQuery)]
         listRes = []
         for e in t1:
-            if all([abs(e[key]-value)<10.**(-12.) for key,value in approxQuery.items()]) and \
-                all([value[0]<=e[key]<value[1] for key,value in boundQuery.items()]):
+            if all([abs(e[key]-value)<10.**(-12.)
+                for key,value in approxQuery.items()]) and \
+                    all([value[0]<=e[key]<value[1] for key,value in boundQuery.items()]):
                 if obj=='eigv':
-                    if self.useJson == True:
-                        listRes.append(json.loads(e[obj]))
-                    else:
-                        listRes.append(
-                                scipy.fromstring(e[obj]).reshape(e['neigs'], e['basisSize']))
+                    listRes.append(scipy.fromstring(e[obj]).reshape(
+                        e['neigs'], e['basisSize']))
                 elif obj=='spec':
-                    if self.useJson == True:
-                        listRes.append(json.loads(e[obj]))
-                    else:
-                        listRes.append(scipy.fromstring(e[obj]))
+                    listRes.append(scipy.fromstring(e[obj]))
                 else:
                     listRes.append(e[obj])
 
@@ -57,11 +44,3 @@ class Database():
             return listRes
         else:
             return [y for (x,y) in sorted(zip(orderBy, listRes))]
-
-
-    def migrateJsonToBytes(self, otherdb):
-        for e in self.table:
-            del e["id"]
-            e['eigv'] = scipy.array(json.loads(e['eigv'])).tostring()
-            e['spec'] = scipy.array(json.loads(e['spec'])).tostring()
-            otherdb.table.insert(e)

@@ -7,31 +7,42 @@ from matplotlib import rc
 import database
 
 output = "pdf"
-renlist = ("raw", "ren")
+renlist = ("raw", "renloc", "rentails")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-k = 1
 neigs = 10
 
-def plotvsE(Elist, ELETdiff):
+def EL(ET):
+    return ET*2.5
+
+def plotvsE(Elist):
 
     db = database.Database()
 
-    exactQuery = {"k":k}
+    exactQuery = {}
     approxQuery = {"g":g, "L":L}
 
     E0 = {}
+    E1 = {}
     for ren in renlist:
         E0[ren] = []
+        E1[ren] = []
 
         for ET in ETlist:
             exactQuery["ren"] = ren
             approxQuery["ET"] = ET
-            if ren=="ren":
-                approxQuery["EL"] = ET+ELETdiff
+            exactQuery["k"] = 1
+            if ren=="renloc":
+                approxQuery["EL"] = ET
+            elif ren=="rentails":
+                approxQuery["EL"] = EL(ET)
+                # approxQuery["EL"] = max(ETlist)+ELETdiff
             E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
+
+            exactQuery["k"] = -1
+            E1[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
 
     # VACUUM ENERGY
@@ -46,45 +57,77 @@ def plotvsE(Elist, ELETdiff):
     plt.plot(Elist, data, linewidth=linewidth, color="b", marker=marker,
             markersize=markersize, dashes = dashes, label="raw")
 
-    # if tails:
-        # plt.axhline(y=data[-1], color='k')
-        # plt.axhline(y=data[-1], xmin=min(Elist), xmax=max(Elist), linewidth=2, color = 'k')
-
-    data = E0["ren"]
+    data = E0["renloc"]
     plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
-            markersize=markersize, dashes = dashes, label="ren")
+            markersize=markersize, dashes = dashes, label="renloc")
+
+    data = E0["rentails"]
+    plt.plot(Elist, data, linewidth=linewidth, color="k", marker=marker,
+            markersize=markersize, dashes = dashes, label="rentails")
+
+    # MASS
+    plt.figure(2)
+
+    data = array(E1["raw"])-array(E0["raw"])
+    plt.plot(Elist, data, linewidth=linewidth, color="b", marker=marker,
+            markersize=markersize, dashes = dashes, label="raw")
+
+    data = array(E1["renloc"])-array(E0["renloc"])
+    plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
+            markersize=markersize, dashes = dashes, label="renloc")
+
+    data = array(E1["rentails"])-array(E0["rentails"])
+    plt.plot(Elist, data, linewidth=linewidth, color="k", marker=marker,
+            markersize=markersize, dashes = dashes, label="rentails")
+
 
 
 
 argv = sys.argv
-if len(argv) < 6:
-    print(argv[0], "<L> <g> <ETmin> <ETmax> <EL-ET>")
+if len(argv) < 5:
+    print(argv[0], "<L> <g> <ETmin> <ETmax>")
     sys.exit(-1)
 
 L = float(argv[1])
 g = float(argv[2])
 ETmin = float(argv[3])
 ETmax = float(argv[4])
-ELETdiff = float(argv[5])
+# ELETdiff = float(argv[5])
 
-ETlist = scipy.linspace(ETmin, ETmax, ETmax-ETmin+1)
+ETlist = scipy.linspace(ETmin, ETmax, 2*(ETmax-ETmin)+1)
 print("ETlist:", ETlist)
 
 
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-plotvsE(ETlist, ELETdiff)
+plotvsE(ETlist)
 
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 #plt.xlim(min(xList)-0.01, max(xList)+0.01)
-plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L-E_T$={2:.1f}".format(g,L,ELETdiff))
-plt.xlabel(r"$E_{{\rm max}}$")
+plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L=2.5 E_T$".format(g,L))
+# plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L$={2:.1f}".format(g,L,EL))
+plt.xlabel(r"$E_T$")
 plt.ylabel(r"$E_0$")
 plt.legend(loc="upper right")
 
-plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_ELETdiff={2:.1f}.{3}"
-        .format(g,L,ELETdiff,output))
 
+plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_EL=2.5*ET.{2}"
+        .format(g,L,output))
+# plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
+        # .format(g,L,EL,output))
+
+plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+#plt.xlim(min(xList)-0.01, max(xList)+0.01)
+plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L=2.5 E_T$".format(g,L))
+# plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L$={2:.1f}".format(g,L,EL))
+plt.xlabel(r"$E_T$")
+plt.ylabel(r"$E_1-E_0$")
+plt.legend(loc="upper right")
+
+plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL=2.5*ET.{2}"
+        .format(g,L,output))
+# plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
+        # .format(g,L,EL,output))
 
 
