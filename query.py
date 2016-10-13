@@ -1,11 +1,8 @@
 import sys
 import scipy
 import math
-import json
 from scipy import pi, log, array, sqrt
-from matplotlib import rc
 import database
-import finiteVolH
 
 
 def main(argv):
@@ -18,7 +15,7 @@ def main(argv):
         query[key] = float(value)
 
     # Hardcoded parameters
-    values = ("L", "Emax", "basisSize", "g", "occmax", "Emaxbar")
+    values = ("L", "ET", "basisSize", "g", "EL", "spec")
 
     # db = database.Database(dbname="spectraJson.db",useJson=True)
     db = database.Database()
@@ -26,7 +23,8 @@ def main(argv):
     exactQuery = {}
     data = [db.getObjList(x, exactQuery=exactQuery, approxQuery=query) for x in values]
     # Check integrity of eigv data
-    eigv = db.getObjList("eigv", exactQuery=exactQuery, approxQuery=query)
+    # spec = db.getObjList("spec", exactQuery=exactQuery, approxQuery=query)
+    # print(spec[0])
     res = set(zip(*data))
     # Transpose list and remove duplicates
     # res = zip(*data)

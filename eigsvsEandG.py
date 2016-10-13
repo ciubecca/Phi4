@@ -13,25 +13,28 @@ neigs = 1
 klist = (-1,1)
 minoverlap = 10**(-2)
 
+ETmin = 10
+ETmax = 20
+gmin = 0.5
+gmax = 3.0
+
+ETlist = scipy.linspace(ETmin, ETmax, (ETmax-ETmin)*2+1)
+print("ETlist:", ETlist)
+glist = scipy.linspace(gmin, gmax, (gmax-gmin)*2+1)
+print("glist:", glist)
 
 
 def el(ET):
     return ET*2.5
 
 argv = sys.argv
-if len(argv) < 5:
+if len(argv) < 2:
     # print(argv[0], "<L> <g> <ETmin> <ETmax> <EL-ET>")
-    print(argv[0], "<L> <g> <ETmin> <ETmax>")
+    print(argv[0], "<L>")
     sys.exit(-1)
 
 L = float(argv[1])
-g = float(argv[2])
-ETmin = float(argv[3])
-ETmax = float(argv[4])
 # ELETdiff = float(argv[5])
-
-ETlist = scipy.linspace(ETmin, ETmax, (ETmax-ETmin)*2+1)
-print("ETlist:", ETlist)
 
 if saveondb:
     db = database.Database()
@@ -46,9 +49,6 @@ for k in klist:
 
     print("k=", k)
     print("Full basis size: ", a.basis[k].size)
-
-    a.setCouplings(g4=g)
-    print("g=", g)
 
 
     print("Computing raw eigenvalues for highest cutoff")
@@ -72,6 +72,10 @@ for k in klist:
 
     for ET in ETlist:
 
+        for g in glist:
+
+            a.setCouplings(g4=g)
+            print("g=", g)
 
             EL = el(ET)
             # EL = ELmax

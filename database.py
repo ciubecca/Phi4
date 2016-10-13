@@ -3,7 +3,7 @@ import json
 import dataset
 import datetime
 
-rentypes = ["raw","ren"]
+rentypes = ["raw","renloc","rentails"]
 
 #FIXME Feature needed: forbid merging json and non-json data
 class Database():
