@@ -44,14 +44,20 @@ class Matrix():
         the initial vector space, both for rows and columns
         """
 
-# XXX Does this take a long time?
-        rows = [self.basisI.lookup(state) for state in subBasisI]
-        columns = [self.basisJ.lookup(state) for state in subBasisJ]
+        if subBasisI == self.basisI:
+            columns = [self.basisJ.lookup(state) for state in subBasisJ]
+            return Matrix(subBasisI, subBasisJ, self.M.tocsc()[:,scipy.array(columns)])
 
-# XXX this could be taking a lot of memory for Vhh
-        return Matrix(subBasisI, subBasisJ,
-                self.M.tocsr()[scipy.array(rows),].
-                tocsc()[:,scipy.array(columns)])
+        elif subBasisJ == self.basisJ:
+            rows = [self.basisI.lookup(state) for state in subBasisI]
+            return Matrix(subBasisI, subBasisJ, self.M.tocsr()[scipy.array(rows),])
+
+        else:
+            rows = [self.basisI.lookup(state) for state in subBasisI]
+            columns = [self.basisJ.lookup(state) for state in subBasisJ]
+
+            return Matrix(subBasisI, subBasisJ, self.M.tocsr()[scipy.array(rows),].
+                                                tocsc()[:,scipy.array(columns)])
 
     def transpose(self):
         return Matrix(self.basisJ, self.basisI, self.M.transpose())

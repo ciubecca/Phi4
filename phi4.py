@@ -196,6 +196,12 @@ class Phi4():
                 self.buildMatrix(Vlist, basis, basis, ignKeyErr=True)*self.L)
 
 
+        ##############################
+        # Propagator
+        ##############################
+        basisH = self.basisH[k]
+
+
     def computeDeltaH(self, k, ET, EL, eps):
 # Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
 
@@ -215,20 +221,30 @@ class Phi4():
             self.ntails = subbasisl.size
 
             # Subset of the selected high energy states
-            subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=EL)
+            # subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=EL)
+
+
+            # Propagator and projector on the high-energy states
+            basisH = self.basisH[k]
+            propVec = []
+            for e in basisH.energyList:
+                if ET < e <= EL:
+                    propVec.append(1/(eps-e))
+                else:
+                    propVec.append(0)
+            propagator = Matrix(basisH, basisH,
+                    scipy.sparse.spdiags(propVec,0,basisH.size,basisH.size))
+
 
             #############################
             # Construct DH
             #############################
-            Vhl = self.Vhl[k].sub(subbasisl, subbasisH)
+            Vhl = self.Vhl[k].sub(subbasisl, basisH)
             Vlh = Vhl.transpose()
-            VLh = self.VLh[k].sub(subbasisH, subbasisL)
+            VLh = self.VLh[k].sub(basisH, subbasisL)
             VhL = VLh.transpose()
-            Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
-
-            propagator = Matrix(subbasisH, subbasisH,
-                scipy.sparse.spdiags([1/(eps-e) for e in subbasisH.energyList],
-                0, subbasisH.size, subbasisH.size))
+            # Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
+            Vhh = self.Vhh[k]
 
 
             VlL = {}
@@ -248,8 +264,9 @@ class Phi4():
             # print("propagator", propagator.M.shape)
             # print("VlL", VlL[0].M.shape)
 
+
             # XXX Sorry, for now the subscripts are confusing, need to sort this out
-            DH2lL = VhL*propagator*Vlh*self.g4**2.
+            DH2lL = VhL*propagator*Vlh*self.g4**2
             # print("DH2lL", DH2lL.M.shape)
             DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
             DH2Ll = DH2lL.transpose()
