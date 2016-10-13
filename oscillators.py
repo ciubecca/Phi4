@@ -67,11 +67,25 @@ class Operator():
         m = helper.m
         self.helper = helper
 
+# This is just a dict where the keys are tuples of annihilation momenta and the
+# values are indexes
         self.dlistPos = {}
+
+# This is a list of lists. Each list contains all the possible creation momenta
+# corresponding to a given set of annihilation momenta
         self.oscList = []
+
+# List with same lenght as oscList. It contains the total energy of the corresponding
+# oscillators
         self.oscEnergies = []
+
+# Combinatorial and phase-space factors of the oscillators
         self.oscFactors = []
 
+# This generates a list of tuples of the form (n, Zc, Zd) from two separate lists of
+# tuples of the form (n,Zc) and (n,Zd)
+# Zc and Zd are respectively the number of creation and annihilation operators at
+# wavenumber n
         def f(clist, dlist):
             ret = []
             wnlist = set(clist+dlist)
@@ -509,7 +523,7 @@ def V4OpsSelectedHalf(basis):
 
 
 def V6OpsSelectedHalf(basis):
-     """ Half of the operators of V6 acting on the "selected" basis of states
+    """ Half of the operators of V6 acting on the "selected" basis of states
     (e.g. the set of "selected" low-energy tails). It takes into account only the
     annihilation part.
     Not all the possible annihilation momenta are included. This method is used

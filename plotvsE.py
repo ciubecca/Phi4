@@ -1,3 +1,11 @@
+# This files generates plots of Vacuum and mass eigenvalues from the database
+# It should be called as:
+# plotvsE L g ETmin ETmax
+# For instance:
+# plotvsE 10 1 10 20
+# Plots all the points for L=10, g=1, and ET = [10, 10.5, 11, 11.5, ..., 20]
+
+
 import sys
 import matplotlib.pyplot as plt
 import scipy

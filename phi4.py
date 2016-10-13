@@ -14,7 +14,7 @@ from scipy import exp, pi, array
 
 
 class Phi4():
-    """ main FVHT class """
+    """ main class """
     def __init__(self, m, L):
 
         self.m = m
@@ -30,6 +30,11 @@ class Phi4():
         self.basisH = {}
         self.basisl = {}
 
+# "raw" are the raw eigenvalues
+# "renloc" are the eigenvalues where the DH2, DH3 corrections are only computed in
+# the local approximation
+# "rentails" are the eigenvalues where the DH2, DH3 corrections are computed exactly up
+# to EL
         self.eigenvalues = {"raw":{}, "renloc":{}, "rentails":{}}
         self.eigenvectors = {"raw":{}, "renloc":{}, "rentails":{}}
 
@@ -37,14 +42,19 @@ class Phi4():
 
 
     def buildBasis(self, Emax, occmax=None):
-        """ Builds the full Hilbert space basis """
+        """ Builds the full Hilbert space basis up to cutoff Emax """
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
 
     def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False):
         """
-        Compute a potential matrix from the operators in Vlist
-        between two bases
+        Compute a potential matrix from the operators in Vlist between two bases
+        Vlist: list of Operator instances (for instance the
+        a^a^a^a^, a^a^a^a and a^a^aa and parts of V4)
+        basis: set of states corresponding to the row indexes of the matrix
+        lookupbasis: set of states corresponding to column indexes of the matrix
+        ignKeyErr: this should be set to True only for Vhh (because some states generated
+        don't belong to the basis)
         """
 
         if basis.helper.nmax > lookupbasis.helper.nmax:
@@ -52,6 +62,7 @@ class Phi4():
         else:
             helper = lookupbasis.helper
 
+# Dictionary of positions of states
         # Contains also the P-reversed states
         # NOTE: using arrays is much less efficient!
         statePos = {}
@@ -77,19 +88,20 @@ class Phi4():
                 shape=(basis.size,lookupbasis.size))
 
         if basis==lookupbasis:
-        # If the two bases are equal, assumes that only half of the matrix was computed
+        # If the two bases are equal, assumes that only half of the matrix was computed.
+        # Therefore add the matrix to its transpose and subtract the diagonal
             diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
             # This should resum duplicate entries
             return (V+V.transpose()-diag_V).tocsc()
         else:
-            # XXX This should resum duplicate entries
+            # This should resum duplicate entries
             return V.tocsc()
 
 
 
     def computePotential(self, k):
         """
-        Builds the potential matrices and the free Hamiltonian.
+        Builds the potential matrices and the free Hamiltonian. In the low-energy sector
         """
 
         basis = self.basis[k]
@@ -106,18 +118,24 @@ class Phi4():
         idM = scipy.sparse.eye(basis.size)
         self.V[k][0] = Matrix(basis, basis, idM)*self.L
 
-    # @profile
+
     def genHEBasis(self, k, basisl, EL):
+        """ Generate a high-energy basis from a set of tails
+        k: parity quantum number
+        basisl: Basis instance containing the set of tails
+        EL: maximal energy of the generated basis
+        """
 
         self.basisl[k] = basisl
 
         # Generate all the operators between the selected states and the states
-        # between in the range [0, EL]
+        # in the range [0, EL]
         Vlist = V4OpsSelectedFull(basisl, EL)
         vectorset = set()
 
         for V in Vlist:
             for v in V.genBasis(basisl, EL):
+# Don't add twice states connected by parity inversion
                 if v not in vectorset and v[::-1] not in vectorset:
                     vectorset.add(v)
 
@@ -125,23 +143,26 @@ class Phi4():
 
         self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
-    # @profile
+
     def computeHEVs(self, k, EL, EL3=None):
-        # NOTE "l" denotes a selected low-energy state, while "L" a
-        # generic low-energy state
+        """
+        Compute the matrices involving the high-energy states below EL
+        k: parity quantum number
+        EL: local cutoff
+        """
+
+        # NOTE matrix subscript notation:
+# "l": selected low-energy state
+# "L": generic low-energy state.
+# "h": selected high-energy state
 
         # We might want to choose EL3 < EL because Vhh is expensive to generate
         if EL3 == None:
             EL3 = EL
 
 
-        # NOTE Notation:
-        # SL : Selected Low
-        # SH : Selected High
-        # FL : Full Low
-
         #################################
-        # Generate the SL-SH matrix
+        # Generate the Vlh matrix
         #################################
         basis = self.basisl[k]
         lookupbasis = self.basisH[k]
@@ -153,7 +174,7 @@ class Phi4():
 
 
         ##############################
-        # Generate the SH-FL matrix
+        # Generate the VhL matrix
         ##############################
         basis = self.basisH[k]
         lookupbasis = self.basis[k]
@@ -165,7 +186,7 @@ class Phi4():
 
 
         ##############################
-        # Generate the SH-SH matrix
+        # Generate the Vhh matrix
         ##############################
         basis = self.basisH[k]
 
@@ -176,6 +197,7 @@ class Phi4():
 
 
     def computeDeltaH(self, k, ET, EL, eps):
+# Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
 
         helper = self.basis[k].helper
         # Subset of the full low energy states
@@ -209,9 +231,11 @@ class Phi4():
                 0, subbasisH.size, subbasisH.size))
 
 
+            VlL = {}
             VLl = {}
             for n in (0,2,4):
-                VLl[n] = self.V[k][n].sub(subbasisl, subbasisL)
+                VlL[n] = self.V[k][n].sub(subbasisL, subbasisl)
+                VLl[n] = VlL[n].transpose()
 
             Vll = {}
             # for n in (0,2,4,6,8):
@@ -219,12 +243,16 @@ class Phi4():
                 Vll[n] = self.V[k][n].sub(subbasisl, subbasisl)
 
 
-            # The first index in deltag denotes the order in V
-            # The second index is a tuple denoting the type of local operators
-            DH2Ll = Vhl*propagator*VLh*self.g4**2. \
-                    + VV2[0]*VLl[0] + VV2[2]*VLl[2] + VV2[4]*VLl[4]
-            DH2lL = DH2Ll.transpose()
-            # XXX can we take the tails states above ET?
+            # print("Vlh", Vlh.M.shape)
+            # print("VhL", VhL.M.shape)
+            # print("propagator", propagator.M.shape)
+            # print("VlL", VlL[0].M.shape)
+
+            # XXX Sorry, for now the subscripts are confusing, need to sort this out
+            DH2lL = VhL*propagator*Vlh*self.g4**2.
+            # print("DH2lL", DH2lL.M.shape)
+            DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
+            DH2Ll = DH2lL.transpose()
             DH2ll = DH2Ll.sub(subbasisl, subbasisl)
 
             # TODO Add the local parts
@@ -251,6 +279,14 @@ class Phi4():
 
 
     def computeEigval(self, k, ET, ren, EL=None, eps=None, neigs=10):
+        """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
+        k: parity quantum number
+        ET: ET
+        EL: EL. Should be set to None for "raw" and to EL for "renlocal"
+        ren: type of eigenvalue. Can be "raw", "renlocal" or "rentails"
+        eps: epsilon parameter in the propagator
+        neigs: number of eigenvalues to compute
+        """
 
         # Subset of low energy states
         helper = self.basis[k].helper

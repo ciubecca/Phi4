@@ -29,19 +29,23 @@ class Helper():
 
         self.omegaList = self._omega(self.wnList)
 
+
     def energy(self, state):
+        """ Computes energy of state in Repr1 """
         return sum(Zn*self.omega(n) for n,Zn in state)
 
     def totalWN(self, state):
         return sum(Zn*n for n,Zn in state)
 
     def oscEnergy(self, wnlist):
+        """ Energy of an oscillator (ordered tuple of momenta) """
         return sum(self.omega(n) for n in wnlist)
 
     def _omega(self, n):
         return sqrt(self.m**2+((2*pi/self.L)*n)**2)
 
     def omega(self, n):
+        """ Energy corresponding to wavenumber n"""
         return self.omegaList[n+self.nmax]
 
     def torepr2(self, state):
@@ -52,10 +56,12 @@ class Helper():
         return ret
 
     def torepr1(self, state):
+        """ Transform state from repr2 to repr1 """
         return [(self.wnList[i],state[i]) for i in range(2*self.nmax+1)
             if state[i]!= 0]
 
     def Emaxtonmax(self, Emax):
+        """ return nmax corresponding to given Emax """
         return int(floor(sqrt((Emax/2.)**2.-self.m**2.)*self.L/(2*pi)))
 
 
@@ -104,7 +110,7 @@ class Basis():
 
     @classmethod
     def fromScratch(self, m, L, Emax, occmax=None):
-        """ Builds the truncated Hilbert space up to cutoff Emax
+        """ Builds the truncated Hilbert space up to cutoff Emax from scratch
         m: mass
         L: size of the cylinder
         Emax: maximal energy of the states
@@ -219,4 +225,3 @@ class Basis():
                         statelist[(-1)**(N0+OLM+ORM)].append(state)
 
         return statelist
-

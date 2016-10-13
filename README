@@ -1,0 +1,17 @@
+The relevant files for the moment are:
+phi4.py (main file)
+eigsvsE.py (to generate eigenvalues wrt ET)
+plotvsE.py (to plot them)
+statefuncs.py (class to represent basis)
+oscillators.py (classes to produce and represent normal-ordered operators)
+matrix.py (auxiliary class to represent matrices)
+
+EXAMPLE:
+
+Add to the database data/spectra.db the eigenvalues for L=10, g=1, ET=10,10.5,11,...,20:
+
+python eigsvsE.py 10 1 10 20
+
+Generate the plots in the figs/ folder:
+
+python plotvsE.py 10 1 10 20

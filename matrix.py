@@ -43,12 +43,10 @@ class Matrix():
         """ This extracts a submatrix given a subspace of
         the initial vector space, both for rows and columns
         """
+
+# XXX Does this take a long time?
         rows = [self.basisI.lookup(state) for state in subBasisI]
-        if subbasisI==subbasisJ and basisI==basisJ:
-            columns = rows
-# This should save some time
-        else:
-            columns = [self.basisJ.lookup(state) for state in subBasisJ]
+        columns = [self.basisJ.lookup(state) for state in subBasisJ]
 
 # XXX this could be taking a lot of memory for Vhh
         return Matrix(subBasisI, subBasisJ,
