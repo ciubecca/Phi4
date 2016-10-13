@@ -44,7 +44,13 @@ class Matrix():
         the initial vector space, both for rows and columns
         """
         rows = [self.basisI.lookup(state) for state in subBasisI]
-        columns = [self.basisJ.lookup(state) for state in subBasisJ]
+        if subbasisI==subbasisJ and basisI==basisJ:
+            columns = rows
+# This should save some time
+        else:
+            columns = [self.basisJ.lookup(state) for state in subBasisJ]
+
+# XXX this could be taking a lot of memory for Vhh
         return Matrix(subBasisI, subBasisJ,
                 self.M.tocsr()[scipy.array(rows),].
                 tocsc()[:,scipy.array(columns)])

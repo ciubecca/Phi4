@@ -8,6 +8,8 @@ import numpy as np
 
 
 class Helper():
+    """ This is just a "helper" class used to conveniently compute energies of
+    oscillators and states and so on"""
     def __init__(self,m,L,Emax,noscmax=4):
         self.L = L
         self.m = m
@@ -59,14 +61,22 @@ class Helper():
 
 # Mantains the ordering of wavenumbers
 def reverse(state):
+    """ Apply the spatial parity transformation to a state in representation 1"""
     return [(-n,Zn) for n,Zn in state[::-1]]
 
 def occn(state):
+    """ Computes the occupation number of a state"""
     return sum(Zn for n,Zn in state)
 
 
 class Basis():
+    """ Class used to store and compute a basis of states"""
     def __init__(self, k, stateset, helper):
+        """ Standard constructor
+        k: parity quantum number
+        stateset: set or list of states in representation 1
+        helper: Helper object
+        """
         self.k = k
         self.helper = helper
         energy = helper.energy
@@ -94,7 +104,11 @@ class Basis():
 
     @classmethod
     def fromScratch(self, m, L, Emax, occmax=None):
-        """ Builds the truncated Hilbert space up to cutoff Emax """
+        """ Builds the truncated Hilbert space up to cutoff Emax
+        m: mass
+        L: size of the cylinder
+        Emax: maximal energy of the states
+        occmax: cutoff in occupation number (optional)"""
 
         self.helper = Helper(m, L, Emax)
         helper = self.helper
@@ -121,8 +135,9 @@ class Basis():
         return Basis(self.k, filter(filterFun, self.stateList), self.helper)
 
 
-    # This is slow. Not to be used in intensive cycles
     def lookup(self, state):
+        """ Lookup function to look up the position of a state in the basis,
+        in representation 1"""
         return self.statePos[tuple(self.helper.torepr2(state))]
 
 
