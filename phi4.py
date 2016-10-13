@@ -202,7 +202,7 @@ class Phi4():
         basisH = self.basisH[k]
 
 
-    def computeDeltaH(self, k, ET, EL, eps):
+    def computeDeltaH(self, k, ET, EL, eps, maxntails):
 # Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
 
         helper = self.basis[k].helper
@@ -214,10 +214,15 @@ class Phi4():
 
         # Local + non-local
         if (EL != ET):
+            basisl = self.basisl[k]
             helper = self.basisH[k].helper
 
             # Subset of the selected low energy states
-            subbasisl = self.basisl[k].sub(lambda v: helper.energy(v)<=ET)
+            # print(self.basisl)
+            vectorlist = [v for v in basisl if helper.energy(v)<=ET]
+            if maxntails != None:
+                vectorlist = vectorlist[:maxntails]
+            subbasisl = Basis(k, vectorlist, basisl.helper)
             self.ntails = subbasisl.size
 
             # Subset of the selected high energy states
@@ -295,7 +300,7 @@ class Phi4():
 
 
 
-    def computeEigval(self, k, ET, ren, EL=None, eps=None, neigs=10):
+    def computeEigval(self, k, ET, ren, EL=None, eps=None, neigs=10, maxntails=None):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number
         ET: ET
@@ -316,7 +321,7 @@ class Phi4():
         if ren=="raw":
             compH = Hraw.M
         else:
-            DeltaH = self.computeDeltaH(k, ET, EL, eps)
+            DeltaH = self.computeDeltaH(k, ET, EL, eps, maxntails)
             compH = (Hraw + DeltaH).M
 
         self.compSize = compH.shape[0]

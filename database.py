@@ -13,7 +13,7 @@ class Database():
         self.useJson = useJson
 
     def insert(self, k, L, ET, g, spec, eigv, basisSize, neigs, ren,
-                eps=0., EL=-1., ntails=-1, occmax=-1):
+                eps=0., EL=0., ntails=0., occmax=0.):
 
         if(basisSize*neigs != eigv.size):
             # print(eigv.size)
