@@ -26,7 +26,8 @@ class Phi4():
         self.DeltaH = {}
         self.VLh = {}
         self.Vhl = {}
-        self.Vhh = {}
+        self.VhhHalf = {}
+        self.VhhDiag = {}
         self.basisH = {}
         self.basisl = {}
 
@@ -46,7 +47,8 @@ class Phi4():
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
 
-    def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False):
+    @profile
+    def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False, sumTranspose=False):
         """
         Compute a potential matrix from the operators in Vlist between two bases
         Vlist: list of Operator instances (for instance the
@@ -87,7 +89,7 @@ class Phi4():
         V = scipy.sparse.coo_matrix((data,(row,col)),
                 shape=(basis.size,lookupbasis.size))
 
-        if basis==lookupbasis:
+        if sumTranspose:
         # If the two bases are equal, assumes that only half of the matrix was computed.
         # Therefore add the matrix to its transpose and subtract the diagonal
             diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
@@ -112,7 +114,7 @@ class Phi4():
         Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
             self.V[k][n] = Matrix(basis,basis,
-                    self.buildMatrix(Vlist[n], basis, basis))*self.L
+                    self.buildMatrix(Vlist[n], basis, basis, sumTranspose=True))*self.L
 
         # Construct the identity potential matrix
         idM = scipy.sparse.eye(basis.size)
@@ -192,9 +194,13 @@ class Phi4():
 
         Vlist = V4OpsSelectedHalf(basis)
 
-        self.Vhh[k] = Matrix(basis, basis,
-                self.buildMatrix(Vlist, basis, basis, ignKeyErr=True)*self.L)
+        # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
+        self.VhhHalf[k] = Matrix(basis, basis,
+                self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
+                    sumTranspose=False)*self.L)
 
+        self.VhhDiag[k] = Matrix(basis, basis,
+                scipy.sparse.spdiags(self.VhhHalf[k].M.diagonal(),0,basis.size,basis.size))
 
         ##############################
         # Propagator
@@ -249,7 +255,8 @@ class Phi4():
             VLh = self.VLh[k].sub(basisH, subbasisL)
             VhL = VLh.transpose()
             # Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
-            Vhh = self.Vhh[k]
+            VhhHalf = self.VhhHalf[k]
+            VhhDiag = self.VhhDiag[k]
 
 
             VlL = {}
@@ -278,7 +285,10 @@ class Phi4():
             DH2ll = DH2Ll.sub(subbasisl, subbasisl)
 
             # TODO Add the local parts
-            DH3ll = Vhl*propagator*Vhh*propagator*Vlh*self.g4**3
+            # NOTE Trick to save memory
+            DH3ll = Vhl*propagator*VhhHalf*propagator*Vlh*self.g4**3
+            DH3ll += DH3ll.transpose()
+            DH3ll -= Vhl*propagator*VhhDiag*propagator*Vlh*self.g4**3
 
             return DH2lL*((DH2ll-DH3ll).inverse())*DH2Ll
 
