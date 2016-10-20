@@ -46,8 +46,7 @@ class Phi4():
         """ Builds the full Hilbert space basis up to cutoff Emax """
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
-
-    @profile
+    # @profile
     def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False, sumTranspose=False):
         """
         Compute a potential matrix from the operators in Vlist between two bases
@@ -145,7 +144,7 @@ class Phi4():
 
         self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
-
+    # @profile
     def computeHEVs(self, k, EL, EL3=None):
         """
         Compute the matrices involving the high-energy states below EL
@@ -207,7 +206,7 @@ class Phi4():
         ##############################
         basisH = self.basisH[k]
 
-
+    # @profile
     def computeDeltaH(self, k, ET, EL, eps, maxntails):
 # Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
 

@@ -1,7 +1,6 @@
-import inspect
-import os
 import phi4
 import sys
+from sys import getsizeof as size
 import math
 import scipy
 from statefuncs import *
@@ -9,9 +8,11 @@ from statefuncs import *
 k = 1
 m = 1.
 
+ntails = 200
+
 argv = sys.argv
 
-args = "<L> <ET> <EL> <?occmax>"
+args = "<L> <ET> <EL>"
 if len(argv) < 4:
     print("python", argv[0], args)
     sys.exit(-1)
@@ -19,31 +20,32 @@ if len(argv) < 4:
 L = float(argv[1])
 ET = float(argv[2])
 EL = float(argv[3])
-try:
-    occmax = int(argv[4])
-except IndexError:
-    occmax = None
 
 a = phi4.Phi4(m,L)
-
-a.buildBasis(Emax=ET, occmax=occmax)
+a.buildBasis(Emax=ET)
 
 print("basis size :", a.basis[k].size)
 
 a.computePotential(k)
 
-subbasis = Basis(k, a.basis[k].stateList[:50], a.basis[k].helper)
+basisl = Basis(k, a.basis[k].stateList[:ntails], a.basis[k].helper)
 
-a.genHEBasis(k, subbasis, ET, EL)
+print("Number of tails:", basisl.size)
+
+a.genHEBasis(k, basisl, EL)
 
 print("HE basis size", a.basisH[k].size)
 
+print("Computing high energy matrices...")
+a.computeHEVs(k, EL)
+
+Vhh = a.VhhHalf[k].M
+print("Size of Vhh in memory:",
+        int((size(Vhh.data)+size(Vhh.indptr)+size(Vhh.indices))))
+
+print("Computing DeltaH...")
 eps = -1
-
-print("Generating DH2")
-a.computeDH2(k, subbasis, ET, EL, eps)
-
-print("Generating DH3")
-a.computeVhh(k, subbasis)
+a.setCouplings(g4=1)
+a.computeDeltaH(k, ET, EL, eps, 200)
 
 # a.saveMatrix(k=k, Emax=Emax)

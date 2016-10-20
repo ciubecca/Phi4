@@ -10,6 +10,7 @@ import bisect
 
 tol = 10**(-10)
 
+# @profile
 def gendlists(state, nd, ntot, nmax):
     """ Generates a list of all the possible combinations of momenta in the state that
     can be annihilated
@@ -110,6 +111,7 @@ class Operator():
                     *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
                     for clist in clists])
 
+    # @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
                                 ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
