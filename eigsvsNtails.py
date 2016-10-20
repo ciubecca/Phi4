@@ -4,6 +4,7 @@ import renorm
 import sys
 import scipy
 import math
+import gc
 import database
 from statefuncs import *
 
@@ -21,10 +22,12 @@ neigs = 1
 # List of parity quantum numbers
 klist = (-1,1)
 
+maxNtails = 100
+
 
 # How EL depends on ET
 def el(ET):
-    return ET*3
+    return ET*2
 
 argv = sys.argv
 if len(argv) < 3:
@@ -78,7 +81,7 @@ for k in klist:
 
     if saveondb:
         db.insert(k=k, ET=ET, L=L, ren="raw", g=g,
-                spec=a.eigenvalues["raw"][k], eigv=a.eigenvectors["raw"][k],
+                spec=a.eigenvalues["raw"][k],
                 basisSize=a.compSize, neigs=neigs)
 
 
@@ -86,11 +89,8 @@ for k in klist:
     basis = a.basis[k]
     indexlist = reversed(sorted(range(basis.size),
         key=lambda i: (a.eigenvectors["raw"][k][0][i])**2))
-    basisl = statefuncs.Basis(k, [basis[i] for i in indexlist], basis.helper)
+    basisl = statefuncs.Basis(k, [basis[i] for i in indexlist][:maxNtails], basis.helper)
 
-    print("overlaps:", a.eigenvectors["raw"][k][0][0]**2,
-            a.eigenvectors["raw"][k][0][-1]**2)
-    print("occ numbers:", [occn(v) for v in basisl])
     # print(basisl)
     print("Total number of tails:", basisl.size)
 
@@ -118,11 +118,11 @@ for k in klist:
 
     if saveondb:
         db.insert(k=k, ET=ET, L=L, ren="renloc", g=g,
-                spec=a.eigenvalues["renloc"][k], eigv=a.eigenvectors["renloc"][k],
+                spec=a.eigenvalues["renloc"][k],
                 basisSize=a.compSize, neigs=neigs, EL=ET, eps=eps)
 
 
-    for ntails in range(2, a.basis[k].size):
+    for ntails in range(2, min(a.basis[k].size, maxNtails), 4):
 # Compute renormalized eigenvalues by computing the fully "non-local" corrections
 # to VHL, VHH up to cutoff EL
 
@@ -134,10 +134,11 @@ for k in klist:
 
         if saveondb:
             db.insert(k=k, ET=ET, L=L, ren="rentails", g=g,
-                    spec=a.eigenvalues["rentails"][k], eigv=a.eigenvectors["rentails"][k],
+                    spec=a.eigenvalues["rentails"][k],
                     basisSize=a.compSize, neigs=neigs, EL=EL, ntails=a.ntails, eps=eps)
 
 
 
     # Free memory
     del a.Vhh[k]
+    gc.collect()
