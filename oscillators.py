@@ -11,6 +11,7 @@ import bisect
 tol = 10**(-10)
 
 # @profile
+# TODO The speed optimization resulting from using the N-Sum algorithm could be important
 def gendlists(state, nd, ntot, nmax):
     """ Generates a list of all the possible combinations of momenta in the state that
     can be annihilated
