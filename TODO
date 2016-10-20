@@ -3,9 +3,9 @@ The report can be read with
 python -m line_profiler genMatrix.py.lprof
 
 Possibilities for speed optimization
-1) gendlist() with the n-sum algorithm. Also generalize the algorithm such that the sum of 
+1) Save the to Vhh matrix to disk using pyTables and extract it in blocks when computing matrix products. Ideally then it'll be computed only once
+2) gendlist() with the n-sum algorithm. Also generalize the algorithm such that the sum of 
 the momenta is less than nmax
-2) bringing part of the code inside computeMatrixElement to C?
 3) Parallelize the matrix generation (this should be easy, which just need to split the 
 basis in chunks)
-4) Save the to Vhh matrix to disk using pyTables and extract it in blocks when computing matrix products. Ideally then it'll be computed only once
+4) bringing part of the code inside computeMatrixElement to C?
