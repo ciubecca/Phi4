@@ -14,6 +14,28 @@ from pathos.multiprocessing import ProcessingPool as Pool
 from multiprocessing import Process, Queue
 
 
+def f_thread(q, Vlist, basis, lookupbasis, idxList, statePos, helper, ignKeyErr):
+    # Will construct the sparse matrix in the COO format and then convert it to CSC
+    data = []
+    row = []
+    col = []
+
+    for V in Vlist:
+        for i in idxList:
+            colpart, datapart = \
+                V.computeMatrixElements(basis,i,lookupbasis,
+                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
+            data += datapart
+            col += colpart
+            row += [i]*len(colpart)
+
+    V = scipy.sparse.coo_matrix((data,(row,col)),
+             shape=(basis.size,lookupbasis.size))
+
+    # This should resum duplicate entries
+    q.put(V.tocsc())
+
+
 class Phi4():
     """ main class """
     def __init__(self, m, L):
@@ -122,15 +144,13 @@ class Phi4():
             idxLists = [range(basis.size)[x:x+chunklen] for x in
                     range(0, basis.size, chunklen)]
 
-            def f(q, idxList):
-                q.put(self.buildMatrixChunk(Vlist, basis, lookupbasis,
-                            idxList, statePos, helper, ignKeyErr=ignKeyErr)*self.L)
 
 
             q = Queue()
-            p = {}
             V = []
-            for n in range(self.nproc): p[n] = Process(target=f, args=(q,idxLists[n]))
+            p = {}
+            for n in range(self.nproc): p[n] = Process(target=f_thread,
+                    args=(q,Vlist,basis,lookupbasis,idxLists[n],statePos,helper,ignKeyErr))
             for n in range(self.nproc): p[n].start()
             for n in range(self.nproc): V.append(q.get())
             return V
