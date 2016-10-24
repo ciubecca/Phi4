@@ -11,6 +11,7 @@ import renorm
 from matrix import Matrix
 from scipy import exp, pi, array
 from pathos.multiprocessing import ProcessingPool as Pool
+from multiprocessing import Process, Queue
 
 
 class Phi4():
@@ -117,15 +118,27 @@ class Phi4():
         else:
             # Split the basis index list into chunks, and generate a list of separate
             # sparse matrices in the CSC format. Not adding them up saves memory.
-            n = int(math.ceil(basis.size/self.nproc))
-            idxLists = [range(basis.size)[x:x+n] for x in range(0, basis.size, n)]
+            chunklen = int(math.ceil(basis.size/self.nproc))
+            idxLists = [range(basis.size)[x:x+chunklen] for x in
+                    range(0, basis.size, chunklen)]
 
-            def f(idxList):
-                return self.buildMatrixChunk(Vlist, basis, lookupbasis,
-                            idxList, statePos, helper, ignKeyErr=ignKeyErr)*self.L
+            def f(q, idxList):
+                q.put(self.buildMatrixChunk(Vlist, basis, lookupbasis,
+                            idxList, statePos, helper, ignKeyErr=ignKeyErr)*self.L)
 
-            with Pool(self.nproc) as p:
-                return p.map(f, idxLists)
+
+            q = Queue()
+            p = {}
+            V = []
+            for n in range(self.nproc): p[n] = Process(target=f, args=(q,idxLists[n]))
+            for n in range(self.nproc): p[n].start()
+            for n in range(self.nproc): V.append(q.get())
+            return V
+
+
+
+            # with Pool(self.nproc) as p:
+                # return p.map(f, idxLists)
 
 
     def computePotential(self, k):
@@ -205,6 +218,10 @@ class Phi4():
         ##############################
         # Generate the VhL matrix
         ##############################
+
+
+        print("Computing VhL...")
+
         basis = self.basisH[k]
         lookupbasis = self.basis[k]
 
@@ -217,6 +234,9 @@ class Phi4():
         ##############################
         # Generate the Vhh matrix
         ##############################
+
+        print("Computing Vhh...")
+
         basis = self.basisH[k]
 
         Vlist = V4OpsSelectedHalf(basis)
