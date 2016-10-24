@@ -10,7 +10,7 @@ from operator import attrgetter
 import renorm
 from matrix import Matrix
 from scipy import exp, pi, array
-
+from multiprocessing.dummy import Pool
 
 
 class Phi4():
@@ -46,8 +46,34 @@ class Phi4():
         """ Builds the full Hilbert space basis up to cutoff Emax """
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
+
+    def buildMatrixChunk(self, Vlist, basis, lookupbasis, idxList, statePos,
+            helper, ignKerErr=False):
+
+        # Will construct the sparse matrix in the COO format and then convert it to CSC
+        data = []
+        row = []
+        col = []
+
+        for V in Vlist:
+            for i in idxList:
+                colpart, datapart = \
+                    V.computeMatrixElements(basis,i,lookupbasis,
+                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
+                data += datapart
+                col += colpart
+                row += [i]*len(colpart)
+
+        V = scipy.sparse.coo_matrix((data,(row,col)),
+                shape=(basis.size,lookupbasis.size))
+
+        # This should resum duplicate entries
+        return V.tocsc()
+
+
     # @profile
-    def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False, sumTranspose=False):
+    def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False, sumTranspose=False,
+            nproc=1):
         """
         Compute a potential matrix from the operators in Vlist between two bases
         Vlist: list of Operator instances (for instance the
@@ -71,32 +97,35 @@ class Phi4():
             statePos[tuple(helper.torepr2(state))] = i
             statePos[tuple(helper.torepr2(state)[::-1])] = i
 
-        # Will construct the sparse matrix in the COO format
-        data = []
-        row = []
-        col = []
 
-        for V in Vlist:
-            for i in range(basis.size):
-                colpart, datapart = \
-                    V.computeMatrixElements(basis,i,lookupbasis,
-                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
-                data += datapart
-                col += colpart
-                row += [i]*len(colpart)
 
-        V = scipy.sparse.coo_matrix((data,(row,col)),
-                shape=(basis.size,lookupbasis.size))
+        if nproc==1:
+            idxList = range(basis.size)
 
-        if sumTranspose:
-        # If the two bases are equal, assumes that only half of the matrix was computed.
-        # Therefore add the matrix to its transpose and subtract the diagonal
-            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
-            # This should resum duplicate entries
-            return (V+V.transpose()-diag_V).tocsc()
+            # Build a single sparse matrix in the CSC format
+            V = self.buildMatrixChunk(Vlist, basis, lookupbasis, idxList, statePos, helper)
+
+            if sumTranspose:
+                # Add the matrix to its transpose and subtract the diagonal
+                diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
+                return (V+V.transpose()-diag_V)*self.L
+            else:
+                return V*self.L
+
         else:
-            # This should resum duplicate entries
-            return V.tocsc()
+            # Split the basis index list into chunks, and generate a list of separate
+            # sparse matrices in the CSC format. Not adding them up saves memory.
+            n = int(math.ceil(basis.size/nproc))
+            idxLists = [range(basis.size)[x:x+n] for x in range(0, basis.size, n)]
+
+            with Pool(nproc) as p:
+                return p.map(
+                        lambda idxList: self.buildMatrixChunk(Vlist, basis, lookupbasis,
+                            idxList, statePos, helper)*self.L,
+                        idxLists)
+
+
+
 
 
 
@@ -113,11 +142,11 @@ class Phi4():
         Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
             self.V[k][n] = Matrix(basis,basis,
-                    self.buildMatrix(Vlist[n], basis, basis, sumTranspose=True))*self.L
+                    self.buildMatrix(Vlist[n], basis, basis, sumTranspose=True))
 
         # Construct the identity potential matrix
         idM = scipy.sparse.eye(basis.size)
-        self.V[k][0] = Matrix(basis, basis, idM)*self.L
+        self.V[k][0] = Matrix(basis, basis, idM)
 
 
     def genHEBasis(self, k, basisl, EL):
@@ -171,7 +200,7 @@ class Phi4():
         Vlist = V4OpsSelectedFull(basis, EL)
 
         self.Vhl[k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+                self.buildMatrix(Vlist, basis, lookupbasis))
 
 
         ##############################
@@ -183,7 +212,7 @@ class Phi4():
         Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
 
         self.VLh[k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+                self.buildMatrix(Vlist, basis, lookupbasis))
 
 
         ##############################
@@ -194,17 +223,13 @@ class Phi4():
         Vlist = V4OpsSelectedHalf(basis)
 
         # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
-        self.VhhHalf[k] = Matrix(basis, basis,
-                self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
-                    sumTranspose=False)*self.L)
+        self.VhhHalfList[k] =  self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
+                    sumTranspose=False, parallel=True)
 
-        self.VhhDiag[k] = Matrix(basis, basis,
-                scipy.sparse.spdiags(self.VhhHalf[k].M.diagonal(),0,basis.size,basis.size))
+        self.VhhDiagList[k] =
+            [scipy.sparse.spdiags(VhhHalfChunk.diagonal(),0,basis.size,basis.size)
+                for VhhHalfChunk in self.VhhHalfList[k]]
 
-        ##############################
-        # Propagator
-        ##############################
-        basisH = self.basisH[k]
 
     # @profile
     def computeDeltaH(self, k, ET, EL, eps, maxntails):
@@ -249,31 +274,25 @@ class Phi4():
             #############################
             # Construct DH
             #############################
-            Vhl = self.Vhl[k].sub(subbasisl, basisH)
-            Vlh = Vhl.transpose()
-            VLh = self.VLh[k].sub(basisH, subbasisL)
-            VhL = VLh.transpose()
+            Vhl = self.Vhl[k].sub(subbasisl, basisH).M
+            Vlh = Vhl.transpose().M
+            VLh = self.VLh[k].sub(basisH, subbasisL).M
+            VhL = VLh.transpose().M
             # Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
-            VhhHalf = self.VhhHalf[k]
-            VhhDiag = self.VhhDiag[k]
+            VhhHalfList = self.VhhHalfList[k]
+            VhhDiagList = self.VhhDiagList[k]
 
 
             VlL = {}
             VLl = {}
             for n in (0,2,4):
-                VlL[n] = self.V[k][n].sub(subbasisL, subbasisl)
+                VlL[n] = self.V[k][n].sub(subbasisL, subbasisl).M
                 VLl[n] = VlL[n].transpose()
 
             Vll = {}
             # for n in (0,2,4,6,8):
             for n in (0,2,4):
-                Vll[n] = self.V[k][n].sub(subbasisl, subbasisl)
-
-
-            # print("Vlh", Vlh.M.shape)
-            # print("VhL", VhL.M.shape)
-            # print("propagator", propagator.M.shape)
-            # print("VlL", VlL[0].M.shape)
+                Vll[n] = self.V[k][n].sub(subbasisl, subbasisl).M
 
 
             # XXX Sorry, for now the subscripts are confusing, need to sort this out
@@ -281,15 +300,19 @@ class Phi4():
             # print("DH2lL", DH2lL.M.shape)
             DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
             DH2Ll = DH2lL.transpose()
-            DH2ll = DH2Ll.sub(subbasisl, subbasisl)
+            DH2ll = DH2Ll.sub(subbasisl, subbasisl).M
 
             # TODO Add the local parts
             # NOTE Trick to save memory
-            DH3ll = Vhl*propagator*VhhHalf*propagator*Vlh*self.g4**3
-            DH3ll += DH3ll.transpose()
-            DH3ll -= Vhl*propagator*VhhDiag*propagator*Vlh*self.g4**3
+            DHH3ll = []
+            for VhhHalfChunk, VhhDiagChunk in izip(VhhHalfList, VhhDiagList):
+                DH3llPart = Vhl*propagator*VhhHalfChunk*propagator*Vlh*self.g4**3
+                DH3llPart += DH3llPart.transpose()
+                DH3llPart -= Vhl*propagator*VhhDiagChunk*propagator*Vlh*self.g4**3
+                DH3ll += DH3llPart
 
             return DH2lL*((DH2ll-DH3ll).inverse())*DH2Ll
+
 
         # Only local
         elif EL==ET:
