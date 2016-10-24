@@ -20,7 +20,7 @@ class Phi4():
 
         self.m = m
         self.L = L
-        self.nproc = 4
+        self.nproc = 7
 
         self.basis = {}
         self.h0 = {}
