@@ -10,7 +10,7 @@ from operator import attrgetter
 import renorm
 from matrix import Matrix
 from scipy import exp, pi, array
-from multiprocessing.dummy import Pool
+from pathos.multiprocessing import ProcessingPool as Pool
 
 
 class Phi4():
@@ -120,11 +120,12 @@ class Phi4():
             n = int(math.ceil(basis.size/self.nproc))
             idxLists = [range(basis.size)[x:x+n] for x in range(0, basis.size, n)]
 
+            def f(idxList):
+                return self.buildMatrixChunk(Vlist, basis, lookupbasis,
+                            idxList, statePos, helper, ignKeyErr=ignKeyErr)*self.L
+
             with Pool(self.nproc) as p:
-                return p.map(
-                        lambda idxList: self.buildMatrixChunk(Vlist, basis, lookupbasis,
-                            idxList, statePos, helper, ignKeyErr=ignKeyErr)*self.L,
-                        idxLists)
+                return p.map(f, idxLists)
 
 
     def computePotential(self, k):
