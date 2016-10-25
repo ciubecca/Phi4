@@ -8,6 +8,7 @@ from oscillators import *
 from collections import Counter
 from operator import attrgetter
 import renorm
+import gc
 from matrix import Matrix
 from scipy import exp, pi, array
 
@@ -18,7 +19,7 @@ class Phi4():
 
         self.m = m
         self.L = L
-        self.nproc = 7
+        self.nchunks = 10
 
         self.basis = {}
         self.h0 = {}
@@ -26,8 +27,8 @@ class Phi4():
         self.DeltaH = {}
         self.VLh = {}
         self.Vhl = {}
-        self.VhhHalfList = {}
-        self.VhhDiagList = {}
+        # self.VhhHalfList = {}
+        # self.VhhDiagList = {}
         self.basisH = {}
         self.basisl = {}
 
@@ -47,8 +48,26 @@ class Phi4():
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
 
-    def buildMatrixChunk(self, Vlist, basis, lookupbasis, idxList, statePos,
-            helper, ignKeyErr=False):
+    def buildMatrix(self, Vlist, basis, lookupbasis, statePos=None,
+            ignKeyErr=False, idxList=None, sumTranspose=False):
+
+
+        if basis.helper.nmax > lookupbasis.helper.nmax:
+            helper = basis.helper
+        else:
+            helper = lookupbasis.helper
+
+# Dictionary of positions of states
+        # Contains also the P-reversed states
+        # NOTE: using arrays is much less efficient!
+        statePos = {}
+        for i,state in enumerate(lookupbasis.stateList):
+            statePos[tuple(helper.torepr2(state))] = i
+            statePos[tuple(helper.torepr2(state)[::-1])] = i
+
+        if idxList==None:
+            idxList = range(basis.size)
+
 
         # Will construct the sparse matrix in the COO format and then convert it to CSC
         data = []
@@ -66,44 +85,6 @@ class Phi4():
 
         V = scipy.sparse.coo_matrix((data,(row,col)),
                 shape=(basis.size,lookupbasis.size))
-
-        # This should resum duplicate entries
-        return V.tocsc()
-
-
-    # @profile
-    def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False, sumTranspose=False,
-            parallel=False):
-        """
-        Compute a potential matrix from the operators in Vlist between two bases
-        Vlist: list of Operator instances (for instance the
-        a^a^a^a^, a^a^a^a and a^a^aa and parts of V4)
-        basis: set of states corresponding to the row indexes of the matrix
-        lookupbasis: set of states corresponding to column indexes of the matrix
-        ignKeyErr: this should be set to True only for Vhh (because some states generated
-        don't belong to the basis)
-        """
-
-        if basis.helper.nmax > lookupbasis.helper.nmax:
-            helper = basis.helper
-        else:
-            helper = lookupbasis.helper
-
-# Dictionary of positions of states
-        # Contains also the P-reversed states
-        # NOTE: using arrays is much less efficient!
-        statePos = {}
-        for i,state in enumerate(lookupbasis.stateList):
-            statePos[tuple(helper.torepr2(state))] = i
-            statePos[tuple(helper.torepr2(state)[::-1])] = i
-
-
-
-        idxList = range(basis.size)
-
-        # Build a single sparse matrix in the CSC format
-        V = self.buildMatrixChunk(Vlist, basis, lookupbasis, idxList, statePos, helper,
-                ignKeyErr=ignKeyErr)
 
         if sumTranspose:
             # Add the matrix to its transpose and subtract the diagonal
@@ -159,7 +140,7 @@ class Phi4():
         self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
     # @profile
-    def computeHEVs(self, k, EL, EL3=None):
+    def computeHEVs(self, k, EL):
         """
         Compute the matrices involving the high-energy states below EL
         k: parity quantum number
@@ -170,11 +151,6 @@ class Phi4():
 # "l": selected low-energy state
 # "L": generic low-energy state
 # "h": selected high-energy state
-
-        # We might want to choose EL3 < EL because Vhh is expensive to generate
-        if EL3 == None:
-            EL3 = EL
-
 
         #################################
         # Generate the Vlh matrix
@@ -204,23 +180,6 @@ class Phi4():
                 self.buildMatrix(Vlist, basis, lookupbasis))
 
 
-        ##############################
-        # Generate the Vhh matrix
-        ##############################
-
-        print("Computing Vhh...")
-
-        basis = self.basisH[k]
-
-        Vlist = V4OpsSelectedHalf(basis)
-
-        # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
-        self.VhhHalfList[k] =  self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
-                    sumTranspose=False, parallel=True)
-
-        self.VhhDiagList[k] = \
-            [scipy.sparse.spdiags(VhhHalfChunk.diagonal(),0,basis.size,basis.size)
-                for VhhHalfChunk in self.VhhHalfList[k]]
 
 
     # @profile
@@ -269,9 +228,6 @@ class Phi4():
             Vlh = Vhl.transpose()
             VLh = self.VLh[k].sub(basisH, subbasisL).M
             VhL = VLh.transpose()
-            # Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
-            VhhHalfList = self.VhhHalfList[k]
-            VhhDiagList = self.VhhDiagList[k]
 
 
             VlL = {}
@@ -291,16 +247,45 @@ class Phi4():
             # print("DH2lL", DH2lL.M.shape)
             DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
             DH2Ll = DH2lL.transpose()
-            DH2ll = Matrix(subbasisL, subbasisl, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
+            DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
+
+
+
 
             # TODO Add the local parts
             # NOTE Trick to save memory
             DH3ll = scipy.sparse.csc_matrix((subbasisl.size, subbasisl.size))
-            for VhhHalfChunk, VhhDiagChunk in zip(VhhHalfList, VhhDiagList):
-                DH3llPart = Vhl*propagator*VhhHalfChunk*propagator*Vlh*self.g4**3
+
+            basis = self.basisH[k]
+            Vhhlist = V4OpsSelectedHalf(basis)
+
+
+            chunklen = int(math.ceil(basis.size/self.nchunks))
+            idxLists = [range(basis.size)[x:x+chunklen] for x in
+                    range(0, basis.size, chunklen)]
+
+            for n in range(self.nchunks):
+                ##############################
+                # Generate the Vhh matrix
+                ##############################
+                print("Computing Vhh chunk ", n)
+
+                idxList = idxLists[n]
+
+                # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
+                VhhHalfPart =  self.buildMatrix(Vhhlist, basis, basis,
+                        ignKeyErr=True, sumTranspose=False, idxList=idxList)
+
+                VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
+                        basis.size)
+
+                DH3llPart = Vhl*propagator*VhhHalfPart*propagator*Vlh*self.g4**3
                 DH3llPart += DH3llPart.transpose()
-                DH3llPart -= Vhl*propagator*VhhDiagChunk*propagator*Vlh*self.g4**3
+                DH3llPart -= Vhl*propagator*VhhDiagPart*propagator*Vlh*self.g4**3
                 DH3ll += DH3llPart
+
+                del VhhHalfPart
+                gc.collect()
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
@@ -311,7 +296,7 @@ class Phi4():
             for n in (0,2,4):
                 VLL[n] = self.V[k][n].sub(subbasisL, subbasisL)
 
-            return VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
+            return (VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]).M
 
 
 
@@ -339,13 +324,13 @@ class Phi4():
         subbasisL = self.basis[k].sub(lambda v: helper.energy(v)<=ET)
         self.subbasisL = subbasisL
 
-        Hraw = (self.h0[k] + self.g4*self.V[k][4]).sub(subbasisL, subbasisL)
+        Hraw = (self.h0[k] + self.g4*self.V[k][4]).sub(subbasisL, subbasisL).M
 
         if ren=="raw":
-            compH = Hraw.M
+            compH = Hraw
         else:
             DeltaH = self.computeDeltaH(k, ET, EL, eps, maxntails)
-            compH = (Hraw + DeltaH).M
+            compH = (Hraw + DeltaH)
 
         self.compSize = compH.shape[0]
 

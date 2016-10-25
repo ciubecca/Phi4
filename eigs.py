@@ -8,15 +8,15 @@ import database
 
 
 # Whether we should save the results in the database data/spectra.db
-saveondb = True
+saveondb = False
 # saveondb = False
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 1
 # List of parity quantum numbers
-klist = (-1,1)
+klist = (1,)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
-minoverlap = 10**(-4)
+minoverlap = 10**(-2)
 
 
 # How EL depends on ET
@@ -123,3 +123,5 @@ for k in klist:
         db.insert(k=k, ET=ET, L=L, ren="rentails", g=g,
                 spec=a.eigenvalues["rentails"][k], eigv=a.eigenvectors["rentails"][k],
                 basisSize=a.compSize, neigs=neigs, EL=EL, ntails=a.ntails, eps=eps)
+    else:
+        print(a.vacuumE("rentails"))
