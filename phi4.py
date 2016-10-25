@@ -10,30 +10,6 @@ from operator import attrgetter
 import renorm
 from matrix import Matrix
 from scipy import exp, pi, array
-from pathos.multiprocessing import ProcessingPool as Pool
-from multiprocessing import Process, Queue
-
-
-def f_thread(q, Vlist, basis, lookupbasis, idxList, statePos, helper, ignKeyErr):
-    # Will construct the sparse matrix in the COO format and then convert it to CSC
-    data = []
-    row = []
-    col = []
-
-    for V in Vlist:
-        for i in idxList:
-            colpart, datapart = \
-                V.computeMatrixElements(basis,i,lookupbasis,
-                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
-            data += datapart
-            col += colpart
-            row += [i]*len(colpart)
-
-    V = scipy.sparse.coo_matrix((data,(row,col)),
-             shape=(basis.size,lookupbasis.size))
-
-    # This should resum duplicate entries
-    q.put(V.tocsc())
 
 
 class Phi4():
@@ -123,42 +99,19 @@ class Phi4():
 
 
 
-        if parallel==False:
-            idxList = range(basis.size)
+        idxList = range(basis.size)
 
-            # Build a single sparse matrix in the CSC format
-            V = self.buildMatrixChunk(Vlist, basis, lookupbasis, idxList, statePos, helper,
-                    ignKeyErr=ignKeyErr)
+        # Build a single sparse matrix in the CSC format
+        V = self.buildMatrixChunk(Vlist, basis, lookupbasis, idxList, statePos, helper,
+                ignKeyErr=ignKeyErr)
 
-            if sumTranspose:
-                # Add the matrix to its transpose and subtract the diagonal
-                diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
-                return (V+V.transpose()-diag_V)*self.L
-            else:
-                return V*self.L
-
+        if sumTranspose:
+            # Add the matrix to its transpose and subtract the diagonal
+            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
+            return (V+V.transpose()-diag_V)*self.L
         else:
-            # Split the basis index list into chunks, and generate a list of separate
-            # sparse matrices in the CSC format. Not adding them up saves memory.
-            chunklen = int(math.ceil(basis.size/self.nproc))
-            idxLists = [range(basis.size)[x:x+chunklen] for x in
-                    range(0, basis.size, chunklen)]
+            return V*self.L
 
-
-
-            q = Queue()
-            V = []
-            p = {}
-            for n in range(self.nproc): p[n] = Process(target=f_thread,
-                    args=(q,Vlist,basis,lookupbasis,idxLists[n],statePos,helper,ignKeyErr))
-            for n in range(self.nproc): p[n].start()
-            for n in range(self.nproc): V.append(q.get())
-            return V
-
-
-
-            # with Pool(self.nproc) as p:
-                # return p.map(f, idxLists)
 
 
     def computePotential(self, k):
