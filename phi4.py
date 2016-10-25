@@ -89,9 +89,9 @@ class Phi4():
         if sumTranspose:
             # Add the matrix to its transpose and subtract the diagonal
             diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
-            return (V+V.transpose()-diag_V)*self.L
+            return (V+V.transpose()-diag_V)
         else:
-            return V*self.L
+            return V
 
 
 
@@ -108,11 +108,11 @@ class Phi4():
         Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
             self.V[k][n] = Matrix(basis,basis,
-                    self.buildMatrix(Vlist[n], basis, basis, sumTranspose=True))
+                    self.buildMatrix(Vlist[n], basis, basis, sumTranspose=True)*self.L)
 
         # Construct the identity potential matrix
         idM = scipy.sparse.eye(basis.size)
-        self.V[k][0] = Matrix(basis, basis, idM)
+        self.V[k][0] = Matrix(basis, basis, idM)*self.L
 
 
     def genHEBasis(self, k, basisl, EL):
@@ -161,7 +161,7 @@ class Phi4():
         Vlist = V4OpsSelectedFull(basis, EL)
 
         self.Vhl[k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis))
+                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
         ##############################
@@ -177,7 +177,7 @@ class Phi4():
         Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
 
         self.VLh[k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis))
+                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
 
@@ -274,7 +274,7 @@ class Phi4():
 
                 # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
                 VhhHalfPart =  self.buildMatrix(Vhhlist, basis, basis,
-                        ignKeyErr=True, sumTranspose=False, idxList=idxList)
+                        ignKeyErr=True, sumTranspose=False, idxList=idxList)*self.L
 
                 VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
                         basis.size)
