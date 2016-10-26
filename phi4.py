@@ -210,23 +210,23 @@ class Phi4():
             # subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=EL)
 
 
-            # Propagator and projector on the high-energy states
-            basisH = self.basisH[k]
-            propVec = []
-            for e in basisH.energyList:
-                if ET < e <= EL:
-                    propVec.append(1/(eps-e))
-                else:
-                    propVec.append(0)
-            propagator = scipy.sparse.spdiags(propVec,0,basisH.size,basisH.size)
+            # Subset of the selected high energy states
+            helper = self.basisH[k].helper
+            vectorlist = [v for v in self.basisH[k] if ET<helper.energy(v)<=EL]
+            subbasisH = Basis(k, vectorlist, helper)
+
+            # Propagator on the high-energy states
+            energyArr = array(subbasisH.energyList)
+            propagator = scipy.sparse.spdiags(1/(eps-energyArr),0,subbasisH.size,
+                    subbasisH.size)
 
 
             #############################
             # Construct DH
             #############################
-            Vhl = self.Vhl[k].sub(subbasisl, basisH).M
+            Vhl = self.Vhl[k].sub(subbasisl, subbasisH).M
             Vlh = Vhl.transpose()
-            VLh = self.VLh[k].sub(basisH, subbasisL).M
+            VLh = self.VLh[k].sub(subbasisH, subbasisL).M
             VhL = VLh.transpose()
 
 
@@ -256,7 +256,7 @@ class Phi4():
             # NOTE Trick to save memory
             DH3ll = scipy.sparse.csc_matrix((subbasisl.size, subbasisl.size))
 
-            basis = self.basisH[k]
+            basis = subbasisH
             Vhhlist = V4OpsSelectedHalf(basis)
 
 
