@@ -21,7 +21,7 @@ minoverlap = 10**(-2)
 
 # How EL depends on ET
 def el(ET):
-    return ET*2.5
+    return ET*3
 
 argv = sys.argv
 if len(argv) < 4:
