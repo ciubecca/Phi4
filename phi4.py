@@ -183,7 +183,7 @@ class Phi4():
 
 
     # @profile
-    def computeDeltaH(self, k, ET, EL, eps, maxntails):
+    def computeDeltaH(self, k, ET, EL, eps, EL3=None, maxntails=None):
 # Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
 
         helper = self.basis[k].helper
@@ -192,6 +192,9 @@ class Phi4():
 
         # Dictionary of local renormalization coefficients
         VV2 = renorm.renlocal(g4=self.g4, EL=EL, m=self.m, eps=eps).VV2
+
+        if EL3==None:
+            EL3 = EL
 
         # Local + non-local
         if (EL != ET):
@@ -252,13 +255,31 @@ class Phi4():
 
 
 
+###########################
+# Computation of DH3
+##########################
+
             # TODO Add the local parts
             # NOTE Trick to save memory
+
+
+            # Subset of the selected high energy states
+            helper = self.basisH[k].helper
+            vectorlist = [v for v in self.basisH[k] if ET<helper.energy(v)<=EL3]
+            subbasisH = Basis(k, vectorlist, helper)
+
+            # Propagator on the high-energy states
+            energyArr = array(subbasisH.energyList)
+            propagator = scipy.sparse.spdiags(1/(eps-energyArr),0,subbasisH.size,
+                    subbasisH.size)
+
+            Vhl = self.Vhl[k].sub(subbasisl, subbasisH).M
+            Vlh = Vhl.transpose()
+
             DH3ll = scipy.sparse.csc_matrix((subbasisl.size, subbasisl.size))
 
             basis = subbasisH
             Vhhlist = V4OpsSelectedHalf(basis)
-
 
             chunklen = int(math.ceil(basis.size/self.nchunks))
             idxLists = [range(basis.size)[x:x+chunklen] for x in
@@ -268,7 +289,7 @@ class Phi4():
                 ##############################
                 # Generate the Vhh matrix
                 ##############################
-                print("Computing Vhh chunk ", n)
+                # print("Computing Vhh chunk ", n)
 
                 idxList = idxLists[n]
 
@@ -308,7 +329,7 @@ class Phi4():
 
 
 
-    def computeEigval(self, k, ET, ren, EL=None, eps=None, neigs=10, maxntails=None):
+    def computeEigval(self, k, ET, ren, EL=None, EL3=None, eps=None, neigs=10, maxntails=None):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number
         ET: ET
@@ -329,7 +350,7 @@ class Phi4():
         if ren=="raw":
             compH = Hraw
         else:
-            DeltaH = self.computeDeltaH(k, ET, EL, eps, maxntails)
+            DeltaH = self.computeDeltaH(k=k, ET=ET, EL=EL, eps=eps, maxntails=maxntails, EL3=EL3)
             compH = (Hraw + DeltaH)
 
         self.compSize = compH.shape[0]
