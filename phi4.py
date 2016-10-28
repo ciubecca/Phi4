@@ -373,12 +373,12 @@ class Phi4():
         # The vacuum is K-even
 
     def spectrum(self, k, ren):
-        eigs = self.eigenvalues[ren]
+        eigs = self.eigenvalues[ren][k]
         # Subtract vacuum energies
         if k==1:
-            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[k][1:]])
+            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[1:]])
         elif k==-1:
-            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[k]])
+            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs])
 
 
     @staticmethod

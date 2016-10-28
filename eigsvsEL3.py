@@ -139,3 +139,6 @@ for k in klist:
             db.insert(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
                     spec=a.eigenvalues["rentails"][k], EL3=EL3,
                     basisSize=a.compSize, neigs=neigs, EL=EL, ntails=a.ntails, eps=eps)
+
+
+    del a.VLh[k]

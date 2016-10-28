@@ -624,3 +624,104 @@ def V6OpsSelectedHalf(basis):
 
     return V06, V15, V24, V33
 
+
+
+def V2V4OpsSelectedHalf(basis):
+    """ Half of the bilocal operators of :V2 V4: acting on the "selected" basis of states
+    (e.g. the set of "selected" low-energy tails). It takes into account only the
+    annihilation part.
+    Not all the possible annihilation momenta are included. This method is used
+    when computing the local V6 matrix on the low-energy tails
+    """
+
+    helper = basis.helper
+    nmax = helper.nmax
+    Emax = basis.Emax
+    oscEnergy = helper.oscEnergy
+
+
+    V06 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 6, 6, nmax))
+
+    for dlist in dlists:
+        # TODO Some of these elements can be excluded
+        V06.append((dlist,[()]))
+
+    V06 = Operator(V06, 6, 0, helper)
+
+
+    V15 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 5, 6, nmax))
+
+    for dlist in dlists:
+        k1, k2, k3, k4, k5 = dlist
+
+        k6 = k1+k2+k3+k4+k5
+        clist = (k6,)
+
+        # TODO Some of these elements can be excluded
+        V13.append((dlist,[clist]))
+
+    V15 = Operator(V15, 5, 1, helper)
+
+
+    V24 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 2, 6, nmax))
+
+    for dlist in dlists:
+        (k1,k2,k3,k4) = dlist
+        V24.append((dlist,[]))
+
+        for k5 in range(max(-nmax+k1+k2+k3+k4,-nmax),
+                min(int(floor((k1+k2+k3+k4)/2)),nmax)+1):
+
+            k6 = k1+k2+k3+k4-k5
+            clist = (k5,k6)
+
+            if oscEnergy(clist) <= Emax+ tol:
+                V22[-1][1].append(clist)
+
+
+    V24 = Operator(V24, 4, 2, helper)
+
+
+
+    V33 = []
+
+    dlists = set()
+    for state in basis.stateList:
+        dlists.update(gendlists(state, 3, 6, nmax))
+
+    for dlist in dlists:
+        (k1,k2,k3) = dlist
+        V33.append((dlist,[]))
+
+        for k4 in range(-nmax, nmax+1):
+
+            for k5 in range(max(-nmax+k1+k2+k3-k4,-nmax),
+                min(int(floor((k1+k2+k3-k4)/2)),nmax)+1):
+
+                k6 = k1+k2+k3-k4-k5
+                clist = (k4,k5,k6)
+
+                if oscEnergy(clist) <= Emax+ tol \
+                    and sorted([abs(min(dlist)),abs(max(dlist))]) <= \
+                        sorted([abs(min(clist)),abs(max(clist))]):
+                            # XXX This is a generalization of the lexicographical
+#sorting condition
+                    V33[-1][1].append(clist)
+
+
+    V33 = Operator(V33, 3, 3, helper)
+
+    return V06, V15, V24, V33
+
