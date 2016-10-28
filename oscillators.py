@@ -44,6 +44,9 @@ def bose(x):
 # XXX Check
 parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 
+class LocOperator(Operator):
+
+class BilocOperator(Operator):
 
 class Operator():
     """
@@ -84,18 +87,6 @@ class Operator():
 # Combinatorial and phase-space factors of the oscillators
         self.oscFactors = []
 
-# This generates a list of tuples of the form (n, Zc, Zd) from two separate lists of
-# tuples of the form (n,Zc) and (n,Zd)
-# Zc and Zd are respectively the number of creation and annihilation operators at
-# wavenumber n
-        def f(clist, dlist):
-            ret = []
-            wnlist = set(clist+dlist)
-            cosc = Counter(clist)
-            dosc = Counter(dlist)
-            for n in wnlist:
-                ret.append((n, cosc.get(n,0), dosc.get(n,0)))
-            return ret
 
 
         for i, (dlist,clists) in enumerate(oscillators):
@@ -103,7 +94,7 @@ class Operator():
 
             self.dlistPos[dlist] = i
 
-            self.oscList.append([f(clist,dlist) for clist in clists])
+            self.oscList.append([self.torepr1(clist,dlist) for clist in clists])
 
             self.oscEnergies.append([helper.oscEnergy(clist)-helper.oscEnergy(dlist)
                 for clist in clists])
@@ -111,6 +102,20 @@ class Operator():
             self.oscFactors.append([bose(clist)*bose(dlist)*scipy.special.binom(nc+nd,nc)\
                     *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
                     for clist in clists])
+
+
+    def torepr1(clist, dlist):
+        """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
+        tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
+        the creation and annihilation momenta
+        Zc and Zd are respectively the number of creation and annihilation operators at
+        wavenumber n """
+
+        wnlist = set(clist+dlist)
+        cosc = Counter(clist)
+        dosc = Counter(dlist)
+        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
+
 
     # @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,

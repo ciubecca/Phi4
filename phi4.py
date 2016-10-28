@@ -294,6 +294,7 @@ class Phi4():
                 idxList = idxLists[n]
 
                 # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
+# TODO Do this more elegantly with iterators ?
                 VhhHalfPart =  self.buildMatrix(Vhhlist, basis, basis,
                         ignKeyErr=True, sumTranspose=False, idxList=idxList)*self.L
 
