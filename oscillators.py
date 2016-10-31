@@ -46,15 +46,6 @@ parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 
 class LocOperator(Operator):
 
-class BilocOperator(Operator):
-
-class Operator():
-    """
-    Collection of oscillators with fixed number of creation and annihilation operators
-    This is convenient to compute matrix elements and generate the high-energy basis
-    from a set of tails
-    """
-
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -88,6 +79,46 @@ class Operator():
         self.oscFactors = []
 
 
+        for i, (dlist,clists) in enumerate(oscillators):
+            clists = list(sorted(clists,key=helper.oscEnergy))
+
+            self.dlistPos[dlist] = i
+
+            self.oscList.append([self.torepr1(clist,dlist) for clist in clists])
+
+            self.oscEnergies.append([helper.oscEnergy(clist)-helper.oscEnergy(dlist)
+                for clist in clists])
+
+            self.oscFactors.append([bose(clist)*bose(dlist)*scipy.special.binom(nc+nd,nc)\
+                    *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
+                    for clist in clists])
+
+
+
+class BilocOperator(Operator):
+
+    def __init__(self, oscillators, nd, nc, helper):
+        """
+        oscillators: list of tuples. The first element of the tuple is a tuple of
+        wavenumbers of annihilation operators, and the second element a list of
+        tuples of wavenumbers of creation operators
+        basis: basis on which the operator will act
+        nd: number of annihilation operators
+        nc: number of creation operators
+        """
+
+        self.nd = nd
+        self.nc = nc
+        omega = helper.omega
+        L = helper.L
+        m = helper.m
+        self.helper = helper
+
+        self.dlistPos = {}
+        self.oscList = []
+        self.oscEnergies = []
+        self.oscFactors = []
+
 
         for i, (dlist,clists) in enumerate(oscillators):
             clists = list(sorted(clists,key=helper.oscEnergy))
@@ -102,6 +133,15 @@ class Operator():
             self.oscFactors.append([bose(clist)*bose(dlist)*scipy.special.binom(nc+nd,nc)\
                     *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
                     for clist in clists])
+
+
+class Operator():
+    """
+    Collection of oscillators with fixed number of creation and annihilation operators
+    This is convenient to compute matrix elements and generate the high-energy basis
+    from a set of tails
+    """
+
 
 
     def torepr1(clist, dlist):
@@ -631,12 +671,9 @@ def V6OpsSelectedHalf(basis):
 
 
 
-def V2V4OpsSelectedHalf(basis):
-    """ Half of the bilocal operators of :V2 V4: acting on the "selected" basis of states
-    (e.g. the set of "selected" low-energy tails). It takes into account only the
-    annihilation part.
-    Not all the possible annihilation momenta are included. This method is used
-    when computing the local V6 matrix on the low-energy tails
+def V2V4OpsHalf(basis):
+    """
+    Half of the bilocal operators of :V2 V4: acting on full low-energy basis of states
     """
 
     helper = basis.helper
@@ -644,89 +681,192 @@ def V2V4OpsSelectedHalf(basis):
     Emax = basis.Emax
     oscEnergy = helper.oscEnergy
 
+    # The first element of the keys is the number of a^, the second of a
+    phi2oscList = {(2,0):[], (1,1):[], (0,2):[]}
+    phi4oscList = {(4,0):[], (3,1):[], (2,2):[]}
 
-    V06 = []
+    # Fill in phi2OscList[(2,0)]
+    dlist = ()
+    phi2OscList[(2,0)].append[(dlist,[])]
+    for k1 in range(-nmax, 1):
+        k2 = -k1
+        clist = (k1,k2)
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 6, 6, nmax))
+        if oscEnergy(clist) <= Emax+tol:
+            phi2OscList[(2,0)][-1][1].append(clist)
 
-    for dlist in dlists:
-        # TODO Some of these elements can be excluded
-        V06.append((dlist,[()]))
+    # Fill in phi2OscList[(1,1)]
+    for k1 in range(-nmax,nmax+1):
+        dlist = (k1,)
+        phi2OscList[(1,1)].append[(dlist,[])]
 
-    V06 = Operator(V06, 6, 0, helper)
+        k2 = k1
+        clist = (k2,)
 
+        if oscEnergy(clist) <= Emax+tol and oscEnergy(dlist) <= Emax+tol
+            phi2OscList[(1,1)][-1][1].append(clist)
 
-    V15 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 5, 6, nmax))
-
-    for dlist in dlists:
-        k1, k2, k3, k4, k5 = dlist
-
-        k6 = k1+k2+k3+k4+k5
-        clist = (k6,)
-
-        # TODO Some of these elements can be excluded
-        V13.append((dlist,[clist]))
-
-    V15 = Operator(V15, 5, 1, helper)
-
-
-    V24 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 2, 6, nmax))
-
-    for dlist in dlists:
-        (k1,k2,k3,k4) = dlist
-        V24.append((dlist,[]))
-
-        for k5 in range(max(-nmax+k1+k2+k3+k4,-nmax),
-                min(int(floor((k1+k2+k3+k4)/2)),nmax)+1):
-
-            k6 = k1+k2+k3+k4-k5
-            clist = (k5,k6)
-
-            if oscEnergy(clist) <= Emax+ tol:
-                V22[-1][1].append(clist)
+    # Fill in phi2OscList[(0,2)]
+    for k1 in range(-nmax,1):
+        k2 = -k1
+        dlist = (k1,k2)
+        clist = ()
+        phi2OscList[(0,2)].append[(dlist,[clist])]
 
 
-    V24 = Operator(V24, 4, 2, helper)
+    # Fill in phi4OscList[(4,0)]
+    dlist = ()
+    phi4oscList[(4,0)].append((dlist, []))
+    for k1 in range(-nmax,nmax+1):
+        for k2 in range(k1,nmax+1):
+            # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
+            for k3 in range(max(-nmax-k1-k2,k2),
+                    min(int(floor((-k1-k2)/2)),nmax)+1):
+
+                k4 = -k1-k2-k3
+                clist = (k1,k2,k3,k4)
+
+                if oscEnergy(clist) <= Emax+tol:
+                    phi4OscList[(4,0)][-1][1].append(clist)
+
+
+    # Fill in phi4OscList[(3,1)]
+    for k1 in range(-nmax,nmax+1):
+        dlist = (k1,)
+        phi4oscList[(3,1)].append((dlist,[]))
+
+        for k2 in range(-nmax,nmax+1):
+            for k3 in range(max(-nmax+k1-k2,k2),
+                           min(int(floor((k1-k2)/2)),nmax)+1):
+
+                k4 = k1-k2-k3
+                clist = (k2,k3,k4)
+
+                if oscEnergy(clist) <= Emax+tol:
+                    phi4oscList[(3,1)][-1][1].append(clist)
+
+
+    # Fill in phi4OscList[(2,2)]
+    for k1 in range(-nmax,nmax+1):
+        for k2 in range(k1,nmax+1):
+            dlist = (k1,k2)
+            phi4oscList[(2,2)].append((dlist,[]))
+
+            for k3 in range(max(-nmax+k1+k2,-nmax),
+                    min(int(floor((k1+k2)/2)),nmax)+1):
+
+                k4 = k1+k2-k3
+                clist = (k3,k4)
+
+                # XXX Is this correct?
+                if oscEnergy(clist) <= Emax+tol and\
+                    sorted([abs(k3),abs(k4)])<sorted([abs(k1),abs(k2)]):
+                    # only consider lexicographically ordered part of V22
+                    # but also including diagonal part which will be separated below
+
+                    phi4oscList[(2,2)][-1][1].append(clist)
+
+
+    return SelectBilocOscillators(phi2oscList, phi4oscList, Emax, helper)
 
 
 
-    V33 = []
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 3, 6, nmax))
+# NOTE Name is confusing
+def V2V4OpsDiag(basis):
+    """
+    Part of the bilocal operators of :V2 V4: involving the terms
+    :V2 a_k1 a_k2 a^_k1 a^_k2:
+    """
 
-    for dlist in dlists:
-        (k1,k2,k3) = dlist
-        V33.append((dlist,[]))
+    helper = basis.helper
+    nmax = helper.nmax
+    Emax = basis.Emax
+    oscEnergy = helper.oscEnergy
 
-        for k4 in range(-nmax, nmax+1):
+    # The first element of the keys is the number of a^, the second of a
+    phi2oscList = {(2,0):[], (1,1):[], (0,2):[]}
+    phi4oscList = {(2,2):[]}
 
-            for k5 in range(max(-nmax+k1+k2+k3-k4,-nmax),
-                min(int(floor((k1+k2+k3-k4)/2)),nmax)+1):
+    # Fill in phi2OscList[(2,0)]
+    dlist = ()
+    phi2OscList[(2,0)].append[(dlist,[])]
+    for k1 in range(-nmax, 1):
+        k2 = -k1
+        clist = (k1,k2)
 
-                k6 = k1+k2+k3-k4-k5
-                clist = (k4,k5,k6)
+        if oscEnergy(clist) <= Emax+tol:
+            phi2OscList[(2,0)][-1][1].append(clist)
 
-                if oscEnergy(clist) <= Emax+ tol \
-                    and sorted([abs(min(dlist)),abs(max(dlist))]) <= \
-                        sorted([abs(min(clist)),abs(max(clist))]):
-                            # XXX This is a generalization of the lexicographical
-#sorting condition
-                    V33[-1][1].append(clist)
+    # Fill in phi2OscList[(1,1)]
+    for k1 in range(-nmax,nmax+1):
+        dlist = (k1,)
+        phi2OscList[(1,1)].append[(dlist,[])]
+
+        k2 = k1
+        clist = (k2,)
+
+        if oscEnergy(clist) <= Emax+tol and oscEnergy(dlist) <= Emax+tol
+            phi2OscList[(1,1)][-1][1].append(clist)
+
+    # Fill in phi2OscList[(0,2)]
+    for k1 in range(-nmax,1):
+        k2 = -k1
+        dlist = (k1,k2)
+        clist = ()
+        phi2OscList[(0,2)].append[(dlist,[clist])]
 
 
-    V33 = Operator(V33, 3, 3, helper)
+    # Fill in phi4OscList[(2,2)]
+    for k1 in range(-nmax,nmax+1):
+        for k2 in range(k1,nmax+1):
+            dlist = (k1,k2)
+            phi4oscList[(2,2)].append((dlist,[]))
 
-    return V06, V15, V24, V33
+            clist = dlist
 
+            phi4oscList[(2,2)][-1][1].append(clist)
+
+
+    return SelectBilocOscillators(phi2oscList, phi4oscList, Emax, helper)
+
+
+
+
+
+
+def SelectBilocOscillators(oscList1, oscList2, Emax, helper):
+
+
+    oscEnergy = helper.oscEnergy
+
+    Oplist = []
+
+    # Now take all the possible products of the oscillators in the V2 and V4 parts
+    for (nc1, nd1),oscLists1 in oscList1.items():
+
+        for (nc2, nd2),oscLists2 in oscList2.items():
+
+            JointOscList = []
+
+            for dlist1, clists1 in oscLists1:
+                for dlist2, clists2 in oscLists2:
+
+                    if oscEnergy(tuple(sorted(dlist1+dlist2))) <= Emax+tol:
+
+                        dlistPair = (dlist1,dlist2)
+                        JointOscList.append((dlistPair,[]))
+
+                        for clist1 in clists1:
+                            for clist2 in clists2:
+
+                                if oscEnergy(tuple(sorted(clist1+clist2)))<=Emax+tol:
+                                    clistPair = (clist1, clist2)
+
+                                    if oscEnergy(tuple(sorted(clist1+clist2))) <= Emax+tol:
+                                        JointOScList[-1][1].append(clistPair)
+
+            Oplist.append(BilocOperator(JointOscList,ndPair=(nd1,nd2),ncPair=(nc1,nc2),
+                helper=helper))
+
+    return Oplist
