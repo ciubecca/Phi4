@@ -10,7 +10,30 @@ import bisect
 
 tol = 10**(-10)
 
-# @profile
+
+def filterDlist(dlist, nd, ntot, nmax):
+    # TODO This can be sped up with the n-SUM algorithm
+    if nd==ntot:
+        return sum(dlist)==0
+    elif nd==ntot-1:
+        return abs(sum(dlist))<=nmax
+    else:
+        return True
+
+
+def torepr1(clist, dlist):
+        """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
+        tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
+        the creation and annihilation momenta
+        Zc and Zd are respectively the number of creation and annihilation operators at
+        wavenumber n """
+
+        wnlist = set(clist+dlist)
+        cosc = Counter(clist)
+        dosc = Counter(dlist)
+        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
+
+
 # TODO The speed optimization resulting from using the N-Sum algorithm could be important
 def gendlists(state, nd, ntot, nmax):
     """ Generates a list of all the possible combinations of momenta in the state that
@@ -21,20 +44,25 @@ def gendlists(state, nd, ntot, nmax):
     nmax: maximal wavenumber of the "lookup" basis
     """
 
-    x = list(itertools.chain.from_iterable([[n]*Zn for n,Zn in state]))
+    # XXX no call to list?
+    x = itertools.chain.from_iterable([[n]*Zn for n,Zn in state])
+    dlists = set(tuple(y) for y in combinations(x,nd))
+    # XXX returns a generator expression
+    return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
 
-    # TODO This can be sped up with the n-SUM algorithm
-    if nd==ntot:
-        # In this case the momenta must sum to 0
-        ret = set(tuple(y) for y in combinations(x,nd))
-        return set(dlist for dlist in ret if sum(dlist)==0)
-    elif nd==ntot-1:
-# In this case we can already exclude momenta whose sum exceeds nmax
-        ret = set(tuple(y) for y in combinations(x,nd))
-        return set(dlist for dlist in ret if abs(sum(dlist))<=nmax)
-    else:
-        ret = set(tuple(y) for y in combinations(x,nd))
-        return ret
+
+def gendlistPairs(state, ndPair, ntotPair, nmax):
+
+    x = list(itertools.chain.from_iterable([[n]*Zn for n,Zn in state]))
+    dlistPairs = set((tuple(sorted(x[:ndPair[0]])),
+        tuple(sorted(x[ndPair[0]:ndPair[1]])))
+        for p in permutations(x))
+
+    return (dlistPair for dlistPair in dlistPairs if
+            filterDlist(dlistPair[0],ndPair[0],ntotPair[0],nmax) and
+            filterDlist(dlistPair[1],ndPair[1],ntotPair[1],nmax))
+
+
 
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
@@ -44,7 +72,13 @@ def bose(x):
 # XXX Check
 parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 
-class LocOperator(Operator):
+
+class LocOperator():
+    """
+    Collection of oscillators with fixed number of creation and annihilation operators
+    This is convenient to compute matrix elements and generate the high-energy basis
+    from a set of tails
+    """
 
     def __init__(self, oscillators, nd, nc, helper):
         """
@@ -93,11 +127,118 @@ class LocOperator(Operator):
                     *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
                     for clist in clists])
 
+    # @profile
+    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
+                                ignKeyErr=False):
+        """ Compute the matrix elements by applying all the oscillators in the operator
+        to an element in the basis
+        basis: set of states on which the operator acts
+        i: index of the state in the basis
+        lookupbasis: basis of states corresponding to the column indexes of the matrix
+        helper: Helper instance
+        statePos: dictionary where the keys are states in representation 2 (in tuple form)
+        and the values are their position in the basis
+        ignKeyErr: this must be set to True if the action of an oscillators on an input state
+        can generate a state not in lookupbasis. This applies only in the computation of Vhh.
+        Otherwise it should be set to False
+        """
+
+
+        # List of columns indices of generated basis elements
+        col = []
+        # List of partial matrix elements
+        data = []
+
+
+        # I define these local variables outside the loops for performance reasons
+        e = basis.energyList[i]
+        p = basis.parityList[i]
+        state = basis.stateList[i]
+
+        statevec = helper.torepr2(state)
+        parityList = lookupbasis.parityList
+        Emin = lookupbasis.Emin
+        Emax = lookupbasis.Emax
+        nmax = helper.nmax
+
+        normFactors = helper.normFactors
+
+        # cycle over all the sets of momenta that can be annihilated
+        for dlist in gendlists(state, self.nd, self.nd+self.nc, lookupbasis.helper.nmax):
+
+            k = self.dlistPos[dlist]
+
+# Only select the oscillators such that the sum of the state and oscillator energies
+# lies within the bounds of the lookupbasis energies
+            imin = bisect.bisect_left(self.oscEnergies[k], Emin-e-tol)
+            imax = bisect.bisect_left(self.oscEnergies[k], Emax-e+tol)
+
+            if imax <= imin:
+                continue
+
+            oscFactors = self.oscFactors[k][imin:imax]
+
+            for i, osc in enumerate(self.oscList[k][imin:imax]):
+                newstatevec = statevec[:]
+
+                x = oscFactors[i]
+
+                for n,Zc,Zd in osc:
+                    newstatevec[n+nmax] += Zc-Zd
+                    x *= normFactors[Zc, Zd, statevec[n+nmax]]
+
+                if ignKeyErr:
+                    try:
+                        j = statePos[tuple(newstatevec)]
+                    except KeyError:
+                        continue
+                else:
+                    j = statePos[tuple(newstatevec)]
+
+                x *= parityFactors[p][parityList[j]]
+                data.append(x)
+                col.append(j)
+
+        return col, data
+
+
+    # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
+    # as Hh = V*Hl
+    def genBasis(self, basis, EL):
+        """ Return a set of tuples of representation 2 states, all of which are not
+        connected by spatial parity transformations.
+        basis: set of "selected" low energy states on which to act
+        EL: maximal energy of the generated high-energy states
+        """
+
+        nmax = self.helper.nmax
+        stateset = set()
+
+        for i, state in enumerate(basis):
+
+            statevec = self.helper.torepr2(state)
+            e = basis.energyList[i]
+
+            for dlist in gendlists(state, self.nd, self.nd+self.nc, nmax):
+                k = self.dlistPos[dlist]
+
+                imax = bisect.bisect_left(self.oscEnergies[k], EL-e+tol)
+
+                for i, osc in enumerate(self.oscList[k][:imax]):
+                    newstatevec = statevec[:]
+                    for n,Zc,Zd in osc:
+                        newstatevec[n+nmax] += Zc-Zd
+                    t1 = tuple(newstatevec)
+                    t2 = tuple(newstatevec[::-1])
+                    if (t1 not in stateset) and (t2 not in stateset):
+                        stateset.add(t1)
+
+        return stateset
+
 
 
 class BilocOperator(Operator):
-
-    def __init__(self, oscillators, nd, nc, helper):
+    def __init__(self, JointOscList, ndPair, ncPair, helper)
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
         wavenumbers of annihilation operators, and the second element a list of
@@ -107,8 +248,8 @@ class BilocOperator(Operator):
         nc: number of creation operators
         """
 
-        self.nd = nd
-        self.nc = nc
+        self.nd = sum(ndPair)
+        self.nc = sum(ncPair)
         omega = helper.omega
         L = helper.L
         m = helper.m
@@ -133,29 +274,6 @@ class BilocOperator(Operator):
             self.oscFactors.append([bose(clist)*bose(dlist)*scipy.special.binom(nc+nd,nc)\
                     *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
                     for clist in clists])
-
-
-class Operator():
-    """
-    Collection of oscillators with fixed number of creation and annihilation operators
-    This is convenient to compute matrix elements and generate the high-energy basis
-    from a set of tails
-    """
-
-
-
-    def torepr1(clist, dlist):
-        """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
-        tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
-        the creation and annihilation momenta
-        Zc and Zd are respectively the number of creation and annihilation operators at
-        wavenumber n """
-
-        wnlist = set(clist+dlist)
-        cosc = Counter(clist)
-        dosc = Counter(dlist)
-        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
-
 
     # @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
@@ -231,40 +349,6 @@ class Operator():
 
 
         return col, data
-
-
-    # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
-    # as Hh = V*Hl
-    def genBasis(self, basis, EL):
-        """ Return a set of tuples of representation 2 states, all of which are not
-        connected by spatial parity transformations.
-        basis: set of "selected" low energy states on which to act
-        EL: maximal energy of the generated high-energy states
-        """
-
-        nmax = self.helper.nmax
-        stateset = set()
-
-        for i, state in enumerate(basis):
-
-            statevec = self.helper.torepr2(state)
-            e = basis.energyList[i]
-
-            for dlist in gendlists(state, self.nd, self.nd+self.nc, nmax):
-                k = self.dlistPos[dlist]
-
-                imax = bisect.bisect_left(self.oscEnergies[k], EL-e+tol)
-
-                for i, osc in enumerate(self.oscList[k][:imax]):
-                    newstatevec = statevec[:]
-                    for n,Zc,Zd in osc:
-                        newstatevec[n+nmax] += Zc-Zd
-                    t1 = tuple(newstatevec)
-                    t2 = tuple(newstatevec[::-1])
-                    if (t1 not in stateset) and (t2 not in stateset):
-                        stateset.add(t1)
-
-        return stateset
 
 
 
