@@ -6,6 +6,7 @@ import itertools
 from statefuncs import Helper
 from itertools import combinations, islice
 from scipy import exp, pi, array
+from scipy.special import binom
 import bisect
 
 tol = 10**(-10)
@@ -21,17 +22,6 @@ def filterDlist(dlist, nd, ntot, nmax):
         return True
 
 
-def torepr1(clist, dlist):
-        """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
-        tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
-        the creation and annihilation momenta
-        Zc and Zd are respectively the number of creation and annihilation operators at
-        wavenumber n """
-
-        wnlist = set(clist+dlist)
-        cosc = Counter(clist)
-        dosc = Counter(dlist)
-        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
 # TODO The speed optimization resulting from using the N-Sum algorithm could be important
@@ -118,14 +108,28 @@ class LocOperator():
 
             self.dlistPos[dlist] = i
 
-            self.oscList.append([self.torepr1(clist,dlist) for clist in clists])
+            self.oscList.append([self.torepr1(clist,dlist)
+                for clistPair in clistPairs])
 
             self.oscEnergies.append([helper.oscEnergy(clist)-helper.oscEnergy(dlist)
                 for clist in clists])
 
-            self.oscFactors.append([bose(clist)*bose(dlist)*scipy.special.binom(nc+nd,nc)\
+            self.oscFactors.append([bose(clist)*bose(dlist)*binom(nc+nd,nc)\
                     *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
                     for clist in clists])
+
+    def torepr1(clist, dlist):
+        """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
+        tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
+        the creation and annihilation momenta
+        Zc and Zd are respectively the number of creation and annihilation operators at
+        wavenumber n """
+
+        wnlist = set(clist+dlist)
+        cosc = Counter(clist)
+        dosc = Counter(dlist)
+        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
+
 
     # @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
@@ -248,36 +252,57 @@ class BilocOperator(Operator):
         nc: number of creation operators
         """
 
-        self.nd = sum(ndPair)
-        self.nc = sum(ncPair)
+        self.ndPair = ndPair
+        self.ncPair = ncPair
+        self.ntotPair = tuple((nd+nc for nc,nd in zip(ncPair,ndPair)))
         omega = helper.omega
         L = helper.L
         m = helper.m
         self.helper = helper
 
-        self.dlistPos = {}
+        self.dlistPairPos = {}
         self.oscList = []
         self.oscEnergies = []
         self.oscFactors = []
 
+        oscEnergy = helper.oscEnergy
 
-        for i, (dlist,clists) in enumerate(oscillators):
-            clists = list(sorted(clists,key=helper.oscEnergy))
+        for i, (dlistPair,clistPairs) in enumerate(JointOscList):
+            clistsPairs = list(sorted(clistsPairs, key=lambda x:sum(oscEnergy(y) for y in x)))
 
-            self.dlistPos[dlist] = i
+            self.dlistPairPos[dlistPair] = i
 
-            self.oscList.append([self.torepr1(clist,dlist) for clist in clists])
+            self.oscList.append([self.torepr1(clistPair,dlistPair)
+                for clistPair in clistPairs])
 
-            self.oscEnergies.append([helper.oscEnergy(clist)-helper.oscEnergy(dlist)
-                for clist in clists])
+            self.oscEnergies.append([sum(oscEnergy(clist)-oscEnergy(dlist)
+                for clist,dlist in zip(clistPair,dlistPair))
+                for clistPair in clistPairs])
 
-            self.oscFactors.append([bose(clist)*bose(dlist)*scipy.special.binom(nc+nd,nc)\
-                    *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
-                    for clist in clists])
+            self.oscFactors.append([
+                scipy.prod(bose(clist)*bose(dlist)*binom(nc+nd,nc)*\
+                    scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
+                    for clist,dlist in zip(clistPair,dlistPair))
+                        for clistPair in clistPairs])
+
+
+    def torepr1(self, clistPair, dlistPair):
+        """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
+        tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
+        the creation and annihilation momenta
+        Zc and Zd are respectively the number of creation and annihilation operators at
+        wavenumber n """
+        clist = tuple(sorted(clistPair[0]+clistPair[1]))
+        dlist = tuple(sorted(dlistPair[0]+dlistPair[1]))
+        wnlist = set(clist+dlist)
+        cosc = Counter(clist)
+        dosc = Counter(dlist)
+        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
+
 
     # @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
-                                ignKeyErr=False):
+                                ignKeyErr=True):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -312,9 +337,10 @@ class BilocOperator(Operator):
         normFactors = helper.normFactors
 
         # cycle over all the sets of momenta that can be annihilated
-        for dlist in gendlists(state, self.nd, self.nd+self.nc, lookupbasis.helper.nmax):
+        for dlistPair in gendlistPairs(state, self.ndPair, self.ntotPair,
+                lookupbasis.helper.nmax):
 
-            k = self.dlistPos[dlist]
+            k = self.dlistPairPos[dlistPair]
 
 # Only select the oscillators such that the sum of the state and oscillator energies
 # lies within the bounds of the lookupbasis energies
@@ -920,7 +946,6 @@ def V2V4OpsDiag(basis):
 
 
 def SelectBilocOscillators(oscList1, oscList2, Emax, helper):
-
 
     oscEnergy = helper.oscEnergy
 
