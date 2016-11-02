@@ -280,9 +280,8 @@ class Phi4():
             V0V4 = self.V0V4[k].sub(subbasisl,subbasisl)
             V2V4 = self.V2V4[k].sub(subbasisl,subbasisl)
 
-            renorm = renorm.renlocal(g4=self.g4, EL=EL, EL3=EL3, eps=eps).VV2
+            VV2 = renorm.renVV2(g4=self.g4, EL=EL, eps=eps).VV2
             # Dictionary of local renormalization coefficients for the g^2 term
-            VV2 = renorm.VV2
 
 
             #######################################
@@ -354,8 +353,9 @@ class Phi4():
                 gc.collect()
 
 
-            # Add the "local" parts to DH3
-
+            # XXX Add the "local" parts to DH3
+            DH3ll += V0V4*self.VV3.V0V4
+            DH3ll += V2V4*self.VV3.V2V4
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
@@ -370,6 +370,11 @@ class Phi4():
             return (VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]).M
 
 
+
+
+    def calcVV3(self, ETlist, eps):
+        print("Calculating VVV renorm coefficients")
+        self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ETlist)
 
 
     def setCouplings(self, g0=0, g2=0, g4=0):
