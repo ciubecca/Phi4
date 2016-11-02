@@ -49,7 +49,7 @@ class Phi4():
 
 
     def buildMatrix(self, Vlist, basis, lookupbasis, statePos=None,
-            ignKeyErr=False, idxList=None, sumTranspose=False):
+            ignKeyErr=False, idxList=None, sumTranspose=False, subDiag=True):
 
 
         if basis.helper.nmax > lookupbasis.helper.nmax:
@@ -89,7 +89,10 @@ class Phi4():
         if sumTranspose:
             # Add the matrix to its transpose and subtract the diagonal
             diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
-            return (V+V.transpose()-diag_V)
+            if subDiag:
+                return (V+V.transpose()-diag_V)
+            else:
+                return (V+V.transpose())
         else:
             return V
 
@@ -168,7 +171,6 @@ class Phi4():
         # Generate the VhL matrix
         ##############################
 
-
         print("Computing VhL...")
 
         basis = self.basisH[k]
@@ -178,6 +180,38 @@ class Phi4():
 
         self.VLh[k] = Matrix(basis, lookupbasis,
                 self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+
+
+        ###################################
+        # Generate all the "local" matrices on the selected
+        # low-energy states
+        ###################################
+        basis = self.basisl[k]
+
+        self.Vll[k] = {}
+        for n in (0,2,4):
+            self.Vll[k][n] = self.V[k][n].sub(subbasisl, subbasisl)
+
+        Vlist = V6OpsSelectedHalf(basis)
+
+        self.Vll[k][6] = Matrix(basis,basis,
+                self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
+                    sumTranspose=True)*self.L)
+
+        ###################################
+        # Generate all the "bilocal" matrices on the selected
+        # low-energy states
+        ###################################
+        self.V0V4[k] = self.Vll[4]*self.L
+
+        Vlist = V2V4Ops1(basis)
+        self.V2V4[k] = Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    sumTranspose=True, subDiag=False)*self.L**2)
+
+        Vlist = V2V4Ops2(basis)
+        self.V2V4[k] += (self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        sumTranspose=False)*self.L**2)
 
 
 
@@ -190,12 +224,11 @@ class Phi4():
         # Subset of the full low energy states
         subbasisL = self.basis[k].sub(lambda v: helper.energy(v)<=ET)
 
-        # Dictionary of local renormalization coefficients
-        VV2 = renorm.renlocal(g4=self.g4, EL=EL, m=self.m, eps=eps).VV2
 
         if EL3==None:
             EL3 = EL
 
+        # FIXME change this condition
         # Local + non-local
         if (EL != ET):
             basisl = self.basisl[k]
@@ -225,7 +258,7 @@ class Phi4():
 
 
             #############################
-            # Construct DH
+            # Construct the matrices needed to compute DeltaH
             #############################
             Vhl = self.Vhl[k].sub(subbasisl, subbasisH).M
             Vlh = Vhl.transpose()
@@ -241,9 +274,20 @@ class Phi4():
 
             Vll = {}
             # for n in (0,2,4,6,8):
-            for n in (0,2,4):
-                Vll[n] = self.V[k][n].sub(subbasisl, subbasisl).M
+            for n in (0,2,4,6):
+                Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
 
+            V0V4 = self.V0V4[k].sub(subbasisl,subbasisl)
+            V2V4 = self.V2V4[k].sub(subbasisl,subbasisl)
+
+            renorm = renorm.renlocal(g4=self.g4, EL=EL, EL3=EL3, eps=eps).VV2
+            # Dictionary of local renormalization coefficients for the g^2 term
+            VV2 = renorm.VV2
+
+
+            #######################################
+            # Construct DH2
+            #######################################
 
             # XXX Sorry, for now the subscripts are confusing, need to sort this out
             DH2lL = VhL*propagator*Vlh*self.g4**2
@@ -309,10 +353,15 @@ class Phi4():
                 del VhhHalfPart
                 gc.collect()
 
+
+            # Add the "local" parts to DH3
+
+
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
 
-        # Only local
+        # Only DH2 with local expansion
+# FIXME it should not depend only on the value of EL and ET
         elif EL==ET:
             VLL = {}
             for n in (0,2,4):

@@ -770,7 +770,7 @@ def V6OpsSelectedHalf(basis):
                 if oscEnergy(clist) <= Emax+ tol \
                     and sorted([abs(min(dlist)),abs(max(dlist))]) <= \
                         sorted([abs(min(clist)),abs(max(clist))]):
-                            # XXX This is a generalization of the lexicographical
+                        # XXX This is a generalization of the lexicographical
 #sorting condition
                     V33[-1][1].append(clist)
 
@@ -781,9 +781,9 @@ def V6OpsSelectedHalf(basis):
 
 
 
-def V2V4OpsHalf(basis):
+def V2V4Ops1(basis):
     """
-    Half of the bilocal operators of :V2 V4: acting on full low-energy basis of states
+    Part of the bilocal operators of :V2 V4: of the form :V2 (a^a^a^a^ + a^a^a^a + a^a^aa)
     """
 
     helper = basis.helper
@@ -881,9 +881,7 @@ def V2V4OpsHalf(basis):
 
 
 
-
-# NOTE Name is confusing
-def V2V4OpsDiag(basis):
+def V2V4Ops2(basis):
     """
     Part of the bilocal operators of :V2 V4: involving the terms
     :V2 a_k1 a_k2 a^_k1 a^_k2:

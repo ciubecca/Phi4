@@ -30,10 +30,11 @@ def sym(q,p,k):
 
 class renlocal():
 
-    def __init__(self, g4, EL, m, eps, g2=0):
+    def __init__(self, g4, EL, eps, m=1, g2=0):
 
         self.VV2 = {}
         self.EL = EL
+        self.EL3 = EL3
         self.m = m
         self.eps = eps
 
@@ -69,34 +70,41 @@ class renlocal():
 
 
 
-    def compVV3(self, ETlist):
+    def compVV3(self, EL3, ETlist):
         self.VV3loc = {}
         self.VV3biloc = {}
         self.neval = 10000
 
         self.ETlist = ETlist
 
+# Local correction to identity
         self.VV3loc[0] = self.computeIntegral(4, phi0_1)
 
+# Local correction to mass operator
         self.VV3loc[2] = self.computeIntegral(3, phi2_1)
         self.VV3loc[2] += self.computeIntegral(3, phi2_2)
         self.VV3loc[2] += self.computeIntegral(3, phi2_3)
         self.VV3loc[2] += self.computeIntegral(3, phi2_4)
 
+# Local corrections to V4 NOTE I moved diagram 4.5 to the non-local corrections
         self.VV3loc[4] = self.computeIntegral(2, phi4_1)
         self.VV3loc[4] += self.computeIntegral(2, phi4_2)
         self.VV3loc[4] += self.computeIntegral(2, phi4_3)
         self.VV3loc[4] += self.computeIntegral(2, phi4_4)
-        self.VV3loc[4] += self.computeIntegral(3, phi4_5)
         self.VV3loc[4] += self.computeIntegral(2, phi4_6)
 
+
         self.neval = 1000
-
+# Local corrections to V6 NOTE I removed diagram 6.2
         self.VV3loc[6] = self.computeIntegral(1, phi6_1)
-        self.VV3loc[6] += self.computeIntegral(1, phi6_2)
+        # self.VV3loc[6] += self.computeIntegral(1, phi6_2)
 
-        # TODO Add bilocal corrections
 
+        self.neval = 10000
+        # Bilocal corrections
+        self.V0V4 = self.computeIntegral(3, phi0phi4_1)
+        self.V2V4 = self.computeIntegral(2, phi2phi4_1)
+        self.V4V4 = self.computeIntegral(1, phi4phi4_1)
 
 
 # print("\n******************* Phi2Phi4 ************************ \n")
