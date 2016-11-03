@@ -34,7 +34,6 @@ class renVV2():
 
         self.VV2 = {}
         self.EL = EL
-        self.EL3 = EL3
         self.m = m
         self.eps = eps
 
@@ -48,7 +47,6 @@ class renVV2():
 
 
 class renVV3():
-
     def __init__(self, ETlist, m, eps):
         self.neval = 10000
 
@@ -101,14 +99,14 @@ class renVV3():
         ET = self.ETlist[0]
 
         ret = {}
-        integ = vegas.Integrator([[-cut,cut] for n in nvar])
+        integ = vegas.Integrator([[-cut,cut]]*nvar)
 
         # step 1 -- adapt to phi0_1; discard results
         integ(lambda x: integrand(ET,eps,x), nitn=nitn, neval=neval)
-        for ET in ETlist:
+        for ET in self.ETlist:
         # step 2 -- integ has adapted to phi0_1; keep results
             result = integ(lambda x: integrand(ET,eps,x), nitn=nitn, neval=neval)
-            ret[ET] = result
+            ret[ET] = result.mean
 
         return ret
 

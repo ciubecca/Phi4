@@ -10,7 +10,7 @@ import numpy as np
 class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
     oscillators and states and so on"""
-    def __init__(self,m,L,Emax,noscmax=4):
+    def __init__(self,m,L,Emax,noscmax=8):
         self.L = L
         self.m = m
         self.nmax = self.Emaxtonmax(Emax)

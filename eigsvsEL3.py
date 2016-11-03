@@ -76,14 +76,15 @@ for k in klist:
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBasis(k, basisl, EL)
+    a.genHEBasis(k, basisl, EL3max)
     print("Size of HE basis:", a.basisH[k].size)
+
 
     print("Computing high energy matrices...")
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
 # Later we will be varying EL, therefore taking submatrices of these.
 # Computing VHH is expensive
-    a.computeHEVs(k, EL)
+    a.computeHEVs(k, EL3max)
 
 
     # Checks if the eigenvalues we are going to compute are alredy present in
@@ -120,6 +121,7 @@ for k in klist:
                 basisSize=a.compSize, neigs=neigs, EL=ET, eps=eps)
 
 
+    a.calcVV3(ETlist=EL3list, eps=eps)
 
 
     for EL3 in EL3list:

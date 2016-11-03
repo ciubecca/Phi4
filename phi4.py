@@ -27,7 +27,9 @@ class Phi4():
         self.DeltaH = {}
         self.VLh = {}
         self.Vhl = {}
-        # self.VhhHalfList = {}
+        self.Vll = {}
+        self.V0V4 = {}
+        self.V2V4 = {}
         # self.VhhDiagList = {}
         self.basisH = {}
         self.basisl = {}
@@ -190,7 +192,7 @@ class Phi4():
 
         self.Vll[k] = {}
         for n in (0,2,4):
-            self.Vll[k][n] = self.V[k][n].sub(subbasisl, subbasisl)
+            self.Vll[k][n] = self.V[k][n].sub(basis, basis)
 
         Vlist = V6OpsSelectedHalf(basis)
 
@@ -202,7 +204,7 @@ class Phi4():
         # Generate all the "bilocal" matrices on the selected
         # low-energy states
         ###################################
-        self.V0V4[k] = self.Vll[4]*self.L
+        self.V0V4[k] = self.Vll[k][4]*self.L
 
         Vlist = V2V4Ops1(basis)
         self.V2V4[k] = Matrix(basis,basis,
@@ -210,7 +212,8 @@ class Phi4():
                     sumTranspose=True, subDiag=False)*self.L**2)
 
         Vlist = V2V4Ops2(basis)
-        self.V2V4[k] += (self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+        self.V2V4[k] += Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         sumTranspose=False)*self.L**2)
 
 
@@ -224,6 +227,8 @@ class Phi4():
         # Subset of the full low energy states
         subbasisL = self.basis[k].sub(lambda v: helper.energy(v)<=ET)
 
+        VV2 = renorm.renVV2(g4=self.g4, EL=EL, eps=eps).VV2
+        # Dictionary of local renormalization coefficients for the g^2 term
 
         if EL3==None:
             EL3 = EL
@@ -277,11 +282,9 @@ class Phi4():
             for n in (0,2,4,6):
                 Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
 
-            V0V4 = self.V0V4[k].sub(subbasisl,subbasisl)
-            V2V4 = self.V2V4[k].sub(subbasisl,subbasisl)
+            V0V4 = self.V0V4[k].sub(subbasisl,subbasisl).M
+            V2V4 = self.V2V4[k].sub(subbasisl,subbasisl).M
 
-            VV2 = renorm.renVV2(g4=self.g4, EL=EL, eps=eps).VV2
-            # Dictionary of local renormalization coefficients for the g^2 term
 
 
             #######################################
@@ -354,8 +357,8 @@ class Phi4():
 
 
             # XXX Add the "local" parts to DH3
-            DH3ll += V0V4*self.VV3.V0V4
-            DH3ll += V2V4*self.VV3.V2V4
+            DH3ll += V0V4*float(self.VV3.V0V4[EL3])*self.g4**3
+            DH3ll += V2V4*float(self.VV3.V2V4[EL3])*self.g4**3
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
