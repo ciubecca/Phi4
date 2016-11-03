@@ -39,9 +39,9 @@ print("HE basis size", a.basisH[k].size)
 print("Computing high energy matrices...")
 a.computeHEVs(k, EL)
 
-Vhh = a.VhhHalf[k].M
-print("Size of Vhh in memory:",
-        int((size(Vhh.data)+size(Vhh.indptr)+size(Vhh.indices))))
+# VhhList = a.VhhHalfList[k]
+# print("Size of Vhh in memory:",
+    # sum(int((size(Vhh.data)+size(Vhh.indptr)+size(Vhh.indices))) for Vhh in VhhList))
 
 print("Computing DeltaH...")
 eps = -1

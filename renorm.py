@@ -28,9 +28,9 @@ def sym(q,p,k):
     return (factorial(4)**3)/(factorial(q)**2)/(factorial(k)**2)/(factorial(p)**2)/factorial(4-q-k)/factorial(4-q-p)/factorial(4-p-k)
 
 
-class renlocal():
+class renVV2():
 
-    def __init__(self, g4, EL, m, eps, g2=0):
+    def __init__(self, g4, EL, eps, m=1, g2=0):
 
         self.VV2 = {}
         self.EL = EL
@@ -46,6 +46,49 @@ class renlocal():
         return sqrt(self.m**2+x**2)
 
 
+class renVV3():
+    def __init__(self, ETlist, m, eps):
+        self.neval = 10000
+
+        self.ETlist = ETlist
+
+        self.m = m
+        self.eps = eps
+
+
+# Local correction to identity
+        # self.VV3loc[0] = self.computeIntegral(4, phi0_1)
+
+# Local correction to mass operator
+        # self.VV3loc[2] = self.computeIntegral(3, phi2_1)
+        # self.VV3loc[2] += self.computeIntegral(3, phi2_2)
+        # self.VV3loc[2] += self.computeIntegral(3, phi2_3)
+        # self.VV3loc[2] += self.computeIntegral(3, phi2_4)
+
+# Local corrections to V4 NOTE I moved diagram 4.5 to the non-local corrections
+        # self.VV3loc[4] = self.computeIntegral(2, phi4_1)
+        # self.VV3loc[4] += self.computeIntegral(2, phi4_2)
+        # self.VV3loc[4] += self.computeIntegral(2, phi4_3)
+        # self.VV3loc[4] += self.computeIntegral(2, phi4_4)
+        # self.VV3loc[4] += self.computeIntegral(2, phi4_6)
+
+
+        self.neval = 1000
+# Local corrections to V6
+        # self.VV3loc[6] = self.computeIntegral(1, phi6_1)
+# NOTE I removed diagram 6.2
+        # self.VV3loc[6] += self.computeIntegral(1, phi6_2)
+
+
+        # self.neval = 10000
+# XXX reset this to 10000
+        self.neval = 1000
+        # Bilocal corrections
+        self.V0V4 = self.computeIntegral(3, phi0phi4_1)
+        self.V2V4 = self.computeIntegral(2, phi2phi4_1)
+        self.V4V4 = self.computeIntegral(1, phi4phi4_1)
+
+
     def computeIntegral(self, nvar, integrand):
         cut=pi/2
         # integral variables mapped to the tangent to x:(-infinity,infinity)
@@ -55,48 +98,22 @@ class renlocal():
         eps = self.eps
         ET = self.ETlist[0]
 
-        ret = []
-        integ = vegas.Integrator([[-cut,cut] for n in nvar])
+        ret = {}
+        integ = vegas.Integrator([[-cut,cut]]*nvar)
 
         # step 1 -- adapt to phi0_1; discard results
         integ(lambda x: integrand(ET,eps,x), nitn=nitn, neval=neval)
-        for ET in ETlist:
+        for ET in self.ETlist:
         # step 2 -- integ has adapted to phi0_1; keep results
             result = integ(lambda x: integrand(ET,eps,x), nitn=nitn, neval=neval)
-            ret.append(result)
+            ret[ET] = result.mean
 
-        return array(ret)
+        return ret
 
 
 
-    def compVV3(self, ETlist):
-        self.VV3loc = {}
-        self.VV3biloc = {}
-        self.neval = 10000
-
-        self.ETlist = ETlist
-
-        self.VV3loc[0] = self.computeIntegral(4, phi0_1)
-
-        self.VV3loc[2] = self.computeIntegral(3, phi2_1)
-        self.VV3loc[2] += self.computeIntegral(3, phi2_2)
-        self.VV3loc[2] += self.computeIntegral(3, phi2_3)
-        self.VV3loc[2] += self.computeIntegral(3, phi2_4)
-
-        self.VV3loc[4] = self.computeIntegral(2, phi4_1)
-        self.VV3loc[4] += self.computeIntegral(2, phi4_2)
-        self.VV3loc[4] += self.computeIntegral(2, phi4_3)
-        self.VV3loc[4] += self.computeIntegral(2, phi4_4)
-        self.VV3loc[4] += self.computeIntegral(3, phi4_5)
-        self.VV3loc[4] += self.computeIntegral(2, phi4_6)
-
-        self.neval = 1000
-
-        self.VV3loc[6] = self.computeIntegral(1, phi6_1)
-        self.VV3loc[6] += self.computeIntegral(1, phi6_2)
-
-        # TODO Add bilocal corrections
-
+    def om(x):
+        return sqrt(self.m**2+x**2)
 
 
 # print("\n******************* Phi2Phi4 ************************ \n")

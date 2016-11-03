@@ -8,9 +8,9 @@ from oscillators import *
 from collections import Counter
 from operator import attrgetter
 import renorm
+import gc
 from matrix import Matrix
 from scipy import exp, pi, array
-
 
 
 class Phi4():
@@ -19,6 +19,7 @@ class Phi4():
 
         self.m = m
         self.L = L
+        self.nchunks = 10
 
         self.basis = {}
         self.h0 = {}
@@ -26,8 +27,11 @@ class Phi4():
         self.DeltaH = {}
         self.VLh = {}
         self.Vhl = {}
-        self.VhhHalf = {}
-        self.VhhDiag = {}
+        self.Vll = {}
+        self.V0V4 = {}
+        self.V2V4 = {}
+        self.V4V4 = {}
+        # self.VhhDiagList = {}
         self.basisH = {}
         self.basisl = {}
 
@@ -46,17 +50,10 @@ class Phi4():
         """ Builds the full Hilbert space basis up to cutoff Emax """
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
-    # @profile
-    def buildMatrix(self, Vlist, basis, lookupbasis, ignKeyErr=False, sumTranspose=False):
-        """
-        Compute a potential matrix from the operators in Vlist between two bases
-        Vlist: list of Operator instances (for instance the
-        a^a^a^a^, a^a^a^a and a^a^aa and parts of V4)
-        basis: set of states corresponding to the row indexes of the matrix
-        lookupbasis: set of states corresponding to column indexes of the matrix
-        ignKeyErr: this should be set to True only for Vhh (because some states generated
-        don't belong to the basis)
-        """
+
+    def buildMatrix(self, Vlist, basis, lookupbasis, statePos=None,
+            ignKeyErr=False, idxList=None, sumTranspose=False, subDiag=True):
+
 
         if basis.helper.nmax > lookupbasis.helper.nmax:
             helper = basis.helper
@@ -71,13 +68,17 @@ class Phi4():
             statePos[tuple(helper.torepr2(state))] = i
             statePos[tuple(helper.torepr2(state)[::-1])] = i
 
-        # Will construct the sparse matrix in the COO format
+        if idxList==None:
+            idxList = range(basis.size)
+
+
+        # Will construct the sparse matrix in the COO format and then convert it to CSC
         data = []
         row = []
         col = []
 
         for V in Vlist:
-            for i in range(basis.size):
+            for i in idxList:
                 colpart, datapart = \
                     V.computeMatrixElements(basis,i,lookupbasis,
                             statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
@@ -89,14 +90,14 @@ class Phi4():
                 shape=(basis.size,lookupbasis.size))
 
         if sumTranspose:
-        # If the two bases are equal, assumes that only half of the matrix was computed.
-        # Therefore add the matrix to its transpose and subtract the diagonal
-            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size)
-            # This should resum duplicate entries
-            return (V+V.transpose()-diag_V).tocsc()
+            # Add the matrix to its transpose and subtract the diagonal
+            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
+            if subDiag:
+                return (V+V.transpose()-diag_V)
+            else:
+                return (V+V.transpose())
         else:
-            # This should resum duplicate entries
-            return V.tocsc()
+            return V
 
 
 
@@ -113,7 +114,7 @@ class Phi4():
         Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
             self.V[k][n] = Matrix(basis,basis,
-                    self.buildMatrix(Vlist[n], basis, basis, sumTranspose=True))*self.L
+                    self.buildMatrix(Vlist[n], basis, basis, sumTranspose=True)*self.L)
 
         # Construct the identity potential matrix
         idM = scipy.sparse.eye(basis.size)
@@ -145,7 +146,7 @@ class Phi4():
         self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
     # @profile
-    def computeHEVs(self, k, EL, EL3=None):
+    def computeHEVs(self, k, EL):
         """
         Compute the matrices involving the high-energy states below EL
         k: parity quantum number
@@ -154,13 +155,8 @@ class Phi4():
 
         # NOTE matrix subscript notation:
 # "l": selected low-energy state
-# "L": generic low-energy state.
+# "L": generic low-energy state
 # "h": selected high-energy state
-
-        # We might want to choose EL3 < EL because Vhh is expensive to generate
-        if EL3 == None:
-            EL3 = EL
-
 
         #################################
         # Generate the Vlh matrix
@@ -177,6 +173,9 @@ class Phi4():
         ##############################
         # Generate the VhL matrix
         ##############################
+
+        print("Computing VhL...")
+
         basis = self.basisH[k]
         lookupbasis = self.basis[k]
 
@@ -186,37 +185,63 @@ class Phi4():
                 self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
-        ##############################
-        # Generate the Vhh matrix
-        ##############################
-        basis = self.basisH[k]
+        ###################################
+        # Generate all the "local" matrices on the selected
+        # low-energy states
+        ###################################
+        basis = self.basisl[k]
 
-        Vlist = V4OpsSelectedHalf(basis)
+        self.Vll[k] = {}
+        for n in (0,2,4):
+            self.Vll[k][n] = self.V[k][n].sub(basis, basis)
 
-        # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
-        self.VhhHalf[k] = Matrix(basis, basis,
+        Vlist = V6OpsSelectedHalf(basis)
+
+        self.Vll[k][6] = Matrix(basis,basis,
                 self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
-                    sumTranspose=False)*self.L)
+                    sumTranspose=True)*self.L)
 
-        self.VhhDiag[k] = Matrix(basis, basis,
-                scipy.sparse.spdiags(self.VhhHalf[k].M.diagonal(),0,basis.size,basis.size))
+        ###################################
+        # Generate all the "bilocal" matrices on the selected
+        # low-energy states
+        ###################################
+        self.V0V4[k] = self.Vll[k][4]*self.L
 
-        ##############################
-        # Propagator
-        ##############################
-        basisH = self.basisH[k]
+        Vlist = V2V4Ops1(basis)
+        self.V2V4[k] = Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    sumTranspose=True, subDiag=False)*self.L**2)
+        Vlist = V2V4Ops2(basis)
+        self.V2V4[k] += Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        sumTranspose=False)*self.L**2)
+
+        Vlist = V4V4Ops1(basis)
+        self.V4V4[k] = Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    sumTranspose=True, subDiag=False)*self.L**2)
+        Vlist = V4V4Ops2(basis)
+        self.V4V4[k] += Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        sumTranspose=False)*self.L**2)
+
+
 
     # @profile
-    def computeDeltaH(self, k, ET, EL, eps, maxntails):
+    def computeDeltaH(self, k, ET, EL, eps, EL3=None, maxntails=None):
 # Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
 
         helper = self.basis[k].helper
         # Subset of the full low energy states
         subbasisL = self.basis[k].sub(lambda v: helper.energy(v)<=ET)
 
-        # Dictionary of local renormalization coefficients
-        VV2 = renorm.renlocal(g4=self.g4, EL=EL, m=self.m, eps=eps).VV2
+        VV2 = renorm.renVV2(g4=self.g4, EL=EL, eps=eps).VV2
+        # Dictionary of local renormalization coefficients for the g^2 term
 
+        if EL3==None:
+            EL3 = EL
+
+        # FIXME change this condition
         # Local + non-local
         if (EL != ET):
             basisl = self.basisl[k]
@@ -234,72 +259,134 @@ class Phi4():
             # subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=EL)
 
 
-            # Propagator and projector on the high-energy states
-            basisH = self.basisH[k]
-            propVec = []
-            for e in basisH.energyList:
-                if ET < e <= EL:
-                    propVec.append(1/(eps-e))
-                else:
-                    propVec.append(0)
-            propagator = Matrix(basisH, basisH,
-                    scipy.sparse.spdiags(propVec,0,basisH.size,basisH.size))
+            # Subset of the selected high energy states
+            helper = self.basisH[k].helper
+            vectorlist = [v for v in self.basisH[k] if ET<helper.energy(v)<=EL]
+            subbasisH = Basis(k, vectorlist, helper)
+
+            # Propagator on the high-energy states
+            energyArr = array(subbasisH.energyList)
+            propagator = scipy.sparse.spdiags(1/(eps-energyArr),0,subbasisH.size,
+                    subbasisH.size)
 
 
             #############################
-            # Construct DH
+            # Construct the matrices needed to compute DeltaH
             #############################
-            Vhl = self.Vhl[k].sub(subbasisl, basisH)
+            Vhl = self.Vhl[k].sub(subbasisl, subbasisH).M
             Vlh = Vhl.transpose()
-            VLh = self.VLh[k].sub(basisH, subbasisL)
+            VLh = self.VLh[k].sub(subbasisH, subbasisL).M
             VhL = VLh.transpose()
-            # Vhh = self.Vhh[k].sub(subbasisH, subbasisH)
-            VhhHalf = self.VhhHalf[k]
-            VhhDiag = self.VhhDiag[k]
 
 
             VlL = {}
             VLl = {}
             for n in (0,2,4):
-                VlL[n] = self.V[k][n].sub(subbasisL, subbasisl)
+                VlL[n] = self.V[k][n].sub(subbasisL, subbasisl).M
                 VLl[n] = VlL[n].transpose()
 
             Vll = {}
             # for n in (0,2,4,6,8):
-            for n in (0,2,4):
-                Vll[n] = self.V[k][n].sub(subbasisl, subbasisl)
+            for n in (0,2,4,6):
+                Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
+
+            V0V4 = self.V0V4[k].sub(subbasisl,subbasisl).M
+            V2V4 = self.V2V4[k].sub(subbasisl,subbasisl).M
+            V4V4 = self.V4V4[k].sub(subbasisl,subbasisl).M
 
 
-            # print("Vlh", Vlh.M.shape)
-            # print("VhL", VhL.M.shape)
-            # print("propagator", propagator.M.shape)
-            # print("VlL", VlL[0].M.shape)
 
+            #######################################
+            # Construct DH2
+            #######################################
 
             # XXX Sorry, for now the subscripts are confusing, need to sort this out
             DH2lL = VhL*propagator*Vlh*self.g4**2
             # print("DH2lL", DH2lL.M.shape)
             DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
             DH2Ll = DH2lL.transpose()
-            DH2ll = DH2Ll.sub(subbasisl, subbasisl)
+            DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
+
+
+
+
+###########################
+# Computation of DH3
+##########################
 
             # TODO Add the local parts
             # NOTE Trick to save memory
-            DH3ll = Vhl*propagator*VhhHalf*propagator*Vlh*self.g4**3
-            DH3ll += DH3ll.transpose()
-            DH3ll -= Vhl*propagator*VhhDiag*propagator*Vlh*self.g4**3
 
-            return DH2lL*((DH2ll-DH3ll).inverse())*DH2Ll
 
-        # Only local
+            # Subset of the selected high energy states
+            helper = self.basisH[k].helper
+            vectorlist = [v for v in self.basisH[k] if ET<helper.energy(v)<=EL3]
+            subbasisH = Basis(k, vectorlist, helper)
+
+            # Propagator on the high-energy states
+            energyArr = array(subbasisH.energyList)
+            propagator = scipy.sparse.spdiags(1/(eps-energyArr),0,subbasisH.size,
+                    subbasisH.size)
+
+            Vhl = self.Vhl[k].sub(subbasisl, subbasisH).M
+            Vlh = Vhl.transpose()
+
+            DH3ll = scipy.sparse.csc_matrix((subbasisl.size, subbasisl.size))
+
+            basis = subbasisH
+            Vhhlist = V4OpsSelectedHalf(basis)
+
+            chunklen = int(math.ceil(basis.size/self.nchunks))
+            idxLists = [range(basis.size)[x:x+chunklen] for x in
+                    range(0, basis.size, chunklen)]
+
+            for n in range(self.nchunks):
+                ##############################
+                # Generate the Vhh matrix
+                ##############################
+                # print("Computing Vhh chunk ", n)
+
+                idxList = idxLists[n]
+
+                # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
+# TODO Do this more elegantly with iterators ?
+                VhhHalfPart =  self.buildMatrix(Vhhlist, basis, basis,
+                        ignKeyErr=True, sumTranspose=False, idxList=idxList)*self.L
+
+                VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
+                        basis.size)
+
+                DH3llPart = Vhl*propagator*VhhHalfPart*propagator*Vlh*self.g4**3
+                DH3llPart += DH3llPart.transpose()
+                DH3llPart -= Vhl*propagator*VhhDiagPart*propagator*Vlh*self.g4**3
+                DH3ll += DH3llPart
+
+                del VhhHalfPart
+                gc.collect()
+
+
+            # XXX Add the "local" parts to DH3
+            DH3ll += V0V4*float(self.VV3.V0V4[EL3])*self.g4**3
+            DH3ll += V2V4*float(self.VV3.V2V4[EL3])*self.g4**3
+
+            return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
+
+
+        # Only DH2 with local expansion
+# FIXME it should not depend only on the value of EL and ET
         elif EL==ET:
             VLL = {}
             for n in (0,2,4):
                 VLL[n] = self.V[k][n].sub(subbasisL, subbasisL)
 
-            return VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
+            return (VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]).M
 
 
+
+
+    def calcVV3(self, ETlist, eps):
+        print("Calculating VVV renorm coefficients")
+        self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ETlist)
 
 
     def setCouplings(self, g0=0, g2=0, g4=0):
@@ -309,7 +396,7 @@ class Phi4():
 
 
 
-    def computeEigval(self, k, ET, ren, EL=None, eps=None, neigs=10, maxntails=None):
+    def computeEigval(self, k, ET, ren, EL=None, EL3=None, eps=None, neigs=10, maxntails=None):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number
         ET: ET
@@ -325,13 +412,13 @@ class Phi4():
         subbasisL = self.basis[k].sub(lambda v: helper.energy(v)<=ET)
         self.subbasisL = subbasisL
 
-        Hraw = (self.h0[k] + self.g4*self.V[k][4]).sub(subbasisL, subbasisL)
+        Hraw = (self.h0[k] + self.g4*self.V[k][4]).sub(subbasisL, subbasisL).M
 
         if ren=="raw":
-            compH = Hraw.M
+            compH = Hraw
         else:
-            DeltaH = self.computeDeltaH(k, ET, EL, eps, maxntails)
-            compH = (Hraw + DeltaH).M
+            DeltaH = self.computeDeltaH(k=k, ET=ET, EL=EL, eps=eps, maxntails=maxntails, EL3=EL3)
+            compH = (Hraw + DeltaH)
 
         self.compSize = compH.shape[0]
 
@@ -353,12 +440,12 @@ class Phi4():
         # The vacuum is K-even
 
     def spectrum(self, k, ren):
-        eigs = self.eigenvalues[ren]
+        eigs = self.eigenvalues[ren][k]
         # Subtract vacuum energies
         if k==1:
-            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[k][1:]])
+            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[1:]])
         elif k==-1:
-            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[k]])
+            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs])
 
 
     @staticmethod
