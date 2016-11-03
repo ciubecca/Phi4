@@ -5,7 +5,7 @@
 # plotvsE 10 1 10 20
 # Plots all the points for L=10, g=1, and ET = [10, 10.5, 11, 11.5, ..., 20]
 
-minoverlaplist = [10**(-2), 10**(-3)]
+minoverlaplist = [10**(-2)]
 
 import sys
 import matplotlib.pyplot as plt
@@ -149,7 +149,7 @@ plt.ylabel(r"$E_0$")
 plt.legend(loc=loc)
 
 
-plt.savefig("figs/fig_E0vsEL3_"+fname)
+plt.savefig("figs/fig_E0vsEL3NoVVV3_"+fname)
 # plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
         # .format(g,L,EL,output))
 
@@ -161,7 +161,7 @@ plt.xlabel(r"$E_{L 3}$")
 plt.ylabel(r"$E_1-E_0$")
 plt.legend(loc=loc)
 
-plt.savefig("figs/fig_MvsEL3_"+fname)
+plt.savefig("figs/fig_MvsEL3NoVVV3_"+fname)
 # plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
         # .format(g,L,EL,output))
 
@@ -175,6 +175,6 @@ plt.xlabel(r"$E_{L 3}$")
 plt.ylabel(r"$E_1$")
 plt.legend(loc=loc)
 
-plt.savefig("figs/fig_E1vsEL3_"+fname)
+plt.savefig("figs/fig_E1vsEL3NoVVV3_"+fname)
 # plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
         # .format(g,L,EL,output))
