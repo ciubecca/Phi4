@@ -30,6 +30,7 @@ class Phi4():
         self.Vll = {}
         self.V0V4 = {}
         self.V2V4 = {}
+        self.V4V4 = {}
         # self.VhhDiagList = {}
         self.basisH = {}
         self.basisl = {}
@@ -210,12 +211,19 @@ class Phi4():
         self.V2V4[k] = Matrix(basis,basis,
                 self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                     sumTranspose=True, subDiag=False)*self.L**2)
-
         Vlist = V2V4Ops2(basis)
         self.V2V4[k] += Matrix(basis,basis,
                 self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         sumTranspose=False)*self.L**2)
 
+        Vlist = V4V4Ops1(basis)
+        self.V4V4[k] = Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    sumTranspose=True, subDiag=False)*self.L**2)
+        Vlist = V4V4Ops2(basis)
+        self.V4V4[k] += Matrix(basis,basis,
+                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        sumTranspose=False)*self.L**2)
 
 
 
@@ -284,6 +292,7 @@ class Phi4():
 
             V0V4 = self.V0V4[k].sub(subbasisl,subbasisl).M
             V2V4 = self.V2V4[k].sub(subbasisl,subbasisl).M
+            V4V4 = self.V4V4[k].sub(subbasisl,subbasisl).M
 
 
 

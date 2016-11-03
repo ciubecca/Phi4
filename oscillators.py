@@ -22,7 +22,6 @@ def filterDlist(dlist, nd, ntot, nmax):
         return True
 
 
-
 # TODO The speed optimization resulting from using the N-Sum algorithm could be important
 def gendlists(state, nd, ntot, nmax):
     """ Generates a list of all the possible combinations of momenta in the state that
@@ -361,9 +360,6 @@ class BilocOperator():
                 x = oscFactors[i]
 
                 for n,Zc,Zd in osc:
-                    # print(n,Zc,Zd)
-                    # print(statevec)
-                    # print(x)
                     newstatevec[n+nmax] += Zc-Zd
                     x *= normFactors[Zc, Zd, statevec[n+nmax]]
 
@@ -685,7 +681,6 @@ def V4OpsSelectedHalf(basis):
 
 
 
-
 def V6OpsSelectedHalf(basis):
     """ Half of the operators of V6 acting on the "selected" basis of states
     (e.g. the set of "selected" low-energy tails). It takes into account only the
@@ -804,44 +799,54 @@ def createClistsV2(nmax, dlist, nc):
 
 def createClistsV4(nmax, dlist, nc):
 
-    # print(dlist)
-    # print(nc)
-
     if len(dlist) != 4-nc:
         raise ValueError
 
+    clists = []
+
     if nc==0:
-        return [()]
+        clists.append(())
 
     elif nc==1:
-        return [(sum(dlist),)]
+        clists.append((sum(dlist),))
 
     elif nc==2:
-        clists = []
-        sumdlist = sum(dlist)
         k1,k2 = dlist
-        for k3 in range(max(-nmax+sumdlist,-nmax),
-                min(int(floor((sumdlist)/2)),nmax)+1):
+        for k3 in range(max(-nmax+k1+k2,-nmax),
+                min(int(floor((k1+k2)/2)),nmax)+1):
 
-            k4 = sumdlist-k3
+            k4 = k1+k2-k3
             clists.append((k3,k4))
-        return clists
 
-    else:
-        raise ValueError("Not yet implemented")
+    elif nc==3:
+        (k1,) = dlist
+        for k2 in range(-nmax,nmax+1):
+            for k3 in range(max(-nmax+k1-k2,k2),
+                           min(int(floor((k1-k2)/2)),nmax)+1):
+
+                k4 = k1-k2-k3
+                clists.append((k2,k3,k4))
+
+    elif nc==4:
+        clists = []
+        for k1 in range(-nmax,nmax+1):
+            for k2 in range(k1,nmax+1):
+                # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
+                for k3 in range(max(-nmax-k1-k2,k2),
+                        min(int(floor((-k1-k2)/2)),nmax)+1):
+                    k4 = -k1-k2-k3
+                    clists.append((k1,k2,k3,k4))
+
+    return clists
+
 
 
 def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
     ret = set()
-    # print("ndPair", ndPair)
-    # print("ntotPair", ntotPair)
 
     for state in basis:
-        # print("state", state)
         ret.update(gendlistPairs(state=state, ndPair=ndPair,
             ntotPair=ntotPair, nmax=nmax))
-        # print(list(gendlistPairs(state=state, ndPair=ndPair,
-            # ntotPair=ntotPair, nmax=nmax)))
     return ret
 
 
@@ -866,7 +871,6 @@ def V2V4Ops1(basis):
         for nd2 in (2,3,4):
             ndPair = (nd1,nd2)
 
-            # print("ndPair", ndPair)
             ncPair = tuple(ntot-nd for ntot,nd in zip(ntotPair,ndPair))
 
             dlistPairs = gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair)
@@ -874,13 +878,10 @@ def V2V4Ops1(basis):
             JointOscList = []
 
             for dlistPair in dlistPairs:
-                # print("dlistPair", dlistPair)
 
                 x1 = createClistsV[2](nmax, dlistPair[0], ncPair[0])
                 x2 = createClistsV[4](nmax, dlistPair[1], ncPair[1])
 
-                # print(x1)
-                # print(x2)
 
                 clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
                         if oscEnergy(clist1)+oscEnergy(clist2) < Emax+tol and
@@ -915,7 +916,7 @@ def V2V4Ops2(basis):
     opsList = []
 
     for nd1 in (0,1,2):
-        for nd2 in (2,3,4):
+        for nd2 in (2,):
             ndPair = (nd1,nd2)
 
             ncPair = tuple(ntot-nd for ntot,nd in zip(ntotPair,ndPair))
@@ -927,6 +928,98 @@ def V2V4Ops2(basis):
             for dlistPair in dlistPairs:
                 x1 = createClistsV[2](nmax, dlistPair[0], ncPair[0])
                 x2 = createClistsV[4](nmax, dlistPair[1], ncPair[1])
+
+                clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
+                        if oscEnergy(clist1)+oscEnergy(clist2) < Emax+tol and
+# Lexicographical ordering condition
+                        (nd2!=2 or
+                            sorted([abs(clist2[0]),abs(clist2[1])]) ==\
+                            sorted([abs(dlistPair[1][0]),abs(dlistPair[1][1])]))]
+
+                JointOscList.append((dlistPair, clistPairs))
+
+            opsList.append(BilocOperator(JointOscList,ndPair,ncPair,helper=helper))
+
+    return opsList
+
+
+
+def V4V4Ops1(basis):
+    """
+    Part of the bilocal operators of :V4 V4: involving the terms
+    :V4 (a^a^a^a^ a^a^a^a a^a^aa): excluding the diagonal part of V4
+    """
+
+    helper = basis.helper
+    nmax = helper.nmax
+    Emax = basis.Emax
+    oscEnergy = helper.oscEnergy
+
+    ntotPair = (4,4)
+
+    opsList = []
+
+    for nd1 in (0,1,2,3,4):
+        for nd2 in (2,3,4):
+            ndPair = (nd1,nd2)
+
+            ncPair = tuple(ntot-nd for ntot,nd in zip(ntotPair,ndPair))
+
+            dlistPairs = gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair)
+
+            JointOscList = []
+
+            for dlistPair in dlistPairs:
+
+                x1 = createClistsV4(nmax, dlistPair[0], ncPair[0])
+                x2 = createClistsV4(nmax, dlistPair[1], ncPair[1])
+
+
+                clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
+                        if oscEnergy(clist1)+oscEnergy(clist2) < Emax+tol and
+# Lexicographical ordering condition
+                        (nd2!=2 or
+                            sorted([abs(clist2[0]),abs(clist2[1])]) <\
+                            sorted([abs(dlistPair[1][0]),abs(dlistPair[1][1])]))]
+
+                JointOscList.append((dlistPair, clistPairs))
+
+            opsList.append(BilocOperator(JointOscList,ndPair,ncPair,helper=helper))
+
+    return opsList
+
+
+
+def V4V4Ops2(basis):
+    """
+    Part of the bilocal operators of :V4 V4: involving the terms
+    :V4 (a^_k1 a^_k2 a_k1 a_k2): including the diagonal part of V4
+    """
+
+    helper = basis.helper
+    nmax = helper.nmax
+    Emax = basis.Emax
+    oscEnergy = helper.oscEnergy
+
+    ntotPair = (4,4)
+
+    opsList = []
+
+    for nd1 in (0,1,2,3,4):
+        for nd2 in (2,):
+            ndPair = (nd1,nd2)
+
+            ncPair = tuple(ntot-nd for ntot,nd in zip(ntotPair,ndPair))
+
+            dlistPairs = gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair)
+
+            JointOscList = []
+
+            for dlistPair in dlistPairs:
+
+                x1 = createClistsV4(nmax, dlistPair[0], ncPair[0])
+                x2 = createClistsV4(nmax, dlistPair[1], ncPair[1])
+
 
                 clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
                         if oscEnergy(clist1)+oscEnergy(clist2) < Emax+tol and

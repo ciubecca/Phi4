@@ -5,7 +5,7 @@
 # plotvsE 10 1 10 20
 # Plots all the points for L=10, g=1, and ET = [10, 10.5, 11, 11.5, ..., 20]
 
-minoverlaplist = [10**(-2), 3*10**(-3)]
+minoverlaplist = [10**(-2), 10**(-3)]
 
 import sys
 import matplotlib.pyplot as plt
@@ -53,15 +53,17 @@ def plotvsEL3(minoverlap, EL3list):
                 approxQuery["EL"] = EL
                 # approxQuery["EL"] = max(ETlist)+ELETdiff
 
-            # exactQuery["k"] = 1
-            # E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
+            exactQuery["k"] = 1
+            E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
             exactQuery["k"] = -1
             E1[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
 
+    label = "minoverlap={}".format(minoverlap)
+
     # VACUUM ENERGY
-    # plt.figure(1)
+    plt.figure(1)
 
     # data = E0["raw"]
     # plt.plot(Elist, data, linewidth=linewidth, color="b", marker=marker,
@@ -71,15 +73,14 @@ def plotvsEL3(minoverlap, EL3list):
     # plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
             # markersize=markersize, dashes = dashes, label="renloc")
 
-    label = "minoverlap={}".format(minoverlap)
 
-    # data = E0["rentails"]
-    # plt.plot(xlist, data, label=label)
-
+    data = E0["rentails"]
+    plt.plot(xlist, data, label=label)
 
 
-    # # MASS
-    # plt.figure(2)
+
+    # MASS
+    plt.figure(2)
 
     # data = array(E1["raw"])-array(E0["raw"])
     # plt.plot(Elist, data, linewidth=linewidth, color="b", marker=marker,
@@ -89,8 +90,8 @@ def plotvsEL3(minoverlap, EL3list):
     # plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
             # markersize=markersize, dashes = dashes, label="renloc")
 
-    # data = array(E1["rentails"])-array(E0["rentails"])
-    # plt.plot(xlist, data, label=label)
+    data = array(E1["rentails"])-array(E0["rentails"])
+    plt.plot(xlist, data, label=label)
 
 
 
