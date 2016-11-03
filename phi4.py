@@ -365,10 +365,6 @@ class Phi4():
                 gc.collect()
 
 
-            # XXX Add the "local" parts to DH3
-            DH3ll += V0V4*float(self.VV3.V0V4[EL3])*self.g4**3
-            DH3ll += V2V4*float(self.VV3.V2V4[EL3])*self.g4**3
-
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
 

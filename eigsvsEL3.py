@@ -121,7 +121,6 @@ for k in klist:
                 basisSize=a.compSize, neigs=neigs, EL=ET, eps=eps)
 
 
-    a.calcVV3(ETlist=EL3list, eps=eps)
 
 
     for EL3 in EL3list:
