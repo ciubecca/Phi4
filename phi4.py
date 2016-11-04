@@ -370,6 +370,11 @@ class Phi4():
             DH3ll += V2V4*self.VV3.V2V4[EL3]*self.g4**3
             DH3ll += V4V4*self.VV3.V4V4[EL3]*self.g4**3
 
+            DH3ll += Vll[0]*self.VV3.VV3loc[0][EL3]*self.g4**3
+            DH3ll += Vll[2]*self.VV3.VV3loc[2][EL3]*self.g4**3
+            DH3ll += Vll[4]*self.VV3.VV3loc[4][EL3]*self.g4**3
+            DH3ll += Vll[6]*self.VV3.VV3loc[6][EL3]*self.g4**3
+
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
 
