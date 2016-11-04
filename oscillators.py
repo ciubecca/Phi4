@@ -269,16 +269,18 @@ class BilocOperator():
 
         oscEnergy = helper.oscEnergy
 
+        def pairOscEnergy(pair):
+            return oscEnergy(pair[0])+oscEnergy(pair[1])
+
         for i, (dlistPair,clistPairs) in enumerate(JointOscList):
-            clistPairs = list(sorted(clistPairs, key=lambda x:sum(oscEnergy(y) for y in x)))
+            clistPairs = list(sorted(clistPairs, key=pairOscEnergy))
 
             self.dlistPairPos[dlistPair] = i
 
             self.oscList.append([self.torepr1(clistPair,dlistPair)
                 for clistPair in clistPairs])
 
-            self.oscEnergies.append([sum(oscEnergy(clist)-oscEnergy(dlist)
-                for clist,dlist in zip(clistPair,dlistPair))
+            self.oscEnergies.append([pairOscEnergy(clistPair)-pairOscEnergy(dlistPair)
                 for clistPair in clistPairs])
 
             self.oscFactors.append([
