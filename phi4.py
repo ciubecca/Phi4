@@ -145,6 +145,7 @@ class Phi4():
 
         self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
+
     # @profile
     def computeHEVs(self, k, EL):
         """
@@ -184,6 +185,8 @@ class Phi4():
         self.VLh[k] = Matrix(basis, lookupbasis,
                 self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
+
+    def computeLEVs(self, k):
 
         ###################################
         # Generate all the "local" matrices on the selected
