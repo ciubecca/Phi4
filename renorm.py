@@ -49,44 +49,56 @@ class renVV2():
 class renVV3():
     def __init__(self, ETlist, m, eps):
         self.neval = 10000
+# XXX reset this to 10000
+        self.neval = 1000
 
         self.ETlist = ETlist
 
         self.m = m
         self.eps = eps
 
+        self.VV3loc = {}
 
 # Local correction to identity
-        # self.VV3loc[0] = self.computeIntegral(4, phi0_1)
+        self.VV3loc[0] = self.computeIntegral(4, phi0_1)
 
 # Local correction to mass operator
-        # self.VV3loc[2] = self.computeIntegral(3, phi2_1)
-        # self.VV3loc[2] += self.computeIntegral(3, phi2_2)
-        # self.VV3loc[2] += self.computeIntegral(3, phi2_3)
-        # self.VV3loc[2] += self.computeIntegral(3, phi2_4)
+        self.VV3loc[2] = self.computeIntegral(3, phi2_1)
+        self.VV3loc[2] += self.computeIntegral(3, phi2_2)
+        self.VV3loc[2] += self.computeIntegral(3, phi2_3)
+        self.VV3loc[2] += self.computeIntegral(3, phi2_4)
 
 # Local corrections to V4 NOTE I moved diagram 4.5 to the non-local corrections
-        # self.VV3loc[4] = self.computeIntegral(2, phi4_1)
-        # self.VV3loc[4] += self.computeIntegral(2, phi4_2)
-        # self.VV3loc[4] += self.computeIntegral(2, phi4_3)
-        # self.VV3loc[4] += self.computeIntegral(2, phi4_4)
-        # self.VV3loc[4] += self.computeIntegral(2, phi4_6)
+        self.VV3loc[4] = self.computeIntegral(2, phi4_1)
+        self.VV3loc[4] += self.computeIntegral(2, phi4_2)
+        self.VV3loc[4] += self.computeIntegral(2, phi4_3)
+        self.VV3loc[4] += self.computeIntegral(2, phi4_4)
+        self.VV3loc[4] += self.computeIntegral(2, phi4_6)
 
 
         self.neval = 1000
 # Local corrections to V6
-        # self.VV3loc[6] = self.computeIntegral(1, phi6_1)
+        self.VV3loc[6] = self.computeIntegral(1, phi6_1)
 # NOTE I removed diagram 6.2
         # self.VV3loc[6] += self.computeIntegral(1, phi6_2)
 
 
-        # self.neval = 10000
+# Convert to dict
+        self.VV3loc = {n: {ET: self.VV3loc[n][i] for i,ET in enumerate(self.ETlist)}
+            for n in self.VV3loc.keys()}
+
+
 # XXX reset this to 10000
-        self.neval = 1000
+        # self.neval = 10000
         # Bilocal corrections
         self.V0V4 = self.computeIntegral(3, phi0phi4_1)
         self.V2V4 = self.computeIntegral(2, phi2phi4_1)
         self.V4V4 = self.computeIntegral(1, phi4phi4_1)
+
+        # Convert to dict
+        self.V0V4 = {ET: self.V0V4[i] for i,ET in enumerate(self.ETlist)}
+        self.V2V4 = {ET: self.V2V4[i] for i,ET in enumerate(self.ETlist)}
+        self.V4V4 = {ET: self.V4V4[i] for i,ET in enumerate(self.ETlist)}
 
 
     def computeIntegral(self, nvar, integrand):
@@ -98,7 +110,7 @@ class renVV3():
         eps = self.eps
         ET = self.ETlist[0]
 
-        ret = {}
+        ret = []
         integ = vegas.Integrator([[-cut,cut]]*nvar)
 
         # step 1 -- adapt to phi0_1; discard results
@@ -106,53 +118,11 @@ class renVV3():
         for ET in self.ETlist:
         # step 2 -- integ has adapted to phi0_1; keep results
             result = integ(lambda x: integrand(ET,eps,x), nitn=nitn, neval=neval)
-            ret[ET] = result.mean
+            ret.append(result.mean)
 
-        return ret
-
+        return array(ret)
 
 
     def om(x):
         return sqrt(self.m**2+x**2)
-
-
-# print("\n******************* Phi2Phi4 ************************ \n")
-
-# c24 = [0 for i in ETlist]
-# neval=1000
-
-# integ24 = vegas.Integrator([[-cut,cut], [-cut,cut]])
-
-# print("===> diagram 1 ...")
-# integ24(lambda x: phi2phi4_1(ET,eps,x), nitn=nitn, neval=neval)
-# for i,ET in enumerate(ETlist):
-    # result = integ24(lambda x: phi2phi4_1(ET,eps,x), nitn=nitn, neval=neval)
-    # print('ET=%.1f result = %s chi2/dof=%.2f   Q = %.2f' % (ET, result, result.chi2/result.dof, result.Q))
-    # c24[i]+=result
-
-# for i,ET in enumerate(ETlist):
-    # print("ET=", ET," c24=", c24[i],)
-
-
-# print("\n******************* Phi4Phi4 ************************ \n")
-
-
-# neval=1000
-# c44 = [0 for i in ETlist]
-
-# integ44 = vegas.Integrator([[-cut,cut]])
-
-# print("===> diagram 1 ...")
-# integ44(lambda x: phi4phi4_1(ET,eps,x), nitn=nitn, neval=neval)
-# for i,ET in enumerate(ETlist):
-    # result = integ44(lambda x: phi4phi4_1(ET,eps,x), nitn=nitn, neval=neval)
-    # print('ET=%.1f result = %s chi2/dof=%.2f   Q = %.2f' % (ET, result, result.chi2/result.dof, result.Q))
-    # c44[i]+=result
-
-# for i,ET in enumerate(ETlist):
-    # print("ET=", ET," c44=", c44[i],)
-
-# t1=time.clock()
-
-# print(t1-t0)
 
