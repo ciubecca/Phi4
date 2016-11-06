@@ -65,4 +65,4 @@ for k in klist:
 # Computing VHH is expensive
     a.computeLEVs(k)
 
-    print(a.V2V4[k].M)
+    print(a.V2V4[k].M.todense())

@@ -306,6 +306,7 @@ class Phi4():
             # XXX Sorry, for now the subscripts are confusing, need to sort this out
             DH2lL = VhL*propagator*Vlh*self.g4**2
             # print("DH2lL", DH2lL.M.shape)
+            print("Local g^2 ren coefficients:", VV2)
             DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
             DH2Ll = DH2lL.transpose()
             DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
@@ -392,10 +393,14 @@ class Phi4():
 
 
 
-
     def calcVV3(self, ETlist, eps):
         print("Calculating VVV renorm coefficients")
         self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ETlist)
+
+
+        print("Bilocal g^3 ren coefficients: ", self.VV3.V0V4, self.VV3.V2V4, self.VV3.V4V4)
+
+        print("Local g^3 ren coefficients: ", self.VV3.VV3loc)
 
 
     def setCouplings(self, g0=0, g2=0, g4=0):

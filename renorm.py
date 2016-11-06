@@ -49,6 +49,8 @@ class renVV2():
 class renVV3():
     def __init__(self, ETlist, m, eps):
         self.neval = 10000
+# XXX reset this to 10000
+        self.neval = 1000
 
         self.ETlist = ETlist
 
@@ -86,8 +88,8 @@ class renVV3():
             for n in self.VV3loc.keys()}
 
 
-        self.neval = 10000
 # XXX reset this to 10000
+        # self.neval = 10000
         # Bilocal corrections
         self.V0V4 = self.computeIntegral(3, phi0phi4_1)
         self.V2V4 = self.computeIntegral(2, phi2phi4_1)
