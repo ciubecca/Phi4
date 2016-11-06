@@ -307,7 +307,7 @@ class Phi4():
             DH2lL = VhL*propagator*Vlh*self.g4**2
             # print("DH2lL", DH2lL.M.shape)
             print("Local g^2 ren coefficients:", VV2)
-            DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
+            # DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
             DH2Ll = DH2lL.transpose()
             DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
 
@@ -370,14 +370,14 @@ class Phi4():
 
 
             # XXX Add the "local" parts to DH3
-            DH3ll += V0V4*self.VV3.V0V4[EL3]*self.g4**3
-            DH3ll += V2V4*self.VV3.V2V4[EL3]*self.g4**3
-            DH3ll += V4V4*self.VV3.V4V4[EL3]*self.g4**3
+            # DH3ll += V0V4*self.VV3.V0V4[EL3]*self.g4**3
+            # DH3ll += V2V4*self.VV3.V2V4[EL3]*self.g4**3
+            # DH3ll += V4V4*self.VV3.V4V4[EL3]*self.g4**3
 
-            DH3ll += Vll[0]*self.VV3.VV3loc[0][EL3]*self.g4**3
-            DH3ll += Vll[2]*self.VV3.VV3loc[2][EL3]*self.g4**3
-            DH3ll += Vll[4]*self.VV3.VV3loc[4][EL3]*self.g4**3
-            DH3ll += Vll[6]*self.VV3.VV3loc[6][EL3]*self.g4**3
+            # DH3ll += Vll[0]*self.VV3.VV3loc[0][EL3]*self.g4**3
+            # DH3ll += Vll[2]*self.VV3.VV3loc[2][EL3]*self.g4**3
+            # DH3ll += Vll[4]*self.VV3.VV3loc[4][EL3]*self.g4**3
+            # DH3ll += Vll[6]*self.VV3.VV3loc[6][EL3]*self.g4**3
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
