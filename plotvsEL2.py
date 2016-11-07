@@ -5,7 +5,7 @@
 # plotvsE 10 1 10 20
 # Plots all the points for L=10, g=1, and ET = [10, 10.5, 11, 11.5, ..., 20]
 
-minoverlaplist = [10**(-2), 10**(-3)]
+minoverlaplist = [10**(-2)]
 
 import sys
 import matplotlib.pyplot as plt
@@ -47,11 +47,7 @@ def plotvsEL2(minoverlap, EL2list):
             approxQuery["ET"] = ET
             approxQuery["minoverlap"] = minoverlap
             approxQuery["EL"] = EL2
-            if ren=="renloc":
-                approxQuery["EL"] = ET
-            elif ren=="rentails":
-                approxQuery["EL"] = min(EL2list)
-                # approxQuery["EL"] = max(ETlist)+ELETdiff
+            approxQuery["EL3"] = min(EL2list)
 
             exactQuery["k"] = 1
             E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
