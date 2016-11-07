@@ -121,7 +121,7 @@ except IndexError:
 # ELETdiff = float(argv[5])
 
 
-EL3list = scipy.linspace(EL3min, EL3max, (EL3max-EL3min)+1)
+EL3list = scipy.linspace(EL3min, EL3max, (EL3max-EL3min)*2+1)
 print("EL3list:", EL3list)
 
 
