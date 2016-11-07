@@ -166,6 +166,7 @@ plt.xlabel(r"$E_{L 2}$")
 plt.ylabel(r"$E_1$")
 plt.legend(loc=loc)
 
+
 plt.savefig("figs/fig_E1vsEL2_"+fname)
 # plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
         # .format(g,L,EL,output))
