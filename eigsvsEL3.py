@@ -20,7 +20,7 @@ neigs = 1
 # List of parity quantum numbers
 klist = (-1,1)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
-minoverlap = 10**(-3)
+minoverlap = 10**(-2)
 
 
 
@@ -78,6 +78,9 @@ for k in klist:
     # and a maximum cutoff EL
     a.genHEBasis(k, basisl, EL3max)
     print("Size of HE basis:", a.basisH[k].size)
+
+
+    a.computeLEVs(k)
 
 
     print("Computing high energy matrices...")
@@ -138,7 +141,7 @@ for k in klist:
 
         if saveondb:
             db.insert(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
-                    spec=a.eigenvalues["rentails"][k], EL3=EL3,
+                    spec=a.eigenvalues["rentails"][k], EL3=EL3, loc3=False,
                     basisSize=a.compSize, neigs=neigs, EL=EL, ntails=a.ntails, eps=eps)
 
 

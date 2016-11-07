@@ -307,7 +307,7 @@ class Phi4():
             DH2lL = VhL*propagator*Vlh*self.g4**2
             # print("DH2lL", DH2lL.M.shape)
             print("Local g^2 ren coefficients:", VV2)
-            # DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
+            DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
             DH2Ll = DH2lL.transpose()
             DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
 

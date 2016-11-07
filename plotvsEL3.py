@@ -26,13 +26,13 @@ rc('text', usetex=True)
 neigs = 10
 
 
-def plotvsEL3(minoverlap, EL3list):
+def plotvsEL3(minoverlap, EL3list, loc3):
 
     xlist = EL3list
 
     db = database.Database()
 
-    exactQuery = {}
+    exactQuery = {"loc3":loc3}
     approxQuery = {"g":g, "L":L}
 
     E0 = {}
@@ -60,7 +60,7 @@ def plotvsEL3(minoverlap, EL3list):
             E1[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
 
-    label = "minoverlap={}".format(minoverlap)
+    label = "minoverlap={}, loc3={}".format(minoverlap,loc3)
 
     # VACUUM ENERGY
     plt.figure(1)
@@ -133,11 +133,12 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 
 
 for minoverlap in minoverlaplist:
-    plotvsEL3(minoverlap, EL3list)
+    for loc3 in (True, False):
+        plotvsEL3(minoverlap, EL3list, loc3)
 
 
 title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f}".format(g,L,ET,EL)
-fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}.{4}".format(g,L,ET,EL,output)
+fname = "noloc3_g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}.{4}".format(g,L,ET,EL,output)
 loc = "lower right"
 
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
@@ -149,7 +150,7 @@ plt.ylabel(r"$E_0$")
 plt.legend(loc=loc)
 
 
-plt.savefig("figs/fig_E0vsEL3NoVVV3_"+fname)
+plt.savefig("figs/fig_E0vsEL3_"+fname)
 # plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
         # .format(g,L,EL,output))
 
@@ -161,7 +162,7 @@ plt.xlabel(r"$E_{L 3}$")
 plt.ylabel(r"$E_1-E_0$")
 plt.legend(loc=loc)
 
-plt.savefig("figs/fig_MvsEL3NoVVV3_"+fname)
+plt.savefig("figs/fig_MvsEL3_"+fname)
 # plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
         # .format(g,L,EL,output))
 
@@ -175,6 +176,6 @@ plt.xlabel(r"$E_{L 3}$")
 plt.ylabel(r"$E_1$")
 plt.legend(loc=loc)
 
-plt.savefig("figs/fig_E1vsEL3NoVVV3_"+fname)
+plt.savefig("figs/fig_E1vsEL3_"+fname)
 # plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
         # .format(g,L,EL,output))
