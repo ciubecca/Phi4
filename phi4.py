@@ -19,7 +19,7 @@ class Phi4():
 
         self.m = m
         self.L = L
-        self.nchunks = 10
+        self.nchunks = 1
 
         self.basis = {}
         self.h0 = {}
