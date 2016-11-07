@@ -20,7 +20,7 @@ neigs = 1
 # List of parity quantum numbers
 klist = (-1,1)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
-minoverlap = 10**(-2)
+minoverlap = 10**(-3)
 
 
 

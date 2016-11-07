@@ -132,7 +132,7 @@ for minoverlap in minoverlaplist:
 
 
 title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}".format(g,L,ET)
-fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}.{3}".format(g,L,ET,output)
+fname = "noLoc_g={0:.1f}_L={1:.1f}_ET={2:.1f}.{3}".format(g,L,ET,output)
 loc = "lower right"
 
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
