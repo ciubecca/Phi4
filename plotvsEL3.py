@@ -5,7 +5,7 @@
 # plotvsE 10 1 10 20
 # Plots all the points for L=10, g=1, and ET = [10, 10.5, 11, 11.5, ..., 20]
 
-minoverlaplist = [10**(-2), 10**(-3)]
+minoverlaplist = [10**(-2)]
 
 import sys
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ def plotvsEL3(minoverlap, EL3list):
 
     db = database.Database()
 
-    exactQuery = {}
+    exactQuery = {"loc3":True}
     approxQuery = {"g":g, "L":L}
 
     E0 = {}

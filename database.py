@@ -14,7 +14,8 @@ class Database():
         self.useJson = useJson
 
     def insert(self, k, L, ET, g, spec, basisSize, neigs, ren, eigv=array([]),
-                eps=0., EL=0., ntails=0., occmax=0., niter=1, minoverlap=0, EL3=0):
+                eps=0., EL=0., ntails=0., occmax=0., niter=1, minoverlap=0, EL3=0,
+                loc3=True):
 
         if(eigv.size!=0 and basisSize*neigs != eigv.size):
             # print(eigv.size)
@@ -24,7 +25,7 @@ class Database():
         self.table.insert(dict(date=datetime.datetime.now(), k=k, L=L, ET=ET, EL=EL,
                 g=g, ren=ren, eigv=eigv.tostring(), spec=spec.tostring(), eps=eps,
                 basisSize=basisSize, neigs=neigs, occmax=occmax, ntails=ntails,
-                niter=niter, minoverlap=minoverlap, EL3=EL3))
+                niter=niter, minoverlap=minoverlap, EL3=EL3, loc3=loc3))
 
     # Get a list of all objects satisfying the query
     def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={}, orderBy=None):
