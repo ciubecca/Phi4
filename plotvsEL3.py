@@ -53,8 +53,8 @@ def plotvsEL3(minoverlap, EL3list, loc3):
                 approxQuery["EL"] = EL
                 # approxQuery["EL"] = max(ETlist)+ELETdiff
 
-            exactQuery["k"] = 1
-            E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
+            # exactQuery["k"] = 1
+            # E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
             exactQuery["k"] = -1
             E1[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
@@ -74,8 +74,8 @@ def plotvsEL3(minoverlap, EL3list, loc3):
             # markersize=markersize, dashes = dashes, label="renloc")
 
 
-    data = E0["rentails"]
-    plt.plot(xlist, data, label=label)
+    # data = E0["rentails"]
+    # plt.plot(xlist, data, label=label)
 
 
 
@@ -90,8 +90,8 @@ def plotvsEL3(minoverlap, EL3list, loc3):
     # plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
             # markersize=markersize, dashes = dashes, label="renloc")
 
-    data = array(E1["rentails"])-array(E0["rentails"])
-    plt.plot(xlist, data, label=label)
+    # data = array(E1["rentails"])-array(E0["rentails"])
+    # plt.plot(xlist, data, label=label)
 
 
 
