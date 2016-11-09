@@ -487,7 +487,7 @@ def V2OpsHalf(basis):
 
 
 # NOTE Old version
-# # Oscillators between the selected states in basis and all the states in the range [0,Emax]
+# Oscillators between the selected states in basis and all the states in the range [0,Emax]
 # def V4OpsSelectedFull(basis, Emax):
     # """ Returns LocOperator instances containing all the oscillators of the V4 operator
     # acting on basis.  All the parts of the operator are computed.
@@ -700,7 +700,7 @@ def V2OpsSelectedFull(basis, Emax):
 
         for dlist in dlists:
             clists = [clist for clist in createClistsV2(nmax, dlist, nc) if
-                    oscEnergy(clist) <= Emax]
+                    oscEnergy(clist) <= Emax+tol]
             oscList.append((dlist, clists))
 
         opsList.append(LocOperator(oscList,nd,nc,helper=helper))
@@ -727,7 +727,7 @@ def V4OpsSelectedFull(basis, Emax):
 
         for dlist in dlists:
             clists = [clist for clist in createClistsV4(nmax, dlist, nc) if
-                    oscEnergy(clist) <= Emax]
+                    oscEnergy(clist) <= Emax+tol]
             oscList.append((dlist, clists))
 
         opsList.append(LocOperator(oscList,nd,nc,helper=helper))

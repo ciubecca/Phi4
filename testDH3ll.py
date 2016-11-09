@@ -15,7 +15,7 @@ g = .1
 minoverlap = 10**-3
 
 
-def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, Vhh=False):
+def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, Vll=False):
 
     Vred = matrix.todok()
     Vfull = fullmatrix.todok()
@@ -51,7 +51,7 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, V
                 try:
                     j = statePosRed[stateListFull[J]]
                 except KeyError as err:
-                    if Vhh==True:
+                    if Vll==True:
                         continue
                     else:
                         raise err
@@ -184,3 +184,26 @@ checkMatrix(VLH, subbasisH, a.basis[k], b.V[k][4].M, b.basis[k], 0-tol, ET)
 
 # print("Checking Vhh")
 # checkMatrix(a.Vhh[k].M, a.basisH[k], a.basisH[k], b.V[k][4].M, b.basis[k], EL+tol, Vhh=True)
+
+
+print("Building DH3ll")
+
+loc3mix = False
+nonloc3mix = False
+loc3 = False
+eps = -1
+
+DH3ll = a.computeDH3(subbasisl, k, ET, ELp, ELpp=None, eps=eps, loc3=False, loc3mix=False,
+        nonloc3mix=False)
+
+basis = b.basis[k]
+energyArr = array(basis.energyList)
+propagator = scipy.sparse.spdiags(1/(eps-energyArr), 0, basis.size, basis.size)
+proj = scipy.sparse.spdiags(array([int(ET<e<ELp) for e in energyArr]), 0, basis.size,
+        basis.size)
+Vfull = b.V[k][4].M
+DH3Full = Vfull*propagator*proj*Vfull*propagator*proj*Vfull*g**3
+
+
+print("Checking DH3ll")
+checkMatrix(DH3ll, subbasisl, subbasisl, DH3Full, basis, 0-tol, ET, Vll=True)

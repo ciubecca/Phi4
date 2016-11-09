@@ -341,23 +341,11 @@ class Phi4():
         return DH2lL
 
 
-    def computeDH3(self, subbasisl, k, ET, ELp, ELpp, eps, loc3, loc3mix):
+    def computeDH3(self, subbasisl, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
         Vll = {}
         for n in (0,2,4,6):
             Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
 
-        V0V4 = self.V0V4[k].sub(subbasisl,subbasisl).M
-        V2V4 = self.V2V4[k].sub(subbasisl,subbasisl).M
-        V4V4 = self.V4V4[k].sub(subbasisl,subbasisl).M
-
-        # Subsets of the selected high energy states
-        helper = self.basisH[k].helper
-        subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=ELpp)
-
-        # Propagators on the high-energy states
-        energyArr = array(subbasisH.energyList)
-        propagatorH = scipy.sparse.spdiags(1/(eps-energyArr),0,subbasisH.size,
-                subbasisH.size)
 
         helper = self.basish[k].helper
         subbasish = self.basish[k].sub(lambda v: ET<helper.energy(v)<=ELp)
@@ -366,8 +354,6 @@ class Phi4():
                 subbasish.size)
 
 
-        VHl = self.VHl[k].sub(subbasisl, subbasisH).M
-        VlH = VHl.transpose()
 
 
 # Local renormalization matrices used to approximate the sum over states with energy
@@ -422,27 +408,43 @@ class Phi4():
 # Add the "mixed" contributions to DH3 by integrating out states with
 # energy ET < E < ELp on one side and ELp < E < EL on the other
 #########################################################################
-        basis = subbasish
-        lookupbasis = subbasisH
 
-        VhHlist = V4OpsSelectedFull(subbasish, ELpp)
+        if nonloc3mix:
+            # Subsets of the selected high energy states
+            helper = self.basisH[k].helper
+            subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=ELpp)
 
-        chunklen = int(math.ceil(basis.size/self.nchunks))
-        idxLists = [range(basis.size)[x:x+chunklen] for x in
-                range(0, basis.size, chunklen)]
+            # Propagators on the high-energy states
+            energyArr = array(subbasisH.energyList)
+            propagatorH = scipy.sparse.spdiags(1/(eps-energyArr),0,subbasisH.size,
+                    subbasisH.size)
 
-        for n in range(self.nchunks):
-            idxList = idxLists[n]
 
-            VhHPart =  self.buildMatrix(VhHlist, basis, lookupbasis,
-                    ignKeyErr=True, sumTranspose=False, idxList=idxList)*self.L
+            VHl = self.VHl[k].sub(subbasisl, subbasisH).M
+            VlH = VHl.transpose()
 
-            DH3llPart = Vhl[4]*propagatorh*VhHPart*propagatorH*VlH*self.g4**3
-            DH3llPart += DH3llPart.transpose()
-            DH3ll += DH3llPart
 
-            del VhHPart
-            gc.collect()
+            basis = subbasish
+            lookupbasis = subbasisH
+
+            VhHlist = V4OpsSelectedFull(subbasish, ELpp)
+
+            chunklen = int(math.ceil(basis.size/self.nchunks))
+            idxLists = [range(basis.size)[x:x+chunklen] for x in
+                    range(0, basis.size, chunklen)]
+
+            for n in range(self.nchunks):
+                idxList = idxLists[n]
+
+                VhHPart =  self.buildMatrix(VhHlist, basis, lookupbasis,
+                        ignKeyErr=True, sumTranspose=False, idxList=idxList)*self.L
+
+                DH3llPart = Vhl[4]*propagatorh*VhHPart*propagatorH*VlH*self.g4**3
+                DH3llPart += DH3llPart.transpose()
+                DH3ll += DH3llPart
+
+                del VhHPart
+                gc.collect()
 
 
 #######################################################################
@@ -463,6 +465,12 @@ class Phi4():
 #####################################################
 
         if loc3:
+            V0V4 = self.V0V4[k].sub(subbasisl,subbasisl).M
+            V2V4 = self.V2V4[k].sub(subbasisl,subbasisl).M
+            V4V4 = self.V4V4[k].sub(subbasisl,subbasisl).M
+
+
+
             DH3ll += V0V4*self.VV3.V0V4[EL3]*self.g4**3
             DH3ll += V2V4*self.VV3.V2V4[EL3]*self.g4**3
             DH3ll += V4V4*self.VV3.V4V4[EL3]*self.g4**3
