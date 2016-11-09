@@ -486,127 +486,128 @@ def V2OpsHalf(basis):
     return V20, V11
 
 
-# Oscillators between the selected states in basis and all the states in the range [0,Emax]
-def V4OpsSelectedFull(basis, Emax):
-    """ Returns LocOperator instances containing all the oscillators of the V4 operator
-    acting on basis.  All the parts of the operator are computed.
-    The lists of annihilation momenta are not all the possible ones, but just those
-    extracted from the particular states in the basis.
-    This is method is used to compute Vlh and VhL
-    basis: "selected" basis of states (e.g. low-energy tails)
-    Emax: maximal energy of the states generated via the operator.
-    """
+# NOTE Old version
+# # Oscillators between the selected states in basis and all the states in the range [0,Emax]
+# def V4OpsSelectedFull(basis, Emax):
+    # """ Returns LocOperator instances containing all the oscillators of the V4 operator
+    # acting on basis.  All the parts of the operator are computed.
+    # The lists of annihilation momenta are not all the possible ones, but just those
+    # extracted from the particular states in the basis.
+    # This is method is used to compute Vlh and VhL
+    # basis: "selected" basis of states (e.g. low-energy tails)
+    # Emax: maximal energy of the states generated via the operator.
+    # """
 
-    helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
-    nmax = helper.nmax
+    # helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
+    # nmax = helper.nmax
 
-    #############
-    # a^ a^ a^ a^
-    #############
-    dlist = ()
-    V40 = [(dlist, [])]
-    for k1 in range(-nmax,nmax+1):
-        for k2 in range(k1,nmax+1):
-            # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
-            for k3 in range(max(-nmax-k1-k2,k2),
-                    min(int(floor((-k1-k2)/2)),nmax)+1):
+    # #############
+    # # a^ a^ a^ a^
+    # #############
+    # dlist = ()
+    # V40 = [(dlist, [])]
+    # for k1 in range(-nmax,nmax+1):
+        # for k2 in range(k1,nmax+1):
+            # # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
+            # for k3 in range(max(-nmax-k1-k2,k2),
+                    # min(int(floor((-k1-k2)/2)),nmax)+1):
 
-                k4 = -k1-k2-k3
-                clist = (k1,k2,k3,k4)
+                # k4 = -k1-k2-k3
+                # clist = (k1,k2,k3,k4)
 
-                if helper.oscEnergy(clist) <= Emax+tol:
-                    V40[-1][1].append(clist)
+                # if helper.oscEnergy(clist) <= Emax+tol:
+                    # V40[-1][1].append(clist)
 
-    V40 = LocOperator(V40, 0, 4, helper)
+    # V40 = LocOperator(V40, 0, 4, helper)
 
-    #############
-    # a^ a^ a^ a
-    #############
-    V31 = []
+    # #############
+    # # a^ a^ a^ a
+    # #############
+    # V31 = []
 
-    dlists = set()
-# Generate all the lists of annihilation momenta from the states in the basis
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 1, 4, nmax))
+    # dlists = set()
+# # Generate all the lists of annihilation momenta from the states in the basis
+    # for state in basis.stateList:
+        # dlists.update(gendlists(state, 1, 4, nmax))
 
-    for dlist in dlists:
-        k1 = dlist[0]
-        V31.append((dlist,[]))
+    # for dlist in dlists:
+        # k1 = dlist[0]
+        # V31.append((dlist,[]))
 
-        for k2 in range(-nmax,nmax+1):
-            for k3 in range(max(-nmax+k1-k2,k2),
-                           min(int(floor((k1-k2)/2)),nmax)+1):
+        # for k2 in range(-nmax,nmax+1):
+            # for k3 in range(max(-nmax+k1-k2,k2),
+                           # min(int(floor((k1-k2)/2)),nmax)+1):
 
-                k4 = k1-k2-k3
-                clist = (k2,k3,k4)
+                # k4 = k1-k2-k3
+                # clist = (k2,k3,k4)
 
-                if helper.oscEnergy(clist) <= Emax+tol:
-                    V31[-1][1].append(clist)
+                # if helper.oscEnergy(clist) <= Emax+tol:
+                    # V31[-1][1].append(clist)
 
-    V31 = LocOperator(V31, 1, 3, helper)
+    # V31 = LocOperator(V31, 1, 3, helper)
 
-    #############
-    # a^ a^ a a
-    #############
-    V22 = []
+    # #############
+    # # a^ a^ a a
+    # #############
+    # V22 = []
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 2, 4, nmax))
+    # dlists = set()
+    # for state in basis.stateList:
+        # dlists.update(gendlists(state, 2, 4, nmax))
 
-    for dlist in dlists:
-        (k1,k2) = dlist
-        V22.append((dlist,[]))
+    # for dlist in dlists:
+        # (k1,k2) = dlist
+        # V22.append((dlist,[]))
 
-        for k3 in range(max(-nmax+k1+k2,-nmax),
-                min(int(floor((k1+k2)/2)),nmax)+1):
+        # for k3 in range(max(-nmax+k1+k2,-nmax),
+                # min(int(floor((k1+k2)/2)),nmax)+1):
 
-            k4 = k1+k2-k3
-            clist = (k3,k4)
+            # k4 = k1+k2-k3
+            # clist = (k3,k4)
 
-            if helper.oscEnergy(clist) <= Emax+tol:
-                V22[-1][1].append(clist)
+            # if helper.oscEnergy(clist) <= Emax+tol:
+                # V22[-1][1].append(clist)
 
-    V22 = LocOperator(V22, 2, 2, helper)
-
-
-    #############
-    # a^ a a a
-    #############
-    V13 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 3, 4, nmax))
-
-    for dlist in dlists:
-        k1, k2, k3 = dlist
-
-        k4 = k1+k2+k3
-        clist = (k4,)
-
-        V13.append((dlist,[clist]))
-
-    V13 = LocOperator(V13, 3, 1, helper)
+    # V22 = LocOperator(V22, 2, 2, helper)
 
 
-    ############
-    # a a a a
-    ###########
-    V04 = []
+    # #############
+    # # a^ a a a
+    # #############
+    # V13 = []
 
-    dlists = set()
-    for state in basis.stateList:
-    # This has to be implemented differently
-        dlists.update(gendlists(state, 4, 4, nmax))
+    # dlists = set()
+    # for state in basis.stateList:
+        # dlists.update(gendlists(state, 3, 4, nmax))
 
-    for dlist in dlists:
-        V04.append((dlist,[()]))
+    # for dlist in dlists:
+        # k1, k2, k3 = dlist
 
-    V04 = LocOperator(V04, 4, 0, helper)
+        # k4 = k1+k2+k3
+        # clist = (k4,)
+
+        # V13.append((dlist,[clist]))
+
+    # V13 = LocOperator(V13, 3, 1, helper)
 
 
-    return V40, V31, V22, V13, V04
+    # ############
+    # # a a a a
+    # ###########
+    # V04 = []
+
+    # dlists = set()
+    # for state in basis.stateList:
+    # # This has to be implemented differently
+        # dlists.update(gendlists(state, 4, 4, nmax))
+
+    # for dlist in dlists:
+        # V04.append((dlist,[()]))
+
+    # V04 = LocOperator(V04, 4, 0, helper)
+
+
+    # return V40, V31, V22, V13, V04
 
 
 
@@ -679,6 +680,132 @@ def V4OpsSelectedHalf(basis):
 
     return V04, V13, V22
 
+
+def V2OpsSelectedFull(basis, Emax):
+    """ Selected set of oscillators between some selected low-energy states
+    and states with energy <= Emax
+    """
+
+    helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
+    nmax = helper.nmax
+    oscEnergy = helper.oscEnergy
+
+    opsList = []
+
+    for nd in (0,1,2):
+        nc = 2-nd
+
+        dlists = gendlistsfromBasis(basis, nmax, nd, 2)
+        oscList = []
+
+        for dlist in dlists:
+            clists = [clist for clist in createClistsV2(nmax, dlist, nc) if
+                    oscEnergy(clist) <= Emax]
+            oscList.append((dlist, clists))
+
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
+
+def V4OpsSelectedFull(basis, Emax):
+    """ Selected set of oscillators between some selected low-energy states
+    and states with energy <= Emax
+    """
+
+    helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
+    nmax = helper.nmax
+    oscEnergy = helper.oscEnergy
+
+    opsList = []
+
+    for nd in (0,1,2,3,4):
+        nc = 4-nd
+
+        dlists = gendlistsfromBasis(basis, nmax, nd, 4)
+        oscList = []
+
+        for dlist in dlists:
+            clists = [clist for clist in createClistsV4(nmax, dlist, nc) if
+                    oscEnergy(clist) <= Emax]
+            oscList.append((dlist, clists))
+
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
+
+
+def gendlistsfromBasis(basis, nmax, nd, ntot):
+    ret = set()
+
+    for state in basis:
+        ret.update(gendlists(state=state, nd=nd, ntot=ntot, nmax=nmax))
+    return ret
+
+
+
+def createClistsV2(nmax, dlist, nc):
+
+    if len(dlist) != 2-nc:
+        raise ValueError
+    if nc==0:
+        return [()]
+    elif nc==1:
+        return [(sum(dlist),)]
+    elif nc==2:
+        return [(k3,-k3) for k3 in range(-nmax,1)]
+
+
+
+def createClistsV4(nmax, dlist, nc):
+
+    if len(dlist) != 4-nc:
+        raise ValueError
+    clists = []
+
+    if nc==0:
+        clists.append(())
+    elif nc==1:
+        clists.append((sum(dlist),))
+    elif nc==2:
+        k1,k2 = dlist
+        for k3 in range(max(-nmax+k1+k2,-nmax),
+                min(int(floor((k1+k2)/2)),nmax)+1):
+
+            k4 = k1+k2-k3
+            clists.append((k3,k4))
+
+    elif nc==3:
+        (k1,) = dlist
+        for k2 in range(-nmax,nmax+1):
+            for k3 in range(max(-nmax+k1-k2,k2),
+                           min(int(floor((k1-k2)/2)),nmax)+1):
+
+                k4 = k1-k2-k3
+                clists.append((k2,k3,k4))
+
+    elif nc==4:
+        clists = []
+        for k1 in range(-nmax,nmax+1):
+            for k2 in range(k1,nmax+1):
+                # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
+                for k3 in range(max(-nmax-k1-k2,k2),
+                        min(int(floor((-k1-k2)/2)),nmax)+1):
+                    k4 = -k1-k2-k3
+                    clists.append((k1,k2,k3,k4))
+
+    return clists
+
+
+
+def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
+    ret = set()
+
+    for state in basis:
+        ret.update(gendlistPairs(state=state, ndPair=ndPair,
+            ntotPair=ntotPair, nmax=nmax))
+    return ret
 
 
 def V6OpsSelectedHalf(basis):
@@ -781,73 +908,6 @@ def V6OpsSelectedHalf(basis):
     return V06, V15, V24, V33
 
 
-
-def createClistsV2(nmax, dlist, nc):
-
-    if len(dlist) != 2-nc:
-        raise ValueError
-
-    if nc==0:
-        return [()]
-
-    elif nc==1:
-        return [(sum(dlist),)]
-
-    elif nc==2:
-        return [(k3,-k3) for k3 in range(-nmax,1)]
-
-
-def createClistsV4(nmax, dlist, nc):
-
-    if len(dlist) != 4-nc:
-        raise ValueError
-
-    clists = []
-
-    if nc==0:
-        clists.append(())
-
-    elif nc==1:
-        clists.append((sum(dlist),))
-
-    elif nc==2:
-        k1,k2 = dlist
-        for k3 in range(max(-nmax+k1+k2,-nmax),
-                min(int(floor((k1+k2)/2)),nmax)+1):
-
-            k4 = k1+k2-k3
-            clists.append((k3,k4))
-
-    elif nc==3:
-        (k1,) = dlist
-        for k2 in range(-nmax,nmax+1):
-            for k3 in range(max(-nmax+k1-k2,k2),
-                           min(int(floor((k1-k2)/2)),nmax)+1):
-
-                k4 = k1-k2-k3
-                clists.append((k2,k3,k4))
-
-    elif nc==4:
-        clists = []
-        for k1 in range(-nmax,nmax+1):
-            for k2 in range(k1,nmax+1):
-                # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
-                for k3 in range(max(-nmax-k1-k2,k2),
-                        min(int(floor((-k1-k2)/2)),nmax)+1):
-                    k4 = -k1-k2-k3
-                    clists.append((k1,k2,k3,k4))
-
-    return clists
-
-
-
-def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
-    ret = set()
-
-    for state in basis:
-        ret.update(gendlistPairs(state=state, ndPair=ndPair,
-            ntotPair=ntotPair, nmax=nmax))
-    return ret
 
 
 def V2V4Ops1(basis):
