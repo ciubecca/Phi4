@@ -26,13 +26,13 @@ rc('text', usetex=True)
 neigs = 10
 
 
-def plotvsEL3(minoverlap, EL3list):
+def plotvsEL3(minoverlap, EL3list, loc3):
 
     xlist = EL3list
 
     db = database.Database()
 
-    exactQuery = {"loc3":True}
+    exactQuery = {"loc3":loc3}
     approxQuery = {"g":g, "L":L}
 
     E0 = {}
@@ -53,14 +53,14 @@ def plotvsEL3(minoverlap, EL3list):
                 approxQuery["EL"] = EL
                 # approxQuery["EL"] = max(ETlist)+ELETdiff
 
-            # exactQuery["k"] = 1
-            # E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
+            exactQuery["k"] = 1
+            E0[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
             exactQuery["k"] = -1
             E1[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
 
 
-    label = "minoverlap={}".format(minoverlap)
+    label = "minoverlap={}, loc3={}".format(minoverlap,loc3)
 
     # VACUUM ENERGY
     plt.figure(1)
@@ -74,8 +74,8 @@ def plotvsEL3(minoverlap, EL3list):
             # markersize=markersize, dashes = dashes, label="renloc")
 
 
-    # data = E0["rentails"]
-    # plt.plot(xlist, data, label=label)
+    data = E0["rentails"]
+    plt.plot(xlist, data, label=label)
 
 
 
@@ -90,8 +90,8 @@ def plotvsEL3(minoverlap, EL3list):
     # plt.plot(Elist, data, linewidth=linewidth, color="r", marker=marker,
             # markersize=markersize, dashes = dashes, label="renloc")
 
-    # data = array(E1["rentails"])-array(E0["rentails"])
-    # plt.plot(xlist, data, label=label)
+    data = array(E1["rentails"])-array(E0["rentails"])
+    plt.plot(xlist, data, label=label)
 
 
 
@@ -133,11 +133,12 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 
 
 for minoverlap in minoverlaplist:
-    plotvsEL3(minoverlap, EL3list)
+    for loc3 in (True, False):
+        plotvsEL3(minoverlap, EL3list, loc3)
 
 
 title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f}".format(g,L,ET,EL)
-fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}.{4}".format(g,L,ET,EL,output)
+fname = "noloc3_g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}.{4}".format(g,L,ET,EL,output)
 loc = "lower right"
 
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')

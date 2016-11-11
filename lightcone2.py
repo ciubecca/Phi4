@@ -8,6 +8,7 @@ import math
 from matplotlib import rc
 from cycler import cycler
 import matplotlib.pyplot as plt
+from bisect import bisect_left
 
 output = "png"
 
@@ -31,7 +32,9 @@ glist = glist[:80]
 msqlist = msqlist[:80]
 msqlistren = msqlistren[:80]
 
-print("glist", glist)
+gETlist = scipy.linspace(0,3.,31)
+
+print("gETlist", gETlist)
 
 
 argv = sys.argv
@@ -50,49 +53,36 @@ a.buildBasis(Emax=ET)
 print("Full basis size: ", a.basis[1].size)
 
 
-retmass = []
-retmassren = []
-
 a.computePotential(k=1)
 a.computePotential(k=-1)
 
+phi2 = a.V[1][2].M/L
 
-for g in glist:
+mET = []
+mETren = []
+VEV = []
+VEVren = []
 
-    phi2 = a.V[1][2].M/L
+for g in gETlist:
 
-    print("g light cone=", g)
+    print("g ET=", g)
     print("Computing raw eigenvalues")
 
     a.setCouplings(g4=g)
     a.computeEigval(k=1, ET=ET, ren="raw", neigs=neigs)
-    v0 = scipy.array(a.eigenvectors["raw"][1][0])
-    VEV = phi2.dot(v0).dot(v0)
-    msqET = m**2 - 12*g*VEV
-    get = g/msqET
-
-    eps = a.eigenvalues["raw"][1][0]
-    a.computeEigval(k=1, ET=ET, ren="renloc", EL=ET, eps=eps, neigs=neigs)
-    v0 = scipy.array(a.eigenvectors["renloc"][1][0])
-    VEVren = phi2.dot(v0).dot(v0)
-    msqETren = m**2 - 12*g*VEVren
-    getRen = g/msqETren
-
-    a.setCouplings(g4=get)
-    a.computeEigval(k=1, ET=ET, ren="raw", neigs=neigs)
     a.computeEigval(k=-1, ET=ET, ren="raw", neigs=neigs)
-    retmass.append(a.spectrum(k=-1,ren="raw")[0]*sqrt(msqET))
+    v0 = scipy.array(a.eigenvectors["raw"][1][0])
 
-    a.setCouplings(g4=getRen)
+    VEV.append(phi2.dot(v0).dot(v0))
+    mET.append(a.spectrum(-1,"raw")[0])
+
     eps = a.eigenvalues["raw"][1][0]
     a.computeEigval(k=1, ET=ET, ren="renloc", EL=ET, eps=eps, neigs=neigs)
-    eps = a.eigenvalues["raw"][-1][0]
     a.computeEigval(k=-1, ET=ET, ren="renloc", EL=ET, eps=eps, neigs=neigs)
-    retmassren.append(a.spectrum(k=-1,ren="renloc")[0]*sqrt(msqETren))
+    v0 = scipy.array(a.eigenvectors["renloc"][1][0])
+    VEVren.append(phi2.dot(v0).dot(v0))
+    mETren.append(a.spectrum(-1,"renloc")[0])
 
-
-
-xlist = array(glist)
 
 
 params = {'legend.fontsize': 8}
@@ -102,19 +92,67 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
     cycler('linestyle', ['-', '--', ':', '-.'])) +
     cycler('label', ["ET","LT","LT extrapolated", "ET ren"]))
 
+mLC = []
+mLCextr = []
+mLCren = []
+mLCextrren = []
+
+
+for i,g in enumerate(gETlist):
+
+    msqLC = m**2+12*g*VEV[i]
+    gLC = g/msqLC
+
+    j = bisect_left(glist, gLC)
+    mLC.append(sqrt(msqlist[j]*msqLC))
+    mLCextr.append(sqrt(msqlistren[j]*msqLC))
+
+
+for i,g in enumerate(gETlist):
+
+    msqLC = m**2+12*g*VEVren[i]
+    gLC = g/msqLC
+
+    j = bisect_left(glist, gLC)
+    mLCren.append(sqrt(msqlist[j]*msqLC))
+    mLCextrren.append(sqrt(msqlistren[j]*msqLC))
+
+
+xlist = gETlist
 
 plt.figure(1)
 
-for ylist in (array(retmass), sqrt(array(msqlist)),sqrt(array(msqlistren)),
-        array(retmassren)):
+for ylist in (mET, mLC, mLCextr):
+    plt.plot(xlist, ylist)
+
+plt.figure(2)
+
+for ylist in (mETren, mLCren, mLCextrren):
     plt.plot(xlist, ylist)
 
 title = r"$L$={:.1f}, $E_T$={:.1f}".format(L,ET)
-fname = "comparisonLT_L={0:.1f}_ET={1:.1f}.{2}".format(L,ET,output)
+fname = "comparison2LT_L={0:.1f}_ET={1:.1f}.{2}".format(L,ET,output)
 loc = "lower right"
 
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
+plt.ylim(0,1.1)
+plt.xlabel(r"$g$")
+plt.ylabel(r"$m$")
+plt.legend(loc=loc)
+
+plt.savefig(fname)
+
+
+
+
+title = r"$L$={:.1f}, $E_T$={:.1f} ren".format(L,ET)
+fname = "comparison2LTren_L={0:.1f}_ET={1:.1f}.{2}".format(L,ET,output)
+loc = "lower right"
+
+plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.ylim(0,1.1)
 plt.xlabel(r"$g$")
 plt.ylabel(r"$m$")
 plt.legend(loc=loc)

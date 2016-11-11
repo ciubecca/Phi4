@@ -15,31 +15,35 @@ import database
 saveondb = True
 # saveondb = False
 m = 1
-# Number of eigenvalues to compute per sector
-neigs = 1
 # List of parity quantum numbers
-klist = (-1,1)
+klist = (1,)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
 minoverlap = 10**(-2)
 
+nonloc3mix = True
+loc3mix = True
+loc3 = True
 
+
+def ELppf(ELp):
+    return 1.5*ELp
 
 argv = sys.argv
 if len(argv) < 6:
-    print(argv[0], "<L> <g> <ET> <EL3min> <EL3max>")
+    print(argv[0], "<L> <g> <ET> <ELpmin> <ELpmax>")
     sys.exit(-1)
 
 L = float(argv[1])
 g = float(argv[2])
 ET = float(argv[3])
-EL3min = float(argv[4])
-EL3max = float(argv[5])
+ELpmin = float(argv[4])
+ELpmax = float(argv[5])
 # ELETdiff = float(argv[5])
 
-EL = EL3max
+EL = ELppf(ELpmax)
 
-EL3list = scipy.linspace(EL3min, EL3max, (EL3max-EL3min)*2+1)
-print("EL3list:", EL3list)
+ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
+print("ELplist:", ELplist)
 
 print("minoverlap:", minoverlap)
 
@@ -63,7 +67,7 @@ for k in klist:
 
 
     print("Computing raw eigenvalues for highest cutoff")
-    a.computeEigval(k, ET, "raw", neigs=neigs)
+    a.computeEigval(k, ET, "raw")
 
 
     # Select a set of tails and construct a Basis object
@@ -76,7 +80,7 @@ for k in klist:
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBasis(k, basisl, EL3max)
+    a.genHEBases(k, basisl, EL=EL, ELpp=ELppf(ELpmax))
     print("Size of HE basis:", a.basisH[k].size)
 
 
@@ -87,62 +91,44 @@ for k in klist:
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
 # Later we will be varying EL, therefore taking submatrices of these.
 # Computing VHH is expensive
-    a.computeHEVs(k, EL3max)
+    a.computeHEVs(k)
 
 
-    # Checks if the eigenvalues we are going to compute are alredy present in
-#the database. If yes, skip them
-    # if saveondb:
-        # approxQuery = {"g":g, "L":L, "ET":ET, "EL":EL}
-        # exactQuery = {"k":k, "ren":"rentails"}
-        # if db.getObjList('spec', approxQuery=approxQuery,
-                # exactQuery=exactQuery) != []:
-            # print("Eigenvalues already present")
-            # continue
 
 # Compute the raw eigenvalues for cutoff ET
-    a.computeEigval(k, ET, "raw", neigs=neigs)
+    a.computeEigval(k, ET, "raw")
     print("Raw vacuum:", a.eigenvalues["raw"][k][0])
     eps = a.eigenvalues["raw"][k][0]
-
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="raw", g=g,
-                spec=a.eigenvalues["raw"][k],
-                basisSize=a.compSize, neigs=neigs)
 
 
 # Compute "local" renormalized eigenvalues for cutoff ET
 # Since we are passing EL=ET to the method call, the matrices VHL, VHH will be computed
 # only in the local approximation
-    a.computeEigval(k, ET, "renloc", EL=ET, eps=eps, neigs=neigs)
+    a.computeEigval(k, ET, "renloc", EL=ET, eps=eps)
     print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
     eps = a.eigenvalues["renloc"][k][0]
 
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="renloc", g=g,
-                spec=a.eigenvalues["renloc"][k],
-                basisSize=a.compSize, neigs=neigs, EL=ET, eps=eps)
+    if loc3==True:
+        a.calcVV3(ELplist, eps)
 
 
+    for ELp in ELplist:
 
+        ELpp = ELppf(ELp)
+        print("ELp={}, ELpp={}".format(ELp,ELpp))
 
-    for EL3 in EL3list:
-
-        # EL = ELmax
-        print("EL3={}".format(EL3))
-
-
-# Compute renormalized eigenvalues by computing the fully "non-local" corrections
-# to VHL, VHH up to cutoff EL
-        a.computeEigval(k, ET, "rentails", EL, eps=eps, neigs=neigs, EL3=EL3)
+        a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
+                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
         print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
         print("Number of tails:", a.ntails)
 
+
         if saveondb:
-            db.insert(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
-                    spec=a.eigenvalues["rentails"][k], EL3=EL3, loc3=False,
-                    basisSize=a.compSize, neigs=neigs, EL=EL, ntails=a.ntails, eps=eps)
+            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
+                EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps,
+                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, basisSize=a.compSize)
 
+            db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
 
-    del a.VLh[k]
+    del a.VLH[k]
