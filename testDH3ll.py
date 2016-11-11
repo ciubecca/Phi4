@@ -15,6 +15,8 @@ g = .1
 minoverlap = 10**-3
 
 
+
+
 def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, Vll=False):
 
     Vred = matrix.todok()
@@ -88,7 +90,7 @@ def checkMatrix(matrix, basis, lookupbasis, fullmatrix, fullbasis, Emin, Emax, V
 
 argv = sys.argv
 
-args = "<L> <ET> <EL> <ELp> <ELpmax>"
+args = "<L> <ET> <EL> <ELp> <ELpp>"
 if len(argv) < 6:
     print("python", argv[0], args)
     sys.exit(-1)
@@ -97,7 +99,7 @@ L = float(argv[1])
 ET = float(argv[2])
 EL = float(argv[3])
 ELp = float(argv[4])
-ELpmax = float(argv[5])
+ELpp = float(argv[5])
 
 a = phi4.Phi4(m,L)
 
@@ -114,7 +116,7 @@ print(sorted(occn(state) for state in vectorlist))
 basisl = Basis(k, vectorlist, a.basis[k].helper)
 print("subbasis size:", basisl.size)
 
-a.genHEBases(k, basisl, EL=EL, ELp=ELpmax)
+a.genHEBases(k, basisl, EL=EL, ELpp=ELpp)
 print("HE basis size", a.basisH[k].size)
 
 a.computeLEVs(k)
@@ -193,16 +195,22 @@ nonloc3mix = False
 loc3 = False
 eps = -1
 
-DH3ll = a.computeDH3(subbasisl, k, ET, ELp, ELpp=None, eps=eps, loc3=False, loc3mix=False,
-        nonloc3mix=False)
+ELpp = 1.5*ELp
+
+DH3ll = a.computeDH3(subbasisl, k, ET, ELp, ELpp=ELpp, eps=eps, loc3=False, loc3mix=False,
+        nonloc3mix=True)
 
 basis = b.basis[k]
 energyArr = array(basis.energyList)
 propagator = scipy.sparse.spdiags(1/(eps-energyArr), 0, basis.size, basis.size)
-proj = scipy.sparse.spdiags(array([int(ET<e<ELp) for e in energyArr]), 0, basis.size,
+projh = scipy.sparse.spdiags(array([int(ET<e<ELp) for e in energyArr]), 0, basis.size,
+        basis.size)
+projH = scipy.sparse.spdiags(array([int(ELp<e<ELpp) for e in energyArr]), 0, basis.size,
         basis.size)
 Vfull = b.V[k][4].M
-DH3Full = Vfull*propagator*proj*Vfull*propagator*proj*Vfull*g**3
+DH3Full = Vfull*propagator*projh*Vfull*propagator*projh*Vfull*g**3
+DH3Full += Vfull*propagator*projH*Vfull*propagator*projh*Vfull*g**3
+DH3Full += Vfull*propagator*projh*Vfull*propagator*projH*Vfull*g**3
 
 
 print("Checking DH3ll")

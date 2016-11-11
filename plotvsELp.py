@@ -7,7 +7,6 @@
 
 minoverlaplist = [10**(-2)]
 minoverlap = minoverlaplist[0]
-loc3 = False
 
 import sys
 import matplotlib.pyplot as plt
@@ -32,13 +31,14 @@ def ELppf(ELp):
     return 1.5*ELp
 
 
-def plotvsELp(ELplist, loc3mix):
+def plotvsELp(ELplist, nonloc3mix, loc3mix, loc3):
 
     xlist = ELplist
 
     db = database.Database()
 
-    exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "ren":"rentails"}
+    exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
+            "ren":"rentails"}
     approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET, "minoverlap":minoverlap}
 
     oddSp = []
@@ -51,11 +51,11 @@ def plotvsELp(ELplist, loc3mix):
         exactQuery["k"] = 1
         evenSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
-        exactQuery["k"] = -1
-        oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
+        # exactQuery["k"] = -1
+        # oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
 
-    label = "minoverlap={}, loc3={}".format(minoverlap,loc3)
+    label = "{} {} {}".format(nonloc3mix, loc3mix, loc3)
 
     evenSp = array(evenSp)
     oddSp = array(oddSp)
@@ -65,15 +65,15 @@ def plotvsELp(ELplist, loc3mix):
 
     for i in range(neigs):
         data = evenSp[:,i]
-        plt.plot(xlist, data)
+        plt.plot(xlist, data, label=label)
 
 
     # ODD SPECTRUM
-    plt.figure(2)
+    # plt.figure(2)
 
-    for i in range(neigs):
-        data = oddSp[:,i]
-        plt.plot(xlist, data)
+    # for i in range(neigs):
+        # data = oddSp[:,i]
+        # plt.plot(xlist, data)
 
 
 argv = sys.argv
@@ -108,9 +108,10 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 
 
 
-for loc3mix in (True,False):
+for nonloc3mix, loc3mix, loc3 in ((False,False,False),(True,False,False),
+    (True,True,False), (True,True,True)):
     # for loc3 in (True, False):
-    plotvsELp(ELplist, loc3mix)
+    plotvsELp(ELplist, nonloc3mix, loc3mix, loc3)
 
 
 title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L''=1.5 E_L'$".format(g,L,ET,EL)
@@ -121,16 +122,18 @@ plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{L}'$")
 plt.ylabel(r"$E_i$")
-# plt.legend(loc=loc)
+plt.legend(loc=loc)
 
 
 plt.savefig("figs/evenSp_"+fname)
 
-plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{L}'$")
-plt.ylabel(r"$E_i$")
-# plt.legend(loc=loc)
 
 
-plt.savefig("figs/oddSp_"+fname)
+# plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+# plt.title(title)
+# plt.xlabel(r"$E_{L}'$")
+# plt.ylabel(r"$E_i$")
+# # plt.legend(loc=loc)
+
+
+# plt.savefig("figs/oddSp_"+fname)

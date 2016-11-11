@@ -16,15 +16,14 @@ saveondb = True
 # saveondb = False
 m = 1
 # List of parity quantum numbers
-klist = (1,-1)
+klist = (1,)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
 minoverlap = 10**(-2)
 
+nonloc3mix = True
+loc3mix = True
+loc3 = True
 
-loc3 = False
-loc3mix = False
-
-print("loc3mix", loc3mix)
 
 def ELppf(ELp):
     return 1.5*ELp
@@ -81,7 +80,7 @@ for k in klist:
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBases(k, basisl, EL=EL, ELp=ELpmax)
+    a.genHEBases(k, basisl, EL=EL, ELpp=ELppf(ELpmax))
     print("Size of HE basis:", a.basisH[k].size)
 
 
@@ -101,11 +100,6 @@ for k in klist:
     print("Raw vacuum:", a.eigenvalues["raw"][k][0])
     eps = a.eigenvalues["raw"][k][0]
 
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="raw", g=g,
-                spec=a.eigenvalues["raw"][k],
-                basisSize=a.compSize)
-
 
 # Compute "local" renormalized eigenvalues for cutoff ET
 # Since we are passing EL=ET to the method call, the matrices VHL, VHH will be computed
@@ -114,9 +108,8 @@ for k in klist:
     print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
     eps = a.eigenvalues["renloc"][k][0]
 
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="renloc", g=g, spec=a.eigenvalues["renloc"][k],
-                basisSize=a.compSize, EL=ET, eps=eps)
+    if loc3==True:
+        a.calcVV3(ELplist, eps)
 
 
     for ELp in ELplist:
@@ -125,15 +118,17 @@ for k in klist:
         print("ELp={}, ELpp={}".format(ELp,ELpp))
 
         a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                loc3=loc3, loc3mix=loc3mix)
+                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
         print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
         print("Number of tails:", a.ntails)
 
+
         if saveondb:
-            db.insert(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
-                    spec=a.eigenvalues["rentails"][k], ELp=ELp, loc3=loc3,
-                    loc3mix=loc3mix,
-                    basisSize=a.compSize, EL=EL, ELpp=ELpp, ntails=a.ntails, eps=eps)
+            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
+                EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps,
+                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, basisSize=a.compSize)
+
+            db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
 
     del a.VLH[k]

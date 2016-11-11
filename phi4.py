@@ -123,7 +123,7 @@ class Phi4():
         self.V[k][0] = Matrix(basis, basis, idM)*self.L
 
 
-    def genHEBases(self, k, basisl, EL, ELp):
+    def genHEBases(self, k, basisl, EL, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
         basisl: Basis instance containing the set of tails
@@ -132,25 +132,27 @@ class Phi4():
 
         self.basisl[k] = basisl
 
-        # Generate all the operators between the selected states and the states
-        # in the range [0, EL]
-        Vlist = V4OpsSelectedFull(basisl, EL)
-        vectorset = set()
+        for Emax,basis in zip((EL, ELpp),(self.basisH, self.basish)):
+            # Generate all the operators between the selected states and the states
+            # in the range [0, EL]
 
-        for V in Vlist:
-            for v in V.genBasis(basisl, EL):
+            if Emax == None:
+                basis[k] = None
+                continue
+
+            Vlist = V4OpsSelectedFull(basisl, Emax)
+            vectorset = set()
+
+            for V in Vlist:
+                for v in V.genBasis(basisl, Emax):
 # Don't add twice states connected by parity inversion
-                if v not in vectorset and v[::-1] not in vectorset:
-                    vectorset.add(v)
+                    if v not in vectorset and v[::-1] not in vectorset:
+                        vectorset.add(v)
 
-        helper = Vlist[0].helper
+            helper = Vlist[0].helper
 
-        # Basis of selected states with energy <= EL
-        self.basisH[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
-
-        # Basis of selected states with energy <= EL' < EL
-        self.basish[k] = Basis(k, [v for i,v in enumerate(self.basisH[k]) if
-            self.basisH[k].energyList[i] <= ELp], helper)
+            # Basis of selected states with energy <= Emax
+            basis[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
 
 
     # @profile
@@ -170,43 +172,45 @@ class Phi4():
         #################################
         # Generate the VlH matrix
         #################################
-        basis = self.basisl[k]
-        lookupbasis = self.basisH[k]
+        if self.basisH[k] != None:
+            basis = self.basisl[k]
+            lookupbasis = self.basisH[k]
 
-        Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
+            Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
 
-        self.VHl[k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+            self.VHl[k] = Matrix(basis, lookupbasis,
+                    self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
-        ##############################
-        # Generate the VHL matrix
-        ##############################
+            ##############################
+            # Generate the VHL matrix
+            ##############################
 
-        print("Computing VhL...")
+            print("Computing VhL...")
 
-        basis = self.basisH[k]
-        lookupbasis = self.basis[k]
+            basis = self.basisH[k]
+            lookupbasis = self.basis[k]
 
-        Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
+            Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
 
-        self.VLH[k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+            self.VLH[k] = Matrix(basis, lookupbasis,
+                    self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 #################################
 # Generate the local VhL matrices
 #################################
 
-        basis = self.basisl[k]
-        lookupbasis = self.basish[k]
+        if self.basish[k] != None:
+            basis = self.basisl[k]
+            lookupbasis = self.basish[k]
 
-        Vlist = V2OpsSelectedFull(basis, lookupbasis.Emax)
-        self.Vhl[2][k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+            Vlist = V2OpsSelectedFull(basis, lookupbasis.Emax)
+            self.Vhl[2][k] = Matrix(basis, lookupbasis,
+                    self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
-        Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
-        self.Vhl[4][k] = Matrix(basis, lookupbasis,
-                self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+            Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax)
+            self.Vhl[4][k] = Matrix(basis, lookupbasis,
+                    self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
     def computeLEVs(self, k):
@@ -254,7 +258,7 @@ class Phi4():
 
 
     def computeDeltaH(self, k, ren, ET, eps, loc3=None, loc3mix=None,
-            EL=None, ELp=None, ELpp=None, maxntails=None):
+            nonloc3mix=None, EL=None, ELp=None, ELpp=None, maxntails=None):
         """
         Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
         """
@@ -278,7 +282,7 @@ class Phi4():
             DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
 
             DH3ll = self.computeDH3(subbasisl, k, ET=ET, ELp=ELp, ELpp=ELpp, eps=eps,
-                    loc3=loc3, loc3mix=loc3mix)
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
@@ -411,8 +415,8 @@ class Phi4():
 
         if nonloc3mix:
             # Subsets of the selected high energy states
-            helper = self.basisH[k].helper
-            subbasisH = self.basisH[k].sub(lambda v: ET<helper.energy(v)<=ELpp)
+            helper = self.basish[k].helper
+            subbasisH = self.basish[k].sub(lambda v: ELp<helper.energy(v)<=ELpp)
 
             # Propagators on the high-energy states
             energyArr = array(subbasisH.energyList)
@@ -420,7 +424,7 @@ class Phi4():
                     subbasisH.size)
 
 
-            VHl = self.VHl[k].sub(subbasisl, subbasisH).M
+            VHl = self.Vhl[4][k].sub(subbasisl, subbasisH).M
             VlH = VHl.transpose()
 
 
@@ -471,22 +475,22 @@ class Phi4():
 
 
 
-            DH3ll += V0V4*self.VV3.V0V4[EL3]*self.g4**3
-            DH3ll += V2V4*self.VV3.V2V4[EL3]*self.g4**3
-            DH3ll += V4V4*self.VV3.V4V4[EL3]*self.g4**3
+            DH3ll += V0V4*self.VV3.V0V4[ELp]*self.g4**3
+            DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3
+            DH3ll += V4V4*self.VV3.V4V4[ELp]*self.g4**3
 
-            DH3ll += Vll[0]*self.VV3.VV3loc[0][EL3]*self.g4**3
-            DH3ll += Vll[2]*self.VV3.VV3loc[2][EL3]*self.g4**3
-            DH3ll += Vll[4]*self.VV3.VV3loc[4][EL3]*self.g4**3
-            DH3ll += Vll[6]*self.VV3.VV3loc[6][EL3]*self.g4**3
+            DH3ll += Vll[0]*self.VV3.VV3loc[0][ELp]*self.g4**3
+            DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*self.g4**3
+            DH3ll += Vll[4]*self.VV3.VV3loc[4][ELp]*self.g4**3
+            DH3ll += Vll[6]*self.VV3.VV3loc[6][ELp]*self.g4**3
 
         return DH3ll
 
 
 
-    def calcVV3(self, ETlist, eps):
+    def calcVV3(self, ELplist, eps):
         print("Calculating VVV renorm coefficients")
-        self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ETlist)
+        self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ELplist)
 
 
         print("Bilocal g^3 ren coefficients: ", self.VV3.V0V4, self.VV3.V2V4, self.VV3.V4V4)
@@ -502,7 +506,7 @@ class Phi4():
 
 
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None,
-            eps=None, neigs=10, maxntails=None, loc3=None, loc3mix=None):
+            eps=None, neigs=10, maxntails=None, loc3=None, loc3mix=None, nonloc3mix=None):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number
         ET: ET
@@ -524,7 +528,8 @@ class Phi4():
             compH = Hraw
         else:
             DeltaH = self.computeDeltaH(k=k, ET=ET, EL=EL, ren=ren, eps=eps,
-                    maxntails=maxntails, ELp=ELp, ELpp=ELpp, loc3=loc3, loc3mix=loc3mix)
+                    maxntails=maxntails, ELp=ELp, ELpp=ELpp, loc3=loc3, loc3mix=loc3mix,
+                    nonloc3mix=nonloc3mix)
             compH = (Hraw + DeltaH)
 
         self.compSize = compH.shape[0]
