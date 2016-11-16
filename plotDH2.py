@@ -12,7 +12,6 @@ from cycler import cycler
 k = +1
 m = 1
 g = 1
-eps = -1
 
 indexList = [(0,0),(0,1),(1,1)]
 
@@ -23,19 +22,19 @@ frac = 3
 
 argv = sys.argv
 
-args = "<L> <ET> <ELpmin> <ELpmax>"
+args = "<L> <ET> <ELmin> <ELmax>"
 if len(argv) < 5:
     print("python", argv[0], args)
     sys.exit(-1)
 
 L = float(argv[1])
 ET = float(argv[2])
-ELpmin = float(argv[3])
-ELpmax = float(argv[4])
+ELmin = float(argv[3])
+ELmax = float(argv[4])
 
 
-ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
-print("ELplist:", ELplist)
+ELlist = scipy.linspace(ELmin, ELmax, (ELmax-ELmin)*2+1)
+print("ELlist:", ELlist)
 
 
 a = phi4.Phi4(m,L)
@@ -55,37 +54,31 @@ print("subbasis size:", basisl.size)
 
 print(basisl)
 
-a.genHEBases(k, basisl, EL=None, ELpp=ELpmax*frac)
-print("HE basis size", a.basish[k].size)
+a.genHEBases(k, basisl, EL=ELmax, ELpp=None)
+print("HE basis size", a.basisH[k].size)
 
 a.computeLEVs(k)
 
 print("Computing HE matrices")
 a.computeHEVs(k)
 
+eps = -1
 
-tlist = ((False,False,False),(True,False,False),(True,True,False),(True,True,True))
-# tlist = ((False,False,False),(True,False,False),(True,True,False))
-
-if True in (t[2] for t in tlist):
-    a.calcVV3(ELplist, eps)
-
+tlist = (False, True)
 
 ret = {}
 
 for t in tlist:
-    nonloc3mix, loc3mix, loc3 = t
+    loc2 = t
     ret[t] = {index:[] for index in indexList}
 
-    for ELp in ELplist:
-        ELpp = frac*ELp
-        print("ELp={}, ELpp={}".format(ELp,ELpp))
+    for EL in ELlist:
+        print("EL={}".format(EL))
 
-        DH3ll = a.computeDH3(basisl, k, ET, ELp, ELpp=ELpp, eps=eps,
-                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix).todense()
+        DH2lL = a.computeDH2(basisl, k, ET, EL, eps=eps, loc2=loc2).todense()
 
         for index in indexList:
-            ret[t][index].append(DH3ll[index])
+            ret[t][index].append(DH2lL[index])
 
 
 for index in indexList:
@@ -99,17 +92,17 @@ for index in indexList:
     rc('text', usetex=True)
 
     for t in tlist:
-        plt.plot(ELplist, ret[t][index], label=str(t))
+        plt.plot(ELlist, ret[t][index], label=str(t))
 
     output = "png"
-    title = r"$L$={:.1f}, $E_T$={:.1f}, $E_L''={} E_L'$, index={}".format(L,ET,frac,index)
-    fname = "DH3_L={:.1f}_ET={:.1f}_frac={}_index={}.{}".format(L,ET,frac,str(index),output)
+    title = r"$L$={:.1f}, $E_T$={:.1f}, index={}".format(L,ET,index)
+    fname = "DH2_L={:.1f}_ET={:.1f}_index={}.{}".format(L,ET,str(index),output)
     loc = "lower right"
 
     plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     plt.title(title)
-    plt.xlabel(r"$E_{L}'$")
-    plt.ylabel(r"$\Delta H_3 {}$".format(index))
+    plt.xlabel(r"$E_{L}$")
+    plt.ylabel(r"$\Delta H_2 {}$".format(index))
     plt.legend(loc=loc)
 
 

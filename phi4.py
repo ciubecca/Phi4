@@ -19,7 +19,7 @@ class Phi4():
 
         self.m = m
         self.L = L
-        self.nchunks = 1
+        self.nchunks = 5
 
         self.basis = {}
         self.h0 = {}
@@ -257,7 +257,7 @@ class Phi4():
 
 
 
-    def computeDeltaH(self, k, ren, ET, eps, loc3=None, loc3mix=None,
+    def computeDeltaH(self, k, ren, ET, eps, loc2=None, loc3=None, loc3mix=None,
             nonloc3mix=None, EL=None, ELp=None, ELpp=None, maxntails=None):
         """
         Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
@@ -277,7 +277,7 @@ class Phi4():
             subbasisl = Basis(k, vectorlist, helper)
             self.ntails = subbasisl.size
 
-            DH2lL = self.computeDH2(subbasisl, k, ET=ET, EL=EL, eps=eps)
+            DH2lL = self.computeDH2(subbasisl, k, ET=ET, EL=EL, eps=eps, loc2=loc2)
             DH2Ll = DH2lL.transpose()
             DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
 
@@ -299,7 +299,7 @@ class Phi4():
 
 
 
-    def computeDH2(self, subbasisl, k, ET, EL, eps):
+    def computeDH2(self, subbasisl, k, ET, EL, eps, loc2):
 
         helper = self.basis[k].helper
         # Subset of the full low energy states
@@ -340,15 +340,14 @@ class Phi4():
 
         # XXX Sorry, for now the subscripts are confusing, need to sort this out
         DH2lL = VHL*propagatorH*VlH*self.g4**2
-        DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
+
+        if loc2:
+            DH2lL += VV2[0]*VlL[0] + VV2[2]*VlL[2] + VV2[4]*VlL[4]
 
         return DH2lL
 
 
     def computeDH3(self, subbasisl, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
-        Vll = {}
-        for n in (0,2,4,6):
-            Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
 
 
         helper = self.basish[k].helper
@@ -469,15 +468,23 @@ class Phi4():
 #####################################################
 
         if loc3:
+
+            Vll = {}
+            for n in (0,2,4,6):
+                Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
+
+
             V0V4 = self.V0V4[k].sub(subbasisl,subbasisl).M
             V2V4 = self.V2V4[k].sub(subbasisl,subbasisl).M
             V4V4 = self.V4V4[k].sub(subbasisl,subbasisl).M
 
 
-
             DH3ll += V0V4*self.VV3.V0V4[ELp]*self.g4**3
             DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3
             DH3ll += V4V4*self.VV3.V4V4[ELp]*self.g4**3
+
+            print("matrix element:", Vll[0].todense()[0,0])
+            print("ren coefficient:", self.VV3.VV3loc[0][ELp])
 
             DH3ll += Vll[0]*self.VV3.VV3loc[0][ELp]*self.g4**3
             DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*self.g4**3
@@ -506,7 +513,8 @@ class Phi4():
 
 
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None,
-            eps=None, neigs=10, maxntails=None, loc3=None, loc3mix=None, nonloc3mix=None):
+            eps=None, neigs=10, maxntails=None, loc2=None,
+            loc3=None, loc3mix=None, nonloc3mix=None):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number
         ET: ET
@@ -528,8 +536,8 @@ class Phi4():
             compH = Hraw
         else:
             DeltaH = self.computeDeltaH(k=k, ET=ET, EL=EL, ren=ren, eps=eps,
-                    maxntails=maxntails, ELp=ELp, ELpp=ELpp, loc3=loc3, loc3mix=loc3mix,
-                    nonloc3mix=nonloc3mix)
+                    maxntails=maxntails, ELp=ELp, ELpp=ELpp, loc2=loc2,
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
             compH = (Hraw + DeltaH)
 
         self.compSize = compH.shape[0]
