@@ -9,11 +9,7 @@ from statefuncs import *
 
 k = +1
 m = 1.
-g = .1
-
-
-minoverlap = 10**-3
-
+g = 1
 
 
 
@@ -107,14 +103,8 @@ a.buildBasis(Emax=ET)
 
 a.computePotential(k)
 
-a.setCouplings(0,0,g)
-a.computeEigval(k, ET, "raw")
-
-vectorlist = [state for i,state in enumerate(a.basis[k])
-        if abs(a.eigenvectors["raw"][1][0][i]) > minoverlap]
-print(sorted(occn(state) for state in vectorlist))
+vectorlist = [[], [(0,2)]]
 basisl = Basis(k, vectorlist, a.basis[k].helper)
-print("subbasis size:", basisl.size)
 
 a.genHEBases(k, basisl, EL=EL, ELpp=ELpp)
 print("HE basis size", a.basisH[k].size)
