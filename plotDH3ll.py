@@ -14,10 +14,21 @@ m = 1
 g = 1
 eps = -1
 
-indexList = [(0,0),(0,1),(1,1)]
+vectorlist = [[],
+        [(0,2)],
+        [(0,4)],
+        [(0,6)],
+        [(0,8)],
+        [(0,1),(1,4),(-4,1)]
+        ]
+indexList = [(0,0), # V0
+        (0,1), # V2
+        (0,2), # V4 + V0V4
+        (0,3), # V6 + V2V4
+        (0,4), # V4V4
+        (0,5) # V6
+        ]
 
-maxntails = 2
-minoverlap = 10**-2
 
 frac = 3
 
@@ -47,8 +58,6 @@ a.computePotential(k)
 a.setCouplings(0,0,g)
 a.computeEigval(k, ET, "raw")
 
-vectorlist = [state for i,state in enumerate(a.basis[k])
-        if abs(a.eigenvectors["raw"][1][0][i]) > minoverlap][:maxntails]
 print(sorted(occn(state) for state in vectorlist))
 basisl = Basis(k, vectorlist, a.basis[k].helper)
 print("subbasis size:", basisl.size)
