@@ -12,13 +12,10 @@ from cycler import cycler
 k = +1
 m = 1
 g = 1
+eps = -1
 
 indexList = [(0,0),(0,1),(1,1)]
 
-maxntails = 2
-minoverlap = 10**-2
-
-frac = 3
 
 argv = sys.argv
 
@@ -44,13 +41,9 @@ a.buildBasis(Emax=ET)
 a.computePotential(k)
 
 a.setCouplings(0,0,g)
-a.computeEigval(k, ET, "raw")
 
-vectorlist = [state for i,state in enumerate(a.basis[k])
-        if abs(a.eigenvectors["raw"][1][0][i]) > minoverlap][:maxntails]
-print(sorted(occn(state) for state in vectorlist))
+vectorlist = [[],[(0,2)]]
 basisl = Basis(k, vectorlist, a.basis[k].helper)
-print("subbasis size:", basisl.size)
 
 print(basisl)
 
@@ -62,7 +55,6 @@ a.computeLEVs(k)
 print("Computing HE matrices")
 a.computeHEVs(k)
 
-eps = -1
 
 tlist = (False, True)
 

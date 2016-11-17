@@ -52,6 +52,8 @@ basis = a.basis[k]
 energyArr = array(basis.energyList)
 propagator = scipy.sparse.spdiags(1/(eps-energyArr), 0, basis.size, basis.size)
 Vfull = a.V[k][4].M
+print(energyArr[:20])
+print(propagator)
 
 for t in tlist:
     nonloc3mix, loc3mix, loc3 = t
@@ -62,6 +64,7 @@ for t in tlist:
 
         projh = scipy.sparse.spdiags(array([int(ET<e<ELp) for e in energyArr]), 0,
             basis.size,basis.size)
+        # print(projh)
 
         DH3Full = Vfull*propagator*projh*Vfull*propagator*projh*Vfull
 

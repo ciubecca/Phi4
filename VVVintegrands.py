@@ -28,8 +28,7 @@ def om(x):
 
 #Symmetry factor
 def sym(q,p,k):
-    return (factorial(4)**3)/(factorial(q)**2)/(factorial(k)**2)/(factorial(p)**2)/factorial(4-q-k)/factorial(4-q-p)/factorial(4-p-k)
-
+    return (factorial(4)**3)/(factorial(q)*factorial(k)*factorial(p)*factorial(4-q-k)*factorial(4-q-p)*factorial(4-p-k))
 
 
 
@@ -45,7 +44,7 @@ def phi0_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     #relativistic factor
-    relfact= 1/((4*pi)**6)*1/(om(y[0])*om(y[1])*om(y[2])*om(y[3])*om(-y[0]-y[2]-y[3])*om(-y[1]-y[2]-y[3]))
+    relfact= (2*pi)**2*1/((4*pi)**6)*1/(om(y[0])*om(y[1])*om(y[2])*om(y[3])*om(-y[0]-y[2]-y[3])*om(-y[1]-y[2]-y[3]))
     cut1= om(y[0])+om(-y[0]-y[2]-y[3])+om(y[2])+om(y[3])
     cut2= om(y[1])+om(-y[1]-y[2]-y[3])+om(y[2])+om(y[3])
 
@@ -63,7 +62,8 @@ def phi2_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     #relativistic factor
-    relfact= 1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[2])*om(-y[1]-y[2]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[2])*om(-y[1]-y[2]))
     cut1= om(y[0])+om(-y[0]-y[2])+om(y[2])
     cut2= om(y[1])+om(-y[1]-y[2])+om(y[2])
 
@@ -77,7 +77,8 @@ def phi2_2(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1],y[2])=(q1,k1,k2)
-    relfact= 1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[1]-y[2])*om(-y[0]-y[1]-y[2]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[1]-y[2])*om(-y[0]-y[1]-y[2]))
 
     cut1= om(y[1]+y[2])+om(y[1])+om(y[2])
     cut2= om(y[0])+om(y[0]+y[1]+y[2])+om(y[1])+om(y[2])
@@ -92,7 +93,8 @@ def phi2_3(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
      # (y[0],y[1],y[2])=(k1,k2,k3)
-    relfact= 1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[1]-y[2])*om(-y[0]-y[1]-y[2]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[1]-y[2])*om(-y[0]-y[1]-y[2]))
 
     cut1= om(y[0])+om(y[1])+om(y[2])+om(-y[0]-y[1]-y[2])
     cut2= cut1
@@ -107,7 +109,8 @@ def phi2_4(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1],y[2])=(p1,p2,p3)
-    relfact= 1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[1]-y[2])*om(y[0]+y[1]+y[2]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**5)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[1]-y[2])*om(y[0]+y[1]+y[2]))
     cut1= om(y[0])+om(y[1])+om(y[2])+om(-y[0]-y[1]-y[2])
     cut2= 2*om(-y[0]-y[1]-y[2])
 
@@ -126,7 +129,8 @@ def phi4_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     #relativistic factor
-    relfact= 1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(-y[0])*om(-y[1]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(-y[0])*om(-y[1]))
     cut1= om(y[0])+om(-y[0])
     cut2= om(y[1])+om(-y[1])
 
@@ -140,7 +144,8 @@ def phi4_2(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1])=(k1,q1)
-    relfact= 1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(-y[0])*om(-y[1]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(-y[0])*om(-y[1]))
     cut1= om(y[0])+om(-y[0])+om(-y[1])+om(y[1])
     cut2= om(y[0])+om(-y[0])
 
@@ -154,7 +159,8 @@ def phi4_3(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1])=(k1,k2)
-    relfact= 1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(y[0]+y[1])*om(y[0]+y[1]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(y[0]+y[1])*om(y[0]+y[1]))
     cut1= om(y[0])+om(y[1])+om(-y[0]-y[1])
     cut2= cut1
 
@@ -168,7 +174,8 @@ def phi4_4(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1])=(k,p1)
-    relfact= 1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(y[0])*om(-y[0]-y[1]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(y[0])*om(-y[0]-y[1]))
     cut1= 2*om(y[0])
     cut2= om(y[0])+om(y[1])+om(y[0]+y[1])
 
@@ -183,7 +190,8 @@ def phi4_6(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1])=(k1,k2)
-    relfact= 1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(-y[0]-y[1])*m)
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(-y[0]-y[1])*m)
     cut1= om(y[0])+om(y[1])+om(-y[0]-y[1])
     cut2= cut1+m
 
@@ -202,12 +210,14 @@ def phi6_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     #y[0]=k2
-    relfact= 1/((4*pi)**3)*1/(om(y[0])*om(y[0])*om(y[0]))
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**3)*1/(om(y[0])*om(y[0])*om(y[0]))
     cut1= 2*om(y[0])
     cut2= cut1
 
     return sym(1,1,1)*relfact*jacobian*HT(cut1-ET)/(eps-cut1)*HT(cut2-ET)/(eps-cut2)
 
+# NOTE I am not going to include this diagram in the numerics
 ###################
 ##  diagram 6.2  ##
 ###################
@@ -216,7 +226,8 @@ def phi6_2(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # y[0]=k1
-    relfact= 1/((4*pi)**3)*1/(om(y[0])*om(-y[0])*m)
+    loopcorr = (2*pi)**2
+    relfact= loopcorr*1/((4*pi)**3)*1/(om(y[0])*om(-y[0])*m)
     cut1= 2*om(y[0])
     cut2= cut1+m
 
@@ -231,7 +242,7 @@ def phi0phi4_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1],y[2])=(k1,k2,k3)
-    relfact= 1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[1]-y[2]))
+    relfact= (1/(2*pi)**3)*(1/(2**4))*1/(om(y[0])*om(y[1])*om(y[2])*om(-y[0]-y[1]-y[2]))
     cut1= om(y[0])+om(y[1])+om(y[2])+om(y[0]+y[1]+y[2])
     cut2= cut1
 
@@ -241,6 +252,7 @@ def phi0phi4_1(ET,eps,x):
 ######### Phi2Phi4 #########
 ############################
 
+
 #####################
 ##  diagram 2-4.1  ##
 #####################
@@ -249,7 +261,7 @@ def phi2phi4_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     #(y[0],y[1])=(k1,k2)
-    relfact= 1/((4*pi)**3)*1/(om(y[0])*om(y[1])*om(-y[0]-y[1]))
+    relfact= (1/(2*pi)**2)*(1/2**3)**1/(om(y[0])*om(y[1])*om(-y[0]-y[1]))
     cut1= om(y[0])+om(y[1])+om(y[0]+y[1])
     cut2= cut1
 
@@ -267,7 +279,7 @@ def phi4phi4_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     #(y[0],y[1])=(k1,k2)
-    relfact= 1/((4*pi)**2)*1/(om(y[0])*om(y[-0]))
+    relfact= 1/(2*pi)*1/(2**2)*1/(om(y[0])*om(y[-0]))
     cut1= 2*om(y[0])
     cut2= cut1
 
