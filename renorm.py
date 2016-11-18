@@ -79,8 +79,8 @@ class renVV3():
         self.neval = 1000
 # Local corrections to V6
         self.VV3loc[6] = self.computeIntegral(1, phi6_1)
-# NOTE I removed diagram 6.2
-        # self.VV3loc[6] += self.computeIntegral(1, phi6_2)
+# NOTE This is overestimated
+        self.VV3loc[6] += self.computeIntegral(1, phi6_2)
 
 
 # Convert to dict

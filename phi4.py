@@ -225,11 +225,12 @@ class Phi4():
         for n in (0,2,4):
             self.Vll[k][n] = self.V[k][n].sub(basis, basis)
 
-        Vlist = V6OpsSelectedHalf(basis)
+        # Vlist = V6OpsSelectedHalf(basis)
+        Vlist = V6OpsSelectedFull(basis, self.basis[k].Emax)
 
         self.Vll[k][6] = Matrix(basis,basis,
                 self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
-                    sumTranspose=True)*self.L)
+                    sumTranspose=False)*self.L)
 
         ###################################
         # Generate all the "bilocal" matrices on the selected

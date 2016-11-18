@@ -185,13 +185,13 @@ def phi4_4(ET,eps,x):
 ###################
 ##  diagram 4.6  ##
 ###################
+# NOTE This is overestimated
 def phi4_6(ET,eps,x):
     # I do a change of variables
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # (y[0],y[1])=(k1,k2)
-    loopcorr = (2*pi)**2
-    relfact= loopcorr*1/((4*pi)**4)*1/(om(y[0])*om(y[1])*om(-y[0]-y[1])*m)
+    relfact= 1/(2*pi)**2*1/(2**4)*1/(om(y[0])*om(y[1])*om(-y[0]-y[1])*m)
     cut1= om(y[0])+om(y[1])+om(-y[0]-y[1])
     cut2= cut1+m
 
@@ -210,14 +210,13 @@ def phi6_1(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     #y[0]=k2
-    loopcorr = (2*pi)**2
-    relfact= loopcorr*1/((4*pi)**3)*1/(om(y[0])*om(y[0])*om(y[0]))
+    relfact= 1/(2*pi)*1/(2**3)*1/(om(y[0])*om(y[0])*om(y[0]))
     cut1= 2*om(y[0])
     cut2= cut1
 
     return sym(1,1,1)*relfact*jacobian*HT(cut1-ET)/(eps-cut1)*HT(cut2-ET)/(eps-cut2)
 
-# NOTE I am not going to include this diagram in the numerics
+# NOTE This is overestimated
 ###################
 ##  diagram 6.2  ##
 ###################
@@ -226,8 +225,7 @@ def phi6_2(ET,eps,x):
     y= numpy.tan(x)
     jacobian = 1/(prod(numpy.cos(x))**2)
     # y[0]=k1
-    loopcorr = (2*pi)**2
-    relfact= loopcorr*1/((4*pi)**3)*1/(om(y[0])*om(-y[0])*m)
+    relfact= 1/(2*pi)*(1/2**3)*1/(om(y[0])*om(-y[0])*m)
     cut1= 2*om(y[0])
     cut2= cut1+m
 

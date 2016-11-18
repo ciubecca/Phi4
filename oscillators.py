@@ -737,6 +737,33 @@ def V4OpsSelectedFull(basis, Emax):
     return opsList
 
 
+def V6OpsSelectedFull(basis, Emax):
+    """ Selected set of oscillators between some selected low-energy states
+    and states with energy <= Emax
+    """
+
+    helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
+    nmax = helper.nmax
+    oscEnergy = helper.oscEnergy
+
+    opsList = []
+
+    for nd in (0,1,2,3,4,5,6):
+        nc = 6-nd
+
+        dlists = gendlistsfromBasis(basis, nmax, nd, 6)
+        oscList = []
+
+        for dlist in dlists:
+            clists = [clist for clist in createClistsV6(nmax, dlist, nc) if
+                    oscEnergy(clist) <= Emax+tol]
+            oscList.append((dlist, clists))
+
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
+
 
 def gendlistsfromBasis(basis, nmax, nd, ntot):
     ret = set()
@@ -801,6 +828,62 @@ def createClistsV4(nmax, dlist, nc):
 
 
 
+def createClistsV6(nmax, dlist, nc):
+
+    if len(dlist) != 6-nc:
+        raise ValueError
+    clists = []
+
+    if nc==0:
+        clists.append(())
+    elif nc==1:
+        clists.append((sum(dlist),))
+
+    elif nc==2:
+        sumk = sum(dlist)
+        for k5 in range(-nmax, nmax+1):
+            k6 = sumk-k5
+            if k5<=k6<=nmax:
+                clists.append((k5,k6))
+
+    elif nc==3:
+        sumk = sum(dlist)
+        for k4 in range(-nmax,nmax+1):
+            for k5 in range(k4,nmax+1):
+                k6 = sumk-k4-k5
+                if k5<=k6<=nmax:
+                    clists.append((k4,k5,k6))
+
+    elif nc==4:
+        sumk = sum(dlist)
+        for k3 in range(-nmax,nmax+1):
+            for k4 in range(k3,nmax+1):
+                for k5 in range(k4,nmax+1):
+                    k6 = sumk-k3-k4-k5
+                    if k5<=k6<=nmax:
+                        clists.append((k3,k4,k5,k6))
+    elif nc==5:
+        sumk = sum(dlist)
+        for k2 in range(-nmax,nmax+1):
+            for k3 in range(k2,nmax+1):
+                for k4 in range(k3,nmax+1):
+                    for k5 in range(k4,nmax+1):
+                        k6 = sumk-k2-k3-k4-k5
+                        if k5<=k6<=nmax:
+                            clists.append((k2,k3,k4,k5,k6))
+    elif nc==6:
+        for k1 in range(-nmax,nmax+1):
+            for k2 in range(k1,nmax+1):
+                for k3 in range(k2,nmax+1):
+                    for k4 in range(k3,nmax+1):
+                        for k5 in range(k4,nmax+1):
+                            k6 = -k1-k2-k3-k4-k5
+                            if k5<=k6<=nmax:
+                                clists.append((k1,k2,k3,k4,k5,k6))
+    return clists
+
+
+
 def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
     ret = set()
 
@@ -808,6 +891,7 @@ def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
         ret.update(gendlistPairs(state=state, ndPair=ndPair,
             ntotPair=ntotPair, nmax=nmax))
     return ret
+
 
 
 def V6OpsSelectedHalf(basis):

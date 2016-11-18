@@ -26,9 +26,12 @@ indexList = [(0,0), # V0
         (0,2), # V4 + V0V4
         (0,3), # V6 + V2V4
         (0,4), # V4V4
-        (0,5) # V6
+        (0,5), # V6
+        (2,2),
+        (1,5),
+        (2,5),
+        (3,5)
         ]
-
 
 frac = 3
 
@@ -53,16 +56,15 @@ a = phi4.Phi4(m,L)
 
 a.buildBasis(Emax=ET)
 
+
 a.computePotential(k)
 
 a.setCouplings(0,0,g)
 a.computeEigval(k, ET, "raw")
 
-print(sorted(occn(state) for state in vectorlist))
 basisl = Basis(k, vectorlist, a.basis[k].helper)
-print("subbasis size:", basisl.size)
-
 print(basisl)
+
 
 a.genHEBases(k, basisl, EL=None, ELpp=ELpmax*frac)
 print("HE basis size", a.basish[k].size)
@@ -112,7 +114,7 @@ for index in indexList:
 
     output = "png"
     title = r"$L$={:.1f}, $E_T$={:.1f}, $E_L''={} E_L'$, index={}".format(L,ET,frac,index)
-    fname = "DH3_L={:.1f}_ET={:.1f}_frac={}_index={}.{}".format(L,ET,frac,str(index),output)
+    fname = "DH plots/DH3_L={:.1f}_ET={:.1f}_frac={}_index={}.{}".format(L,ET,frac,str(index),output)
     loc = "lower right"
 
     plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
@@ -120,7 +122,6 @@ for index in indexList:
     plt.xlabel(r"$E_{L}'$")
     plt.ylabel(r"$\Delta H_3 {}$".format(index))
     plt.legend(loc=loc)
-
 
     plt.savefig(fname)
 
