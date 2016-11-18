@@ -1,13 +1,3 @@
-# This files generates plots of Vacuum and mass eigenvalues from the database
-# It should be called as:
-# plotvsE L g ETmin ETmax
-# For instance:
-# plotvsE 10 1 10 20
-# Plots all the points for L=10, g=1, and ET = [10, 10.5, 11, 11.5, ..., 20]
-
-minoverlaplist = [10**(-2)]
-minoverlap = minoverlaplist[0]
-
 import sys
 import matplotlib.pyplot as plt
 import scipy
@@ -17,23 +7,31 @@ from matplotlib import rc
 from cycler import cycler
 import database
 
+
+minoverlap = 10**(-2)
+# List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
+tlist = ((False,False,False),(True,True,False),(True,True,True))
+# Ratio between ELpp and ELp
+ratio = 2
+
+
 output = "png"
 # renlist = ("raw", "renloc", "rentails")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-neigs = 1
-
+neigs = 3
 
 
 def ELppf(ELp):
     return 1.5*ELp
 
 
-def plotvsELp(ELplist, nonloc3mix, loc3mix, loc3):
+def plotvsELp(ELplist, t):
 
     xlist = ELplist
+    nonloc3mix, loc3mix, loc3 = t
 
     db = database.Database()
 
@@ -46,16 +44,17 @@ def plotvsELp(ELplist, nonloc3mix, loc3mix, loc3):
 
     for ELp in ELplist:
         approxQuery["ELp"] = ELp
-        approxQuery["ELpp"] = ELppf(ELp)
+        approxQuery["ELpp"] = ratio*ELp
 
         exactQuery["k"] = 1
         evenSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
-        # exactQuery["k"] = -1
-        # oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
+        exactQuery["k"] = -1
+        oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
 
-    label = "{} {} {}".format(nonloc3mix, loc3mix, loc3)
+    nonloc3mix, loc3mix, loc3 = t
+    label = str(t)
 
     evenSp = array(evenSp)
     oddSp = array(oddSp)
@@ -69,11 +68,11 @@ def plotvsELp(ELplist, nonloc3mix, loc3mix, loc3):
 
 
     # ODD SPECTRUM
-    # plt.figure(2)
+    plt.figure(2)
 
-    # for i in range(neigs):
-        # data = oddSp[:,i]
-        # plt.plot(xlist, data)
+    for i in range(neigs):
+        data = oddSp[:,i]
+        plt.plot(xlist, data, label=label)
 
 
 argv = sys.argv
@@ -92,7 +91,7 @@ ELpmax = float(argv[5])
 try:
     EL = float(argv[6])
 except IndexError:
-    EL = ELppf(ELpmax)
+    EL = ratio*ELpmax
 # ELETdiff = float(argv[5])
 
 
@@ -108,20 +107,18 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 
 
 
-for nonloc3mix, loc3mix, loc3 in ((False,False,False),(True,False,False),
-    (True,True,False), (True,True,True)):
-    # for loc3 in (True, False):
-    plotvsELp(ELplist, nonloc3mix, loc3mix, loc3)
+for t in tlist:
+    plotvsELp(ELplist, t)
 
 
-title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L''=1.5 E_L'$".format(g,L,ET,EL)
-fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}.{4}".format(g,L,ET,EL,output)
+title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L''={4} E_L'$".format(g,L,ET,EL,ratio)
+fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}_ratio={4}.{5}".format(g,L,ET,EL,ratio,output)
 loc = "lower right"
 
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{L}'$")
-plt.ylabel(r"$E_i$")
+plt.ylabel(r"$E_i$ even")
 plt.legend(loc=loc)
 
 
@@ -129,11 +126,11 @@ plt.savefig("figs/evenSp_"+fname)
 
 
 
-# plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-# plt.title(title)
-# plt.xlabel(r"$E_{L}'$")
-# plt.ylabel(r"$E_i$")
-# # plt.legend(loc=loc)
+plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_{L}'$")
+plt.ylabel(r"$E_i$ odd")
+plt.legend(loc=loc)
 
 
-# plt.savefig("figs/oddSp_"+fname)
+plt.savefig("figs/oddSp_"+fname)

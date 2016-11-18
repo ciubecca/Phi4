@@ -16,17 +16,17 @@ saveondb = True
 # saveondb = False
 m = 1
 # List of parity quantum numbers
-klist = (1,)
+klist = (1,-1)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
 minoverlap = 10**(-2)
+# Ratio between ELpp and ELp
+ratio = 2
+neigs = 10
 
-nonloc3mix = True
-loc3mix = True
-loc3 = True
+# List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
+tlist = ((False,False,False),(True,True,False),(True,True,True))
 
 
-def ELppf(ELp):
-    return 1.5*ELp
 
 argv = sys.argv
 if len(argv) < 6:
@@ -38,14 +38,15 @@ g = float(argv[2])
 ET = float(argv[3])
 ELpmin = float(argv[4])
 ELpmax = float(argv[5])
-# ELETdiff = float(argv[5])
 
-EL = ELppf(ELpmax)
+# EL is chosen as the maximum ELpp
+EL = ratio*ELpmax
 
 ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
 print("ELplist:", ELplist)
 
 print("minoverlap:", minoverlap)
+print("ELpp/ELp:", ratio)
 
 if saveondb:
     db = database.Database()
@@ -65,10 +66,8 @@ for k in klist:
     a.setCouplings(g4=g)
     print("g=", g)
 
-
     print("Computing raw eigenvalues for highest cutoff")
     a.computeEigval(k, ET, "raw")
-
 
     # Select a set of tails and construct a Basis object
     vectorlist = [state for i,state in enumerate(a.basis[k])
@@ -80,9 +79,8 @@ for k in klist:
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBases(k, basisl, EL=EL, ELpp=ELppf(ELpmax))
+    a.genHEBases(k, basisl, EL=EL, ELpp=ratio*ELpmax)
     print("Size of HE basis:", a.basisH[k].size)
-
 
     a.computeLEVs(k)
 
@@ -108,27 +106,32 @@ for k in klist:
     print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
     eps = a.eigenvalues["renloc"][k][0]
 
-    if loc3==True:
+
+
+    if True in (t[2] for t in tlist):
         a.calcVV3(ELplist, eps)
 
+    for t in tlist:
 
-    for ELp in ELplist:
+        nonloc3mix, loc3mix, loc3 = t
 
-        ELpp = ELppf(ELp)
-        print("ELp={}, ELpp={}".format(ELp,ELpp))
+        for ELp in ELplist:
 
-        a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
-        print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
+            ELpp = ratio*ELp
+            print("ELp={}, ELpp={}".format(ELp,ELpp))
 
-        print("Number of tails:", a.ntails)
+            a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, neigs=neigs)
+            print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
+
+            print("Number of tails:", a.ntails)
 
 
-        if saveondb:
-            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
-                EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps,
-                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, basisSize=a.compSize)
+            if saveondb:
+                datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
+                    EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps, neigs=neigs,
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, basisSize=a.compSize)
 
-            db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
+                db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
 
     del a.VLH[k]
