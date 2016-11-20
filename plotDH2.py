@@ -14,7 +14,7 @@ m = 1
 g = 1
 eps = -1
 
-indexList = [(0,0),(0,1),(1,1)]
+indexList = [(0,0),(0,1),(0,2)]
 
 
 argv = sys.argv
@@ -42,7 +42,7 @@ a.computePotential(k)
 
 a.setCouplings(0,0,g)
 
-vectorlist = [[],[(0,2)]]
+vectorlist = [[],[(0,2)], [(0,4)]]
 basisl = Basis(k, vectorlist, a.basis[k].helper)
 
 print(basisl)

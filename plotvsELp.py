@@ -8,7 +8,7 @@ from cycler import cycler
 import database
 
 
-minoverlap = 10**(-2)
+minoverlap = 3*10**(-3)
 # List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
 tlist = ((False,False,False),(True,True,False),(True,True,True))
 # Ratio between ELpp and ELp
