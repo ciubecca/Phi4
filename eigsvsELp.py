@@ -20,7 +20,9 @@ klist = (1,-1)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
 minoverlap = 10**(-2)
 # Ratio between ELpp and ELp
-ratio = 2
+ratio3 = 1.5
+# Ratio between EL and ET
+ratio2 = 2.5
 neigs = 10
 
 # List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
@@ -40,13 +42,14 @@ ELpmin = float(argv[4])
 ELpmax = float(argv[5])
 
 # EL is chosen as the maximum ELpp
-EL = ratio*ELpmax
+EL = ratio2*ET
 
 ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
 print("ELplist:", ELplist)
 
 print("minoverlap:", minoverlap)
-print("ELpp/ELp:", ratio)
+print("ELpp/ELp:", ratio3)
+print("EL/ET:", ratio2)
 
 if saveondb:
     db = database.Database()
@@ -79,7 +82,7 @@ for k in klist:
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBases(k, basisl, EL=EL, ELpp=ratio*ELpmax)
+    a.genHEBases(k, basisl, EL=EL, ELpp=ratio3*ELpmax)
     print("Size of HE basis:", a.basisH[k].size)
 
     a.computeLEVs(k)
@@ -117,7 +120,7 @@ for k in klist:
 
         for ELp in ELplist:
 
-            ELpp = ratio*ELp
+            ELpp = ratio3*ELp
             print("ELp={}, ELpp={}".format(ELp,ELpp))
 
             a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
