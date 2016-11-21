@@ -21,7 +21,7 @@ neigs = 1
 klist = (1,-1)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
 minoverlap = 10**(-2)
-# Ratio between EL and ET
+# Ratio between ELpp and ELp
 ratio3 = 1.5
 neigs = 10
 
@@ -115,7 +115,7 @@ for k in klist:
         print("EL={}".format(EL))
 
         a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                loc3=True, loc3mix=True, nonloc3mix=True, neigs=neigs)
+                loc2=True, loc3=True, loc3mix=True, nonloc3mix=True, neigs=neigs)
         print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
         print("Number of tails:", a.ntails)
@@ -123,7 +123,7 @@ for k in klist:
         if saveondb:
             datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
                 EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps, neigs=neigs,
-                loc3=True, loc3mix=True, nonloc3mix=True, basisSize=a.compSize)
+                loc2=True, loc3=True, loc3mix=True, nonloc3mix=True, basisSize=a.compSize)
 
             db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
 

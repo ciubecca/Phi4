@@ -258,8 +258,8 @@ class Phi4():
 
 
 
-    def computeDeltaH(self, k, ren, ET, eps, loc2=None, loc3=None, loc3mix=None,
-            nonloc3mix=None, EL=None, ELp=None, ELpp=None, maxntails=None):
+    def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
+            nonloc3mix=True, EL=None, ELp=None, ELpp=None, maxntails=None):
         """
         Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
         """
@@ -514,7 +514,7 @@ class Phi4():
 
 
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None,
-            eps=None, neigs=10, maxntails=None, loc2=None,
+            eps=None, neigs=10, maxntails=None, loc2=True,
             loc3=None, loc3mix=None, nonloc3mix=None):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number

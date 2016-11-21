@@ -124,7 +124,7 @@ for k in klist:
             print("ELp={}, ELpp={}".format(ELp,ELpp))
 
             a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, neigs=neigs)
+                    loc2=True,loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, neigs=neigs)
             print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
             print("Number of tails:", a.ntails)
