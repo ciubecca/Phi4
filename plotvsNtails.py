@@ -105,6 +105,6 @@ for k in klist:
     # plt.legend(loc=loc)
 
     if k==1:
-        plt.savefig("figs/evenSp_"+fname)
+        plt.savefig("evenvsTails_"+fname)
     elif k==-1:
-        plt.savefig("figs/oddSp_"+fname)
+        plt.savefig("oddvsTails_"+fname)
