@@ -107,6 +107,7 @@ for k in klist:
 
     a.calcVV3([ELp], eps)
 
+    a.precomputeDH3(k, ET, ELp, ELpp, eps)
 
     for ntails in ntailsList:
 
