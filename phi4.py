@@ -275,7 +275,7 @@ class Phi4():
             vectorlist = [v for v in basisl if helper.energy(v)<=ET]
             if maxntails != None:
                 vectorlist = vectorlist[:maxntails]
-            subbasisl = Basis(k, vectorlist, helper)
+            subbasisl = Basis(k, vectorlist, helper, orderEnergy=False)
             self.ntails = subbasisl.size
 
             DH2lL = self.computeDH2(subbasisl, k, ET=ET, EL=EL, eps=eps, loc2=loc2)
