@@ -1,18 +1,12 @@
-# This files generates plots of Vacuum and mass eigenvalues from the database
-# It should be called as:
-# plotvsE L g ETmin ETmax
-# For instance:
-# plotvsE 10 1 10 20
-# Plots all the points for L=10, g=1, and ET = [10, 10.5, 11, 11.5, ..., 20]
-
-
 import sys
 import matplotlib.pyplot as plt
 import scipy
 import math
 from scipy import pi, log, log10, array, sqrt, stats
 from matplotlib import rc
+from cycler import cycler
 import database
+
 
 output = "png"
 renlist = ("raw", "renloc", "rentails")
@@ -22,159 +16,104 @@ rc('text', usetex=True)
 
 neigs = 1
 
-Nlist = range(2, 260, 2)
+# Ratio ELpp/ELp
+ratio3 = 1.5
+ntailsList = range(2, 46, 4)
 
-ratio = 2.5
-def EL(ET):
-    return ET*ratio
+print("ntailsList", ntailsList)
 
-def plotvsNtails():
+
+
+def plotvsntails(ntailsList):
+
+    xlist = ntailsList
+    nonloc3mix, loc3mix, loc3 = True, True, True
 
     db = database.Database()
 
-    exactQuery = {}
-    approxQuery = {"g":g, "L":L, "ET":ET}
+    exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
+            "ren":"rentails"}
+    approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET, "ELp":ELp}
+    approxQuery["ELpp"] = ELpp
+    oddSp = []
+    evenSp = []
 
-    E0 = {}
-    E1 = {}
-    for ren in renlist:
+    for ntails in ntailsList:
+        exactQuery["ntails"] = ntails
 
-        for k,data in ((-1,E1),(1,E0)):
+        exactQuery["k"] = 1
+        evenSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
-            data[ren] = []
-
-            for N in Nlist:
-                exactQuery["ren"] = ren
-                exactQuery["k"] = k
-
-                if ren=="rentails":
-                    exactQuery["ntails"] = N
-                else:
-                    approxQuery.pop("ntails",None)
-
-                if ren=="renloc":
-                    approxQuery["EL"] = ET
-                elif ren=="rentails":
-                    approxQuery["EL"] = EL(ET)
-                else:
-                    approxQuery.pop("EL",None)
+        exactQuery["k"] = -1
+        oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
 
-                try:
-                    data[ren].append(db.getObjList('spec', exactQuery, approxQuery)[0][0])
-                except IndexError as err:
-                    print(exactQuery, approxQuery)
-                    raise err
-    linewidth = 1
-    dashes = [4,4]
-    marker = "."
-    markersize = 6
 
+    evenSp = array(evenSp)
+    oddSp = array(oddSp)
 
-    # VACUUM ENERGY
+    # EVEN SPECTRUM
     plt.figure(1)
 
+    for i in range(neigs):
+        data = evenSp[:,i]
+        plt.plot(xlist, data)
 
-    # data = E0["raw"]
-    # plt.plot(Nlist, data, linewidth=linewidth, color="b", marker=marker,
-            # markersize=markersize, dashes = dashes, label="raw")
 
-    data = E0["renloc"]
-    plt.plot(Nlist, data, linewidth=linewidth, color="r", marker=marker,
-            markersize=markersize, dashes = dashes, label="renloc")
-
-    data = E0["rentails"]
-    plt.plot(Nlist, data, linewidth=linewidth, color="k", marker=marker,
-            markersize=markersize, dashes = dashes, label="rentails")
-
-    # # MASS
+    # ODD SPECTRUM
     plt.figure(2)
 
-    # data = array(E1["raw"])-array(E0["raw"])
-    # plt.plot(Nlist, data, linewidth=linewidth, color="b", marker=marker,
-            # markersize=markersize, dashes = dashes, label="raw")
-
-    data = array(E1["renloc"])-array(E0["renloc"])
-    plt.plot(Nlist, data, linewidth=linewidth, color="r", marker=marker,
-            markersize=markersize, dashes = dashes, label="renloc")
-
-    data = array(E1["rentails"])-array(E0["rentails"])
-    plt.plot(Nlist, data, linewidth=linewidth, color="k", marker=marker,
-            markersize=markersize, dashes = dashes, label="rentails")
-
-    # E1
-    plt.figure(3)
-
-    # data = array(E1["raw"])
-    # plt.plot(Nlist, data, linewidth=linewidth, color="b", marker=marker,
-            # markersize=markersize, dashes = dashes, label="raw")
-
-    data = array(E1["renloc"])
-    plt.plot(Nlist, data, linewidth=linewidth, color="r", marker=marker,
-            markersize=markersize, dashes = dashes, label="renloc")
-
-    data = array(E1["rentails"])
-    plt.plot(Nlist, data, linewidth=linewidth, color="k", marker=marker,
-            markersize=markersize, dashes = dashes, label="rentails")
-
+    for i in range(neigs):
+        data = oddSp[:,i]
+        plt.plot(xlist, data)
 
 
 argv = sys.argv
-if len(argv) < 4:
-    print(argv[0], "<L> <g> <ET>")
+
+
+if len(argv) < 6:
+    print(argv[0], "<L> <g> <ET> <EL> <ELp>")
     sys.exit(-1)
 
 L = float(argv[1])
 g = float(argv[2])
 ET = float(argv[3])
+EL = float(argv[4])
+ELp = float(argv[5])
 
+ELpp = ratio3*ELp
 
 
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-plotvsNtails()
+plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
+    cycler('linestyle', ['-', '--', ':', '-.'])))
+
+
+plotvsntails(ntailsList)
+
+
+title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L'$={4:.1f},$E_L''$={5:.1f}$".format(g,L,ET,EL,ELp,ELpp)
+fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}_ELp={4:.1f}_ELpp={5:.1f}.{6}".format(g,L,ET,EL,ELp,ELpp,output)
+loc = "lower right"
 
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-#plt.xlim(min(xList)-0.01, max(xList)+0.01)
-plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L={3} E_T$, $E_T=${2:.1f}".format(g,L,ET,ratio))
-# plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L$={2:.1f}".format(g,L,EL))
-plt.xlabel(r"# tails")
-plt.ylabel(r"$E_0$")
-plt.legend(loc="upper right")
+plt.title(title)
+plt.xlabel("ntails")
+plt.ylabel(r"$E_i$ even")
+plt.legend(loc=loc)
 
 
-plt.savefig("figs/fig_E0vsN_g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={4}*ET.{3}"
-        .format(g,L,ET,output,ratio))
-# plt.savefig("figs/fig_E0vsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
-        # .format(g,L,EL,output))
+plt.savefig("figs/evenSp_"+fname)
+
+
 
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-#plt.xlim(min(xList)-0.01, max(xList)+0.01)
-plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L={3} E_T$, $E_T=${2:.1f}".format(g,L,ET,ratio))
-# plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L$={2:.1f}".format(g,L,EL))
-plt.xlabel(r"# tails")
-plt.ylabel(r"$E_1-E_0$")
-plt.legend(loc="upper right")
+plt.title(title)
+plt.xlabel("ntails")
+plt.ylabel(r"$E_i$ odd")
+plt.legend(loc=loc)
 
 
-plt.savefig("figs/fig_MvsN_g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={4}*ET.{3}"
-        .format(g,L,ET,output,ratio))
-# plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
-        # .format(g,L,EL,output))
-
-
-
-plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-#plt.xlim(min(xList)-0.01, max(xList)+0.01)
-plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L={3} E_T$, $E_T=${2:.1f}".format(g,L,ET,ratio))
-# plt.title(r"$g$={0:.1f}, $L$={1:.1f}, $E_L$={2:.1f}".format(g,L,EL))
-plt.xlabel(r"# tails")
-plt.ylabel(r"$E_1$")
-plt.legend(loc="upper right")
-
-plt.savefig("figs/fig_E1vsN_g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={4}*ET.{3}"
-        .format(g,L,ET,output,ratio))
-# plt.savefig("figs/fig_MvsET_g={0:.1f}_L={1:.1f}_EL={2:.1f}.{3}"
-        # .format(g,L,EL,output))
-
+plt.savefig("figs/oddSp_"+fname)

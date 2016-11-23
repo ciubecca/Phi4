@@ -8,35 +8,38 @@ import gc
 import database
 from statefuncs import *
 
-# Suppose we want to generate all the eigenvalues with L=10, g=1 with truncation energies
-# ET = 10, 10.5, 11, ..., 20
-# Then we should call this file as:
-# eigsvsE.py 10 1 10 20
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = True
 # saveondb = False
 m = 1
-# Number of eigenvalues to compute per sector
-neigs = 1
 # List of parity quantum numbers
-klist = (-1,1)
+klist = (1,-1)
+# Minimum overlap with the raw vacuum for selecting a state in the tails
+minoverlap = 10**(-2)
+# Ratio between ELpp and ELp
+ratio3 = 1.5
+# Ratio between EL and ET
+# ratio2 = 2
+neigs = 10
 
-maxNtails = 100
 
-
-# How EL depends on ET
-def el(ET):
-    return ET*2
 
 argv = sys.argv
-if len(argv) < 3:
-    print(argv[0], "<L> <g> <ET>")
+if len(argv) < 6:
+    print(argv[0], "<L> <g> <ET> <EL> <ELp>")
     sys.exit(-1)
 
 L = float(argv[1])
 g = float(argv[2])
 ET = float(argv[3])
+EL = float(argv[4])
+ELp = float(argv[5])
+
+ELpp = ratio3*ELp
+
+print("minoverlap:", minoverlap)
+print("ELpp/ELp:", ratio3)
 
 
 if saveondb:
@@ -57,88 +60,69 @@ for k in klist:
     a.setCouplings(g4=g)
     print("g=", g)
 
+    print("Computing raw eigenvalues")
+    a.computeEigval(k, ET, "raw")
 
-    EL = el(ET)
-    # EL = ELmax
-    print("ET={}, EL={}".format(ET,EL))
-
-
-    # Checks if the eigenvalues we are going to compute are alredy present in
-#the database. If yes, skip them
-    # if saveondb:
-        # approxQuery = {"g":g, "L":L, "ET":ET, "EL":EL}
-        # exactQuery = {"k":k, "ren":"rentails"}
-        # if db.getObjList('spec', approxQuery=approxQuery,
-                # exactQuery=exactQuery) != []:
-            # print("Eigenvalues already present")
-            # continue
-
-
-# Compute the raw eigenvalues for cutoff ET
-    a.computeEigval(k, ET, "raw", neigs=neigs)
-    print("Raw vacuum:", a.eigenvalues["raw"][k][0])
-    eps = a.eigenvalues["raw"][k][0]
-
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="raw", g=g,
-                spec=a.eigenvalues["raw"][k],
-                basisSize=a.compSize, neigs=neigs)
-
-
-# List of all the tails sorted in overlap with vacuum
-    basis = a.basis[k]
-    indexlist = reversed(sorted(range(basis.size),
-        key=lambda i: (a.eigenvectors["raw"][k][0][i])**2))
-    basisl = statefuncs.Basis(k, [basis[i] for i in indexlist][:maxNtails], basis.helper)
-
-    # print(basisl)
+    # Select a set of tails and construct a Basis object
+    vectorlist = [state for i,state in enumerate(a.basis[k])
+        if abs(a.eigenvectors["raw"][k][0][i]) > minoverlap]
+    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
     print("Total number of tails:", basisl.size)
+
+    ntailsList = range(2, basisl.size, 4)
+    print("List of ntails:", list(ntailsList))
 
 
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBasis(k, basisl, EL)
-    print("Size of HE basis:", a.basisH[k].size)
+    a.genHEBases(k, basisl, EL=EL, ELpp=ELpp)
+    print("Size of HE basis for DH2:", a.basisH[k].size)
+    print("Size of HE basis for DH3:", a.basish[k].size)
+
+    a.computeLEVs(k)
+
 
     print("Computing high energy matrices...")
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
 # Later we will be varying EL, therefore taking submatrices of these.
 # Computing VHH is expensive
-    a.computeHEVs(k, EL)
+    a.computeHEVs(k)
 
+
+
+# Compute the raw eigenvalues for cutoff ET
+    a.computeEigval(k, ET, "raw")
+    print("Raw vacuum:", a.eigenvalues["raw"][k][0])
+    eps = a.eigenvalues["raw"][k][0]
 
 
 # Compute "local" renormalized eigenvalues for cutoff ET
 # Since we are passing EL=ET to the method call, the matrices VHL, VHH will be computed
 # only in the local approximation
-    a.computeEigval(k, ET, "renloc", ET, eps, neigs=neigs)
+    a.computeEigval(k, ET, "renloc", EL=ET, eps=eps)
     print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
     eps = a.eigenvalues["renloc"][k][0]
 
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="renloc", g=g,
-                spec=a.eigenvalues["renloc"][k],
-                basisSize=a.compSize, neigs=neigs, EL=ET, eps=eps)
+
+    a.calcVV3([ELp], eps)
 
 
-    for ntails in range(2, min(a.basis[k].size, maxNtails), 4):
-# Compute renormalized eigenvalues by computing the fully "non-local" corrections
-# to VHL, VHH up to cutoff EL
+    for ntails in ntailsList:
 
-        a.computeEigval(k, ET, "rentails", EL, eps, neigs=neigs, maxntails=ntails)
+        print("ntails:", ntails)
 
+        a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps, neigs=neigs,
+                maxntails=ntails)
         print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
         print("Number of tails:", a.ntails)
 
         if saveondb:
-            db.insert(k=k, ET=ET, L=L, ren="rentails", g=g,
-                    spec=a.eigenvalues["rentails"][k],
-                    basisSize=a.compSize, neigs=neigs, EL=EL, ntails=a.ntails, eps=eps)
+            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
+                EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps, neigs=neigs,
+                loc2=True, loc3=True, loc3mix=True, nonloc3mix=True, basisSize=a.compSize)
 
+            db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
 
-
-    # Free memory
-    del a.Vhh[k]
-    gc.collect()
+    del a.VLH[k]

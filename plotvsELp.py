@@ -10,10 +10,11 @@ import database
 
 minoverlap = 10**(-2)
 # List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
-tlist = ((False,False,False),(True,True,False),(True,True,True))
+tlist = ((False,False,False),(True,True,True))
 # Ratio between ELpp and ELp
-ratio2 = 2
-ratio3 = 2.5
+ratio2 = 2.5
+ratio3 = 1.5
+neigs = 1
 
 
 output = "png"
@@ -45,8 +46,8 @@ def plotvsELp(ELplist, t):
         exactQuery["k"] = 1
         evenSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
-        exactQuery["k"] = -1
-        oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
+        # exactQuery["k"] = -1
+        # oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
 
     nonloc3mix, loc3mix, loc3 = t
@@ -64,11 +65,11 @@ def plotvsELp(ELplist, t):
 
 
     # ODD SPECTRUM
-    plt.figure(2)
+    # plt.figure(2)
 
-    for i in range(neigs):
-        data = oddSp[:,i]
-        plt.plot(xlist, data, label=label)
+    # for i in range(neigs):
+        # data = oddSp[:,i]
+        # plt.plot(xlist, data, label=label)
 
 
 argv = sys.argv
@@ -121,11 +122,11 @@ plt.savefig("figs/evenSp_"+fname)
 
 
 
-plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{L}'$")
-plt.ylabel(r"$E_i$ odd")
-plt.legend(loc=loc)
+# plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+# plt.title(title)
+# plt.xlabel(r"$E_{L}'$")
+# plt.ylabel(r"$E_i$ odd")
+# plt.legend(loc=loc)
 
 
-plt.savefig("figs/oddSp_"+fname)
+# plt.savefig("figs/oddSp_"+fname)

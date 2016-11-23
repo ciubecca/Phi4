@@ -22,7 +22,7 @@ minoverlap = 10**(-2)
 # Ratio between ELpp and ELp
 ratio3 = 1.5
 # Ratio between EL and ET
-ratio2 = 2.5
+ratio2 = 2
 neigs = 10
 
 # List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
