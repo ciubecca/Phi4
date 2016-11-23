@@ -77,7 +77,7 @@ def occn(state):
 
 class Basis():
     """ Class used to store and compute a basis of states"""
-    def __init__(self, k, stateset, helper):
+    def __init__(self, k, stateset, helper, orderEnergy=True):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
@@ -87,8 +87,12 @@ class Basis():
         self.helper = helper
         energy = helper.energy
 
+        self.orderEnergy = orderEnergy
         # Order the states in energy
-        self.stateList = list(sorted(stateset, key=energy))
+        if orderEnergy:
+            self.stateList = list(sorted(stateset, key=energy))
+        else:
+            self.stateList = list(stateset)
         self.size = len(self.stateList)
 
         self.energyList = [energy(state) for state in self.stateList]
@@ -138,7 +142,8 @@ class Basis():
 
     def sub(self, filterFun):
         """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
-        return Basis(self.k, filter(filterFun, self.stateList), self.helper)
+        return Basis(self.k, filter(filterFun, self.stateList), self.helper,
+                self.orderEnergy)
 
 
     def lookup(self, state):

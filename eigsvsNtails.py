@@ -66,7 +66,7 @@ for k in klist:
     # Select a set of tails and construct a Basis object
     vectorlist = [state for i,state in enumerate(a.basis[k])
         if abs(a.eigenvectors["raw"][k][0][i]) > minoverlap]
-    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
+    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
     print("Total number of tails:", basisl.size)
 
     ntailsList = range(2, basisl.size, 4)
