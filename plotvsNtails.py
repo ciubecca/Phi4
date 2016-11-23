@@ -18,7 +18,7 @@ neigs = 1
 
 # Ratio ELpp/ELp
 ratio3 = 1.5
-ntailsList = range(2, 46, 4)
+ntailsList = range(2, 42, 4)
 
 print("ntailsList", ntailsList)
 
@@ -105,7 +105,7 @@ plt.ylabel(r"$E_i$ even")
 plt.legend(loc=loc)
 
 
-plt.savefig("figs/evenSp_"+fname)
+plt.savefig("evenSp_"+fname)
 
 
 
@@ -116,4 +116,4 @@ plt.ylabel(r"$E_i$ odd")
 plt.legend(loc=loc)
 
 
-plt.savefig("figs/oddSp_"+fname)
+plt.savefig("oddSp_"+fname)
