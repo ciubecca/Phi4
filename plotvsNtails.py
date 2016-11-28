@@ -21,9 +21,10 @@ klist = (1,-1)
 # Ratio ELpp/ELp
 ratio3 = 1.5
 
-maxntails = 100
+maxntails = 300
 step = 10
-ntailsList = list(range(step, maxntails+step, step))
+startntails = 20
+ntailsList = list(range(startntails, maxntails+step, step))
 ntailsList = {1:ntailsList, -1:ntailsList}
 
 print("ntailsList", ntailsList)

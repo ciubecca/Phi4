@@ -18,6 +18,8 @@ klist = (1,-1)
 
 # Maximum number of tails (in order of overlap with the vacuum) to include
 maxntails = 100
+startntails = 20
+step = 10
 
 # Ratio between ELpp and ELp
 ratio3 = 1.5
@@ -74,7 +76,7 @@ for k in klist:
     print(basisl[:10])
 
     step = 10
-    ntailsList = range(step, basisl.size+step, step)
+    ntailsList = range(startntails, basisl.size+step, step)
     print("List of ntails:", list(ntailsList))
 
 
