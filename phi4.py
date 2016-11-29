@@ -37,6 +37,8 @@ class Phi4():
         self.basish = {}
         self.basisl = {}
         self.DH3ll = {k:None for k in (-1,1)}
+        self.compDH3ll = {k:None for k in (-1,1)}
+
 
 # "raw" are the raw eigenvalues
 # "renloc" are the eigenvalues where the DH2, DH3 corrections are only computed in
@@ -276,7 +278,7 @@ class Phi4():
             vectorlist = [v for v in basisl if helper.energy(v)<=ET]
             if maxntails != None:
                 vectorlist = vectorlist[:maxntails]
-            subbasisl = Basis(k, vectorlist, helper)
+            subbasisl = Basis(k, vectorlist, helper, orderEnergy=False)
             self.ntails = subbasisl.size
 
             DH2lL = self.computeDH2(subbasisl, k, ET=ET, EL=EL, eps=eps, loc2=loc2)
@@ -290,6 +292,7 @@ class Phi4():
             else:
                 DH3ll = self.DH3ll[k].sub(subbasisl, subbasisl).M
 
+            self.compDH3ll[k] = DH3ll
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
@@ -479,7 +482,6 @@ class Phi4():
 #####################################################
 
         if loc3:
-
             Vll = {}
             for n in (0,2,4,6):
                 Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
@@ -577,6 +579,4 @@ class Phi4():
             return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[1:]])
         elif k==-1:
             return scipy.array([x-self.vacuumE(ren=ren) for x in eigs])
-
-
 

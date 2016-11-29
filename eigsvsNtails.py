@@ -75,7 +75,6 @@ for k in klist:
     print("Total number of tails:", basisl.size)
     print(basisl[:10])
 
-    step = 10
     ntailsList = range(startntails, basisl.size+step, step)
     print("List of ntails:", list(ntailsList))
 
