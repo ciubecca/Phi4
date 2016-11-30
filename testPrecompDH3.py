@@ -120,16 +120,16 @@ for compntails in (ntails,maxntails):
 
 
 
-# print("DH3")
-# print(compDH3[ntails][k]-compDH3[maxntails][k])
+print("DH3")
+print(compDH3[ntails][k]-compDH3[maxntails][k])
 
 # print("V0V4")
 # print(V0V4comp[ntails]-V0V4comp[maxntails])
 # print("V2V4")
-# print(V2V4comp[ntails]-V0V4comp[maxntails])
+# print(V2V4comp[ntails]-V2V4comp[maxntails])
 # print("V4V4")
-# print(V4V4comp[ntails]-V0V4comp[maxntails])
-for n in (0,2,4,6):
-    print("Vll", n)
-    print(Vllcomp[ntails][n]-Vllcomp[maxntails][n])
+# print(V4V4comp[ntails]-V4V4comp[maxntails])
+# for n in (0,2,4,6):
+    # print("Vll", n)
+    # print(Vllcomp[ntails][n]-Vllcomp[maxntails][n])
 

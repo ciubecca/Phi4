@@ -247,21 +247,34 @@ class Phi4():
         ###################################
         self.V0V4[k] = self.Vll[k][4]*self.L
 
-        Vlist = V2V4Ops1(basis)
+        # Vlist = V2V4Ops1(basis)
+        # self.V2V4[k] = Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    # sumTranspose=True, subDiag=False)*self.L**2)
+        # Vlist = V2V4Ops2(basis)
+        # self.V2V4[k] += Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        # sumTranspose=False)*self.L**2)
+
+        Vlist = V2V4Ops(basis)
         self.V2V4[k] = Matrix(basis,basis,
-                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
-                    sumTranspose=True, subDiag=False)*self.L**2)
-        Vlist = V2V4Ops2(basis)
-        self.V2V4[k] += Matrix(basis,basis,
                 self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         sumTranspose=False)*self.L**2)
 
-        Vlist = V4V4Ops1(basis)
+
+
+        # Vlist = V4V4Ops1(basis)
+        # self.V4V4[k] = Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    # sumTranspose=True, subDiag=False)*self.L**2)
+        # Vlist = V4V4Ops2(basis)
+        # self.V4V4[k] += Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        # sumTranspose=False)*self.L**2)
+
+
+        Vlist = V4V4Ops(basis)
         self.V4V4[k] = Matrix(basis,basis,
-                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
-                    sumTranspose=True, subDiag=False)*self.L**2)
-        Vlist = V4V4Ops2(basis)
-        self.V4V4[k] += Matrix(basis,basis,
                 self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         sumTranspose=False)*self.L**2)
 
