@@ -51,8 +51,6 @@ class renVV3():
         self.neval = 10000
 # XXX reset this to 10000
         # self.neval = 10
-# Cancel
-        # self.neval = 10
 
         self.ETlist = ETlist
 

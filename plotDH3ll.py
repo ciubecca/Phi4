@@ -93,7 +93,7 @@ for t in tlist:
         print("ELp={}, ELpp={}".format(ELp,ELpp))
 
         DH3ll = a.computeDH3(basisl, k, ET, ELp, ELpp=ELpp, eps=eps,
-                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix).todense()
+                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix).M.todense()
 
         for index in indexList:
             ret[t][index].append(DH3ll[index])
