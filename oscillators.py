@@ -752,6 +752,7 @@ def V6OpsSelectedFull(basis, Emax):
         nc = 6-nd
 
         dlists = gendlistsfromBasis(basis, nmax, nd, 6)
+        # print(dlists)
         oscList = []
 
         for dlist in dlists:
@@ -768,8 +769,14 @@ def V6OpsSelectedFull(basis, Emax):
 def gendlistsfromBasis(basis, nmax, nd, ntot):
     ret = set()
 
+    # if(ntot==6 and nd==1):
+        # print("nd", nd)
+
     for state in basis:
         ret.update(gendlists(state=state, nd=nd, ntot=ntot, nmax=nmax))
+        # if(ntot==6 and nd==1):
+            # print("state", state)
+            # print(list(gendlists(state=state, nd=nd, ntot=ntot, nmax=nmax)))
     return ret
 
 
@@ -894,104 +901,104 @@ def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
 
 
 
-def V6OpsSelectedHalf(basis):
-    """ Half of the operators of V6 acting on the "selected" basis of states
-    (e.g. the set of "selected" low-energy tails). It takes into account only the
-    annihilation part.
-    Not all the possible annihilation momenta are included. This method is used
-    when computing the local V6 matrix on the low-energy tails
-    """
+# def V6OpsSelectedHalf(basis):
+    # """ Half of the operators of V6 acting on the "selected" basis of states
+    # (e.g. the set of "selected" low-energy tails). It takes into account only the
+    # annihilation part.
+    # Not all the possible annihilation momenta are included. This method is used
+    # when computing the local V6 matrix on the low-energy tails
+    # """
 
-    helper = basis.helper
-    nmax = helper.nmax
-    Emax = basis.Emax
-    oscEnergy = helper.oscEnergy
-
-
-    V06 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 6, 6, nmax))
-
-    for dlist in dlists:
-        # TODO Some of these elements can be excluded
-        V06.append((dlist,[()]))
-
-    V06 = LocOperator(V06, 6, 0, helper)
+    # helper = basis.helper
+    # nmax = helper.nmax
+    # Emax = basis.Emax
+    # oscEnergy = helper.oscEnergy
 
 
-    V15 = []
+    # V06 = []
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 5, 6, nmax))
+    # dlists = set()
+    # for state in basis.stateList:
+        # dlists.update(gendlists(state, 6, 6, nmax))
 
-    for dlist in dlists:
-        k1, k2, k3, k4, k5 = dlist
+    # for dlist in dlists:
+        # # TODO Some of these elements can be excluded
+        # V06.append((dlist,[()]))
 
-        k6 = k1+k2+k3+k4+k5
-        clist = (k6,)
-
-        # TODO Some of these elements can be excluded
-        V15.append((dlist,[clist]))
-
-    V15 = LocOperator(V15, 5, 1, helper)
+    # V06 = LocOperator(V06, 6, 0, helper)
 
 
-    V24 = []
+    # V15 = []
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 4, 6, nmax))
+    # dlists = set()
+    # for state in basis.stateList:
+        # dlists.update(gendlists(state, 5, 6, nmax))
 
-    for dlist in dlists:
-        (k1,k2,k3,k4) = dlist
-        V24.append((dlist,[]))
+    # for dlist in dlists:
+        # k1, k2, k3, k4, k5 = dlist
 
-        for k5 in range(max(-nmax+k1+k2+k3+k4,-nmax),
-                min(int(floor((k1+k2+k3+k4)/2)),nmax)+1):
+        # k6 = k1+k2+k3+k4+k5
+        # clist = (k6,)
 
-            k6 = k1+k2+k3+k4-k5
-            clist = (k5,k6)
+        # # TODO Some of these elements can be excluded
+        # V15.append((dlist,[clist]))
 
-            if oscEnergy(clist) <= Emax+ tol:
-                V24[-1][1].append(clist)
+    # V15 = LocOperator(V15, 5, 1, helper)
 
 
-    V24 = LocOperator(V24, 4, 2, helper)
+    # V24 = []
+
+    # dlists = set()
+    # for state in basis.stateList:
+        # dlists.update(gendlists(state, 4, 6, nmax))
+
+    # for dlist in dlists:
+        # (k1,k2,k3,k4) = dlist
+        # V24.append((dlist,[]))
+
+        # for k5 in range(max(-nmax+k1+k2+k3+k4,-nmax),
+                # min(int(floor((k1+k2+k3+k4)/2)),nmax)+1):
+
+            # k6 = k1+k2+k3+k4-k5
+            # clist = (k5,k6)
+
+            # if oscEnergy(clist) <= Emax+ tol:
+                # V24[-1][1].append(clist)
+
+
+    # V24 = LocOperator(V24, 4, 2, helper)
 
 
 
-    V33 = []
+    # V33 = []
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 3, 6, nmax))
+    # dlists = set()
+    # for state in basis.stateList:
+        # dlists.update(gendlists(state, 3, 6, nmax))
 
-    for dlist in dlists:
-        (k1,k2,k3) = dlist
-        V33.append((dlist,[]))
+    # for dlist in dlists:
+        # (k1,k2,k3) = dlist
+        # V33.append((dlist,[]))
 
-        for k4 in range(-nmax, nmax+1):
+        # for k4 in range(-nmax, nmax+1):
 
-            for k5 in range(max(-nmax+k1+k2+k3-k4,-nmax),
-                min(int(floor((k1+k2+k3-k4)/2)),nmax)+1):
+            # for k5 in range(max(-nmax+k1+k2+k3-k4,-nmax),
+                # min(int(floor((k1+k2+k3-k4)/2)),nmax)+1):
 
-                k6 = k1+k2+k3-k4-k5
-                clist = (k4,k5,k6)
+                # k6 = k1+k2+k3-k4-k5
+                # clist = (k4,k5,k6)
 
-                if oscEnergy(clist) <= Emax+ tol \
-                    and sorted([abs(min(dlist)),abs(max(dlist))]) <= \
-                        sorted([abs(min(clist)),abs(max(clist))]):
-                        # XXX This is a generalization of the lexicographical
-#sorting condition
-                    V33[-1][1].append(clist)
+                # if oscEnergy(clist) <= Emax+ tol \
+                    # and sorted([abs(min(dlist)),abs(max(dlist))]) <= \
+                        # sorted([abs(min(clist)),abs(max(clist))]):
+                        # # XXX This is a generalization of the lexicographical
+# #sorting condition
+                    # V33[-1][1].append(clist)
 
 
-    V33 = LocOperator(V33, 3, 3, helper)
+    # V33 = LocOperator(V33, 3, 3, helper)
 
-    return V06, V15, V24, V33
+    # return V06, V15, V24, V33
 
 
 

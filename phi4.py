@@ -37,7 +37,12 @@ class Phi4():
         self.basish = {}
         self.basisl = {}
         self.DH3ll = {k:None for k in (-1,1)}
-        self.compDH3ll = {k:None for k in (-1,1)}
+        self.compDH3 = {k:None for k in (-1,1)}
+        self.compDH2 = {k:None for k in (-1,1)}
+        self.V0V4comp = {k:None for k in (-1,1)}
+        self.V2V4comp = {k:None for k in (-1,1)}
+        self.V4V4comp = {k:None for k in (-1,1)}
+        self.Vllcomp = {k:{} for k in (-1,1)}
 
 
 # "raw" are the raw eigenvalues
@@ -234,6 +239,7 @@ class Phi4():
         self.Vll[k][6] = Matrix(basis,basis,
                 self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
                     sumTranspose=False)*self.L)
+        # print(self.Vll[k][6].M)
 
         ###################################
         # Generate all the "bilocal" matrices on the selected
@@ -292,7 +298,15 @@ class Phi4():
             else:
                 DH3ll = self.DH3ll[k].sub(subbasisl, subbasisl).M
 
-            self.compDH3ll[k] = DH3ll
+            self.compDH3[k] = DH3ll
+            self.compDH2[k] = DH2ll
+            # self.compDH2ll[k] = DH3ll
+            self.V0V4comp[k] = self.V0V4comp[k].sub(subbasisl,subbasisl).M
+            self.V2V4comp[k] = self.V2V4comp[k].sub(subbasisl,subbasisl).M
+            self.V4V4comp[k] = self.V4V4comp[k].sub(subbasisl,subbasisl).M
+            for n in (0,2,4,6):
+                self.Vllcomp[k][n] = self.Vllcomp[k][n].sub(subbasisl,subbasisl).M
+
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
@@ -485,12 +499,16 @@ class Phi4():
             Vll = {}
             for n in (0,2,4,6):
                 Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
+                self.Vllcomp[k][n] = self.Vll[k][n].sub(subbasisl, subbasisl)
 
 
             V0V4 = self.V0V4[k].sub(subbasisl,subbasisl).M
             V2V4 = self.V2V4[k].sub(subbasisl,subbasisl).M
             V4V4 = self.V4V4[k].sub(subbasisl,subbasisl).M
 
+            self.V0V4comp[k] = self.V0V4[k].sub(subbasisl,subbasisl)
+            self.V2V4comp[k] = self.V2V4[k].sub(subbasisl,subbasisl)
+            self.V4V4comp[k] = self.V4V4[k].sub(subbasisl,subbasisl)
 
             DH3ll += V0V4*self.VV3.V0V4[ELp]*self.g4**3
             DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3

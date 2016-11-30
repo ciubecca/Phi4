@@ -50,7 +50,7 @@ class renVV3():
     def __init__(self, ETlist, m, eps):
         self.neval = 10000
 # XXX reset this to 10000
-        self.neval = 500
+        self.neval = 10
 # Cancel
         # self.neval = 10
 
@@ -79,8 +79,8 @@ class renVV3():
 
 
 # XXX reset this to 1000
-        self.neval = 1000
-        self.neval = 500
+        self.neval = 10000
+        self.neval = 10
 # Local corrections to V6
         self.VV3loc[6] = self.computeIntegral(1, phi6_1)
 # NOTE This is overestimated
@@ -94,7 +94,7 @@ class renVV3():
 
 # XXX reset this to 10000
         self.neval = 10000
-        self.neval = 500
+        self.neval = 10
         # Bilocal corrections
         self.V0V4 = self.computeIntegral(3, phi0phi4_1)
         self.V2V4 = self.computeIntegral(2, phi2phi4_1)
