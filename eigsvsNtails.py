@@ -14,10 +14,10 @@ saveondb = True
 # saveondb = False
 m = 1
 # List of parity quantum numbers
-klist = (1,-1)
+klist = (1,)
 
 # Maximum number of tails (in order of overlap with the vacuum) to include
-maxntails = 100
+maxntails = 300
 startntails = 20
 step = 10
 

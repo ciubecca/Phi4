@@ -14,14 +14,14 @@ renlist = ("raw", "renloc", "rentails")
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-neigs = 1
+neigs = 3
 
 klist = (1,-1)
 
 # Ratio ELpp/ELp
 ratio3 = 1.5
 
-maxntails = 100
+maxntails = 300
 step = 10
 startntails = 20
 ntailsList = list(range(startntails, maxntails+step, step))
