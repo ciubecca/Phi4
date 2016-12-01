@@ -91,6 +91,8 @@ for k in klist:
 
     for ET in ETlist:
 
+        print("ET", ET)
+
         EL = ratioELET*ET
         ELp = ratioELpET*ET
         ELpp = ratioELppELp*ELp
