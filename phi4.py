@@ -19,7 +19,8 @@ class Phi4():
 
         self.m = m
         self.L = L
-        self.nchunks = 10
+# Maximum dimension of the chunks for computing Vhh
+        self.chunklen = 20000
 
         self.basis = {}
         self.h0 = {}
@@ -405,19 +406,23 @@ class Phi4():
         basis = subbasish
         Vhhlist = V4OpsSelectedHalf(basis)
 
-        nchunks = min(self.nchunks, basis.size)
 
-        chunklen = int(math.ceil(basis.size/nchunks))
+        chunklen = min(self.chunklen, basis.size)
+
+        print("self.chunklen", self.chunklen)
+        print("basis size", basis.size)
+
         idxLists = [range(basis.size)[x:x+chunklen] for x in
                 range(0, basis.size, chunklen)]
 
-        for n in range(nchunks):
+        print(idxLists)
+
+
+        for idxList in idxLists:
             ##############################
             # Generate the Vhh matrix
             ##############################
-            # print("Computing Vhh chunk ", n)
 
-            idxList = idxLists[n]
 
 # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
 # TODO Do this more elegantly with iterators ?
@@ -460,14 +465,18 @@ class Phi4():
 
             VhHlist = V4OpsSelectedFull(subbasish, ELpp)
 
-            nchunks = min(basis.size, self.nchunks)
 
-            chunklen = int(math.ceil(basis.size/nchunks))
+            chunklen = min(self.chunklen, basis.size)
+
+            print("self.chunklen", self.chunklen)
+            print("basis size", basis.size)
+
             idxLists = [range(basis.size)[x:x+chunklen] for x in
-                    range(0, basis.size, chunklen)]
+                range(0, basis.size, chunklen)]
 
-            for n in range(nchunks):
-                idxList = idxLists[n]
+            print(idxLists)
+
+            for idxList in idxLists:
 
                 VhHPart =  self.buildMatrix(VhHlist, basis, lookupbasis,
                         ignKeyErr=True, sumTranspose=False, idxList=idxList)*self.L
