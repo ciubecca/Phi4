@@ -14,9 +14,13 @@ saveondb = True
 # saveondb = False
 m = 1
 # List of parity quantum numbers
-klist = (1,-1)
-# Minimum overlap with the raw vacuum for selecting a state in the tails
-minoverlap = 10**(-2)
+klist = (1,)
+
+# Maximum number of tails (in order of overlap with the vacuum) to include
+maxntails = 300
+startntails = 20
+step = 10
+
 # Ratio between ELpp and ELp
 ratio3 = 1.5
 # Ratio between EL and ET
@@ -38,7 +42,7 @@ ELp = float(argv[5])
 
 ELpp = ratio3*ELp
 
-print("minoverlap:", minoverlap)
+print("maxntails:", maxntails)
 print("ELpp/ELp:", ratio3)
 
 
@@ -63,13 +67,15 @@ for k in klist:
     print("Computing raw eigenvalues")
     a.computeEigval(k, ET, "raw")
 
-    # Select a set of tails and construct a Basis object
-    vectorlist = [state for i,state in enumerate(a.basis[k])
-        if abs(a.eigenvectors["raw"][k][0][i]) > minoverlap]
+    # Select a set of tails and construct a Basis object, ordered in overlap with
+    # the vacuum
+    vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
+            -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
     basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
     print("Total number of tails:", basisl.size)
+    print(basisl[:10])
 
-    ntailsList = range(2, basisl.size, 4)
+    ntailsList = range(startntails, basisl.size+step, step)
     print("List of ntails:", list(ntailsList))
 
 
@@ -107,6 +113,7 @@ for k in klist:
 
     a.calcVV3([ELp], eps)
 
+    a.precomputeDH3(k, ET, ELp, ELpp, eps)
 
     for ntails in ntailsList:
 
@@ -119,7 +126,7 @@ for k in klist:
         print("Number of tails:", a.ntails)
 
         if saveondb:
-            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
+            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g,
                 EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps, neigs=neigs,
                 loc2=True, loc3=True, loc3mix=True, nonloc3mix=True, basisSize=a.compSize)
 

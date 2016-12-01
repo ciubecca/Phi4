@@ -17,8 +17,9 @@ saveondb = True
 m = 1
 # List of parity quantum numbers
 klist = (1,-1)
-# Minimum overlap with the raw vacuum for selecting a state in the tails
-minoverlap = 10**(-2)
+# Maximum number of tails
+maxntails = 200
+
 # Ratio between ELpp and ELp
 ratio3 = 1.5
 # Ratio between EL and ET
@@ -47,7 +48,6 @@ EL = ratio2*ET
 ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
 print("ELplist:", ELplist)
 
-print("minoverlap:", minoverlap)
 print("ELpp/ELp:", ratio3)
 print("EL/ET:", ratio2)
 
@@ -72,11 +72,13 @@ for k in klist:
     print("Computing raw eigenvalues for highest cutoff")
     a.computeEigval(k, ET, "raw")
 
-    # Select a set of tails and construct a Basis object
-    vectorlist = [state for i,state in enumerate(a.basis[k])
-        if abs(a.eigenvectors["raw"][k][0][i]) > minoverlap]
-    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
+    # Select a set of tails and construct a Basis object, ordered in overlap with
+    # the vacuum
+    vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
+            -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
+    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
     print("Total number of tails:", basisl.size)
+    print(basisl[:10])
 
 
     print("Generating high energy basis...")
@@ -131,7 +133,7 @@ for k in klist:
 
 
             if saveondb:
-                datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, minoverlap=minoverlap,
+                datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g,
                     EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps, neigs=neigs,
                     loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, basisSize=a.compSize)
 

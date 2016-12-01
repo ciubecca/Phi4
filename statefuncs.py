@@ -100,8 +100,8 @@ class Basis():
         self.parityList = [int(state==reverse(state)) for state in self.stateList]
 
         try:
-            self.Emax = self.energyList[-1]
-            self.Emin = self.energyList[0]
+            self.Emax = max(self.energyList)
+            self.Emin = min(self.energyList)
         except IndexError:
             self.Emax = None
             self.Emin = None

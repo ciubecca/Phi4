@@ -36,6 +36,8 @@ class Phi4():
         self.basisH = {}
         self.basish = {}
         self.basisl = {}
+        self.DH3ll = {k:None for k in (-1,1)}
+
 
 # "raw" are the raw eigenvalues
 # "renloc" are the eigenvalues where the DH2, DH3 corrections are only computed in
@@ -231,6 +233,7 @@ class Phi4():
         self.Vll[k][6] = Matrix(basis,basis,
                 self.buildMatrix(Vlist, basis, basis, ignKeyErr=True,
                     sumTranspose=False)*self.L)
+        # print(self.Vll[k][6].M)
 
         ###################################
         # Generate all the "bilocal" matrices on the selected
@@ -238,21 +241,34 @@ class Phi4():
         ###################################
         self.V0V4[k] = self.Vll[k][4]*self.L
 
-        Vlist = V2V4Ops1(basis)
+        # Vlist = V2V4Ops1(basis)
+        # self.V2V4[k] = Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    # sumTranspose=True, subDiag=False)*self.L**2)
+        # Vlist = V2V4Ops2(basis)
+        # self.V2V4[k] += Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        # sumTranspose=False)*self.L**2)
+
+        Vlist = V2V4Ops(basis)
         self.V2V4[k] = Matrix(basis,basis,
-                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
-                    sumTranspose=True, subDiag=False)*self.L**2)
-        Vlist = V2V4Ops2(basis)
-        self.V2V4[k] += Matrix(basis,basis,
                 self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         sumTranspose=False)*self.L**2)
 
-        Vlist = V4V4Ops1(basis)
+
+
+        # Vlist = V4V4Ops1(basis)
+        # self.V4V4[k] = Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                    # sumTranspose=True, subDiag=False)*self.L**2)
+        # Vlist = V4V4Ops2(basis)
+        # self.V4V4[k] += Matrix(basis,basis,
+                # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
+                        # sumTranspose=False)*self.L**2)
+
+
+        Vlist = V4V4Ops(basis)
         self.V4V4[k] = Matrix(basis,basis,
-                self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
-                    sumTranspose=True, subDiag=False)*self.L**2)
-        Vlist = V4V4Ops2(basis)
-        self.V4V4[k] += Matrix(basis,basis,
                 self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         sumTranspose=False)*self.L**2)
 
@@ -282,8 +298,13 @@ class Phi4():
             DH2Ll = DH2lL.transpose()
             DH2ll = Matrix(subbasisl, subbasisL, DH2Ll).sub(subbasisl, subbasisl).M.tocsc()
 
-            DH3ll = self.computeDH3(subbasisl, k, ET=ET, ELp=ELp, ELpp=ELpp, eps=eps,
-                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
+
+            if self.DH3ll[k] == None:
+                DH3ll = self.computeDH3(subbasisl, k, ET=ET, ELp=ELp, ELpp=ELpp, eps=eps,
+                        loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix).M
+            else:
+                DH3ll = self.DH3ll[k].sub(subbasisl, subbasisl).M
+
 
             return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
 
@@ -348,17 +369,21 @@ class Phi4():
         return DH2lL
 
 
+    def precomputeDH3(self, k, ET, ELp, ELpp, eps, loc3=True, loc3mix=True, nonloc3mix=True):
+
+        self.DH3ll[k] = self.computeDH3(self.basisl[k], k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix)
+
+
+
     def computeDH3(self, subbasisl, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
 
+        print("Computing DH3")
 
         helper = self.basish[k].helper
         subbasish = self.basish[k].sub(lambda v: ET<helper.energy(v)<=ELp)
         energyArr = array(subbasish.energyList)
         propagatorh = scipy.sparse.spdiags(1/(eps-energyArr),0,subbasish.size,
                 subbasish.size)
-
-
-
 
 # Local renormalization matrices used to approximate the sum over states with energy
 # above EL
@@ -469,7 +494,6 @@ class Phi4():
 #####################################################
 
         if loc3:
-
             Vll = {}
             for n in (0,2,4,6):
                 Vll[n] = self.Vll[k][n].sub(subbasisl, subbasisl).M
@@ -484,15 +508,15 @@ class Phi4():
             DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3
             DH3ll += V4V4*self.VV3.V4V4[ELp]*self.g4**3
 
-            print("matrix element:", Vll[0].todense()[0,0])
-            print("ren coefficient:", self.VV3.VV3loc[0][ELp])
+            # print("matrix element:", Vll[0].todense()[0,0])
+            # print("ren coefficient:", self.VV3.VV3loc[0][ELp])
 
             DH3ll += Vll[0]*self.VV3.VV3loc[0][ELp]*self.g4**3
             DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*self.g4**3
             DH3ll += Vll[4]*self.VV3.VV3loc[4][ELp]*self.g4**3
             DH3ll += Vll[6]*self.VV3.VV3loc[6][ELp]*self.g4**3
 
-        return DH3ll
+        return Matrix(subbasisl, subbasisl, DH3ll)
 
 
 
@@ -501,9 +525,9 @@ class Phi4():
         self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ELplist)
 
 
-        print("Bilocal g^3 ren coefficients: ", self.VV3.V0V4, self.VV3.V2V4, self.VV3.V4V4)
+        # print("Bilocal g^3 ren coefficients: ", self.VV3.V0V4, self.VV3.V2V4, self.VV3.V4V4)
 
-        print("Local g^3 ren coefficients: ", self.VV3.VV3loc)
+        # print("Local g^3 ren coefficients: ", self.VV3.VV3loc)
 
 
     def setCouplings(self, g0=0, g2=0, g4=0):
@@ -567,6 +591,4 @@ class Phi4():
             return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[1:]])
         elif k==-1:
             return scipy.array([x-self.vacuumE(ren=ren) for x in eigs])
-
-
 
