@@ -104,8 +104,8 @@ plotvsET(ETlist)
 
 for k in klist:
 
-    title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}".format(g,L,k)
-    fname = "g={0:.1f}_L={1:.1f}.{2}".format(g,L,output)
+    title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}, maxntails={3}".format(g,L,k,maxntails)
+    fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}".format(g,L,maxntails,output)
     loc = "lower right"
 
     plt.figure(fignum(k), figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
