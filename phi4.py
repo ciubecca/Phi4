@@ -405,11 +405,13 @@ class Phi4():
         basis = subbasish
         Vhhlist = V4OpsSelectedHalf(basis)
 
-        chunklen = int(math.ceil(basis.size/self.nchunks))
+        nchunks = min(self.nchunks, basis.size)
+
+        chunklen = int(math.ceil(basis.size/nchunks))
         idxLists = [range(basis.size)[x:x+chunklen] for x in
                 range(0, basis.size, chunklen)]
 
-        for n in range(self.nchunks):
+        for n in range(nchunks):
             ##############################
             # Generate the Vhh matrix
             ##############################
@@ -458,11 +460,13 @@ class Phi4():
 
             VhHlist = V4OpsSelectedFull(subbasish, ELpp)
 
-            chunklen = int(math.ceil(basis.size/self.nchunks))
+            nchunks = min(basis.size, self.nchunks)
+
+            chunklen = int(math.ceil(basis.size/nchunks))
             idxLists = [range(basis.size)[x:x+chunklen] for x in
                     range(0, basis.size, chunklen)]
 
-            for n in range(self.nchunks):
+            for n in range(nchunks):
                 idxList = idxLists[n]
 
                 VhHPart =  self.buildMatrix(VhHlist, basis, lookupbasis,
