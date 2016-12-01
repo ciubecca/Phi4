@@ -25,7 +25,7 @@ class Database():
         for e in t1:
             if all([abs(e[key]-value)<10.**(-12.)
                 for key,value in approxQuery.items()]) and \
-                    all([value[0]<=e[key]<value[1] for key,value in boundQuery.items()]):
+                    all([value[0]<=e[key]<=value[1] for key,value in boundQuery.items()]):
                 if obj=='eigv':
                     listRes.append(scipy.fromstring(e[obj]).reshape(
                         e['neigs'], e['basisSize']))
@@ -37,4 +37,5 @@ class Database():
         if orderBy==None:
             return listRes
         else:
+# FIXME ??
             return [y for (x,y) in sorted(zip(orderBy, listRes))]
