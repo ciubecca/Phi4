@@ -14,7 +14,7 @@ renlist = ("rentails",)
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-klist = (1,)
+klist = (1,-1)
 
 neigs = 3
 
@@ -104,8 +104,12 @@ plotvsET(ETlist)
 
 for k in klist:
 
-    title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}, maxntails={3}".format(g,L,k,maxntails)
-    fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}".format(g,L,maxntails,output)
+    title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}, maxntails={3},"\
+                "$E_L/E_T$={4:.1f}, $E_L'/E_T$={5:.1f}, $E_L''/E_T={6:.1f}$"\
+                .format(g,L,k,maxntails,ratioELET,ratioELpET,ratioELppELp)
+    fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}_"\
+                "ELET={3}_ELpET={4}_ELppELp={5}.{6}"\
+                .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp,output)
     loc = "lower right"
 
     plt.figure(fignum(k), figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
