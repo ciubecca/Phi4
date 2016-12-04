@@ -17,7 +17,7 @@ m = 1
 klist = (1,)
 
 # Maximum number of tails (in order of overlap with the vacuum) to include
-maxntails = 300
+maxntails = 200
 startntails = 20
 step = 10
 

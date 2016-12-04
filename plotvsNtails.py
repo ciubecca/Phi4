@@ -16,12 +16,12 @@ rc('text', usetex=True)
 
 neigs = 3
 
-klist = (1,-1)
+klist = (1,)
 
 # Ratio ELpp/ELp
 ratio3 = 1.5
 
-maxntails = 300
+maxntails = 200
 step = 10
 startntails = 20
 ntailsList = list(range(startntails, maxntails+step, step))

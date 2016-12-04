@@ -14,7 +14,7 @@ renlist = ("rentails",)
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-klist = (1,-1)
+klist = (1,)
 
 neigs = 3
 
@@ -26,7 +26,7 @@ ratioELpET = 1.5
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-maxntails = 200
+maxntails = 300
 
 
 def fignum(k):
