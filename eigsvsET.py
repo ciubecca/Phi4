@@ -24,7 +24,7 @@ ratioELpET = 1.5
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-neigs = 10
+neigs = 1
 
 argv = sys.argv
 if len(argv) < 5:
@@ -97,12 +97,12 @@ for k in klist:
         ELp = ratioELpET*ET
         ELpp = ratioELppELp*ELp
 
-        a.computeEigval(k, ET, "raw")
+        a.computeEigval(k, ET, "raw", neigs=neigs)
         print("Raw vacuum:", a.eigenvalues["raw"][k][0])
         eps = a.eigenvalues["raw"][k][0]
 
 
-        a.computeEigval(k, ET, "renloc", eps=eps)
+        a.computeEigval(k, ET, "renloc", eps=eps, neigs=neigs)
         print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
         eps = a.eigenvalues["renloc"][k][0]
 

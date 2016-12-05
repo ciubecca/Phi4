@@ -14,14 +14,14 @@ renlist = ("raw", "renloc", "rentails")
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-neigs = 3
+neigs = 1
 
 klist = (1,)
 
 # Ratio ELpp/ELp
 ratio3 = 1.5
 
-maxntails = 200
+maxntails = 400
 step = 10
 startntails = 20
 ntailsList = list(range(startntails, maxntails+step, step))
@@ -56,7 +56,12 @@ def plotvsntails(ntailsList):
         for ntails in ntailsList[k]:
             exactQuery["ntails"] = ntails
 
-            spectrum[k].append(db.getObjList('spec', exactQuery, approxQuery)[0])
+            try:
+                spectrum[k].append(db.getObjList('spec', exactQuery, approxQuery)[0])
+            except IndexError as e:
+                print(approxQuery)
+                print(exactQuery)
+                raise(e)
 
 
 

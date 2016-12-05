@@ -17,33 +17,36 @@ m = 1
 klist = (1,)
 
 # Maximum number of tails (in order of overlap with the vacuum) to include
-maxntails = 200
+maxntails = 300
 startntails = 20
 step = 10
 
-# Ratio between ELpp and ELp
-ratio3 = 1.5
-# Ratio between EL and ET
-# ratio2 = 2
 neigs = 10
 
-
+# Ratio between EL and ET
+ratioELET = 1.5
+# Ratio between ELp and ET
+ratioELpET = 1.5
+# Ratio between ELpp and ELp
+ratioELppELp = 1.5
 
 argv = sys.argv
-if len(argv) < 6:
-    print(argv[0], "<L> <g> <ET> <EL> <ELp>")
+if len(argv) < 4:
+    print(argv[0], "<L> <g> <ET>")
     sys.exit(-1)
 
 L = float(argv[1])
 g = float(argv[2])
 ET = float(argv[3])
-EL = float(argv[4])
-ELp = float(argv[5])
 
-ELpp = ratio3*ELp
+EL = ratioELET*ET
+ELp = ratioELpET*ET
+ELpp = ratioELppELp*ELp
 
 print("maxntails:", maxntails)
-print("ELpp/ELp:", ratio3)
+print("EL/ET:", ratioELET)
+print("ELp/ET:", ratioELpET)
+print("ELpp/ELp", ratioELppELp)
 
 
 if saveondb:

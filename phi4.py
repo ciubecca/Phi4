@@ -251,6 +251,8 @@ class Phi4():
                 # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         # sumTranspose=False)*self.L**2)
 
+        print("Computing V2V4")
+
         Vlist = V2V4Ops(basis)
         self.V2V4[k] = Matrix(basis,basis,
                 self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
@@ -267,6 +269,8 @@ class Phi4():
                 # self.buildMatrix(Vlist,basis,basis,ignKeyErr=True,
                         # sumTranspose=False)*self.L**2)
 
+
+        print("Computing V4V4")
 
         Vlist = V4V4Ops(basis)
         self.V4V4[k] = Matrix(basis,basis,
@@ -409,19 +413,15 @@ class Phi4():
 
         chunklen = min(self.chunklen, basis.size)
 
-        print("self.chunklen", self.chunklen)
-        print("basis size", basis.size)
-
         idxLists = [range(basis.size)[x:x+chunklen] for x in
                 range(0, basis.size, chunklen)]
 
-        print(idxLists)
 
-
-        for idxList in idxLists:
+        for i,idxList in enumerate(idxLists):
             ##############################
             # Generate the Vhh matrix
             ##############################
+            print("Doing chunk", i, "for Vhh")
 
 
 # NOTE Trick to save memory: we never compute explicitly the full matrix Vhh
@@ -468,15 +468,12 @@ class Phi4():
 
             chunklen = min(self.chunklen, basis.size)
 
-            print("self.chunklen", self.chunklen)
-            print("basis size", basis.size)
-
             idxLists = [range(basis.size)[x:x+chunklen] for x in
                 range(0, basis.size, chunklen)]
 
-            print(idxLists)
+            for i, idxList in enumerate(idxLists):
 
-            for idxList in idxLists:
+                print("doing chunk", i, "for VhH")
 
                 VhHPart =  self.buildMatrix(VhHlist, basis, lookupbasis,
                         ignKeyErr=True, sumTranspose=False, idxList=idxList)*self.L
@@ -521,8 +518,6 @@ class Phi4():
             DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3
             DH3ll += V4V4*self.VV3.V4V4[ELp]*self.g4**3
 
-            # print("matrix element:", Vll[0].todense()[0,0])
-            # print("ren coefficient:", self.VV3.VV3loc[0][ELp])
 
             DH3ll += Vll[0]*self.VV3.VV3loc[0][ELp]*self.g4**3
             DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*self.g4**3
