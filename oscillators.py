@@ -62,7 +62,7 @@ def repr1torepr3(state):
 
 
 
-# XXX speed this up?
+# XXX This is slow!!!
 def gendlistPairs(state, ndPair, ntotPair, nmax):
 
     staterepr3 = repr1torepr3(state)

@@ -14,7 +14,7 @@ renlist = ("raw", "renloc", "rentails")
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-neigs = 1
+neigs = 10
 
 klist = (1,)
 
@@ -31,8 +31,12 @@ step = 10
 startntails = 20
 ntailsList = list(range(startntails, maxntails+step, step))
 ntailsList = {1:ntailsList, -1:ntailsList}
-
 print("ntailsList", ntailsList)
+
+
+ETlist = [15,20]
+print("ETlist", ETlist)
+
 
 def fignum(k):
     if k==1:
@@ -50,52 +54,52 @@ def plotvsntails(ntailsList):
 
     exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
             "ren":"rentails"}
-    approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET, "ELp":ELp}
-    approxQuery["ELpp"] = ELpp
-    spectrum = {k:[] for k in klist}
+    spectrum = {}
 
     for k in klist:
+        spectrum[k] = {ET:[] for ET in ETlist}
+
         xlist[k] = ntailsList[k]
         exactQuery["k"] = k
 
-        for ntails in ntailsList[k]:
-            exactQuery["ntails"] = ntails
+        for ET in ETlist:
 
-            try:
-                spectrum[k].append(db.getObjList('spec', exactQuery, approxQuery)[0])
-            except IndexError as e:
-                print(approxQuery)
-                print(exactQuery)
-                raise(e)
+            EL = ratioELET*ET
+            ELp = ratioELpET*ET
+            ELpp = ratioELppELp*ELp
+
+            approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET, "ELp":ELp, "ELpp":ELpp}
 
 
+            for ntails in ntailsList[k]:
+                exactQuery["ntails"] = ntails
+
+                try:
+                    spectrum[k][ET].append(db.getObjList('spec', exactQuery, approxQuery)[0])
+                except IndexError as e:
+                    print(approxQuery)
+                    print(exactQuery)
+                    raise(e)
 
 
     # SPECTRUM
     for k in klist:
         plt.figure(fignum(k))
-        sp = array(spectrum[k])
-        for i in range(neigs):
-            data = sp[:,i]
-            plt.plot(xlist[k], data)
+        for ET in ETlist:
+            data = array(spectrum[k][ET])[:,0]
+            plt.plot(xlist[k], data, label="ET="+str(ET))
 
 
 
 argv = sys.argv
 
 
-if len(argv) < 4:
-    print(argv[0], "<L> <g> <ET>")
+if len(argv) < 3:
+    print(argv[0], "<L> <g>")
     sys.exit(-1)
 
 L = float(argv[1])
 g = float(argv[2])
-ET = float(argv[3])
-
-
-EL = ratioELET*ET
-ELp = ratioELpET*ET
-ELpp = ratioELppELp*ELp
 
 
 params = {'legend.fontsize': 8}
@@ -110,17 +114,18 @@ plotvsntails(ntailsList)
 
 for k in klist:
 
-    title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L'$={4:.1f},$E_L''$={5:.1f}".format(g,L,ET,EL,ELp,ELpp)
-    fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}_ELp={4:.1f}_ELpp={5:.1f}.{6}".format(g,L,ET,EL,ELp,ELpp,output)
-    loc = "lower right"
+    title = r"$g$={0:.1f}, $L$={1:.1f}, $E_L/E_T$={2:.1f}, $E_L'/E_T$={3:.1f},"\
+            "$E_L''/E_L'$={4:.1f}".format(g,L,ratioELET,ratioELpET,ratioELppELp)
+    fname = "g={0:.1f}_L={1:.1f}.{2}".format(g,L,output)
+    loc = "upper right"
 
     plt.figure(fignum(k), figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     plt.title(title)
     plt.xlabel("ntails")
     plt.ylabel(r"$E_i$")
-    # plt.legend(loc=loc)
+    plt.legend(loc=loc)
 
     if k==1:
-        plt.savefig("evenvsTails_"+fname)
+        plt.savefig("evenvsTailsAndET_"+fname)
     elif k==-1:
-        plt.savefig("oddvsTails_"+fname)
+        plt.savefig("oddvsTailsAndET_"+fname)
