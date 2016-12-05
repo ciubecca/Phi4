@@ -14,7 +14,7 @@ renlist = ("rentails",)
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-klist = (1,)
+klist = (1,-1)
 
 neigs = 3
 
@@ -26,7 +26,7 @@ ratioELpET = 1.5
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-maxntails = 300
+maxntails = 200
 
 
 def fignum(k):
@@ -34,6 +34,7 @@ def fignum(k):
         return 1
     elif k==-1:
         return 2
+
 
 def plotvsET(ETlist):
 
@@ -46,11 +47,14 @@ def plotvsET(ETlist):
     boundQuery = {"ntails": (0,maxntails)}
 
     spectrum = {k:[] for k in klist}
+    ntails = {k:[] for k in klist}
 
     for k in klist:
         exactQuery["k"] = k
 
         for ET in ETlist:
+
+            # print("ET=",ET)
 
             EL = ratioELET*ET
             ELp = ratioELpET*ET
@@ -64,7 +68,10 @@ def plotvsET(ETlist):
 
             # NOTE We select the entry with the highest ntails below maxntails
             spectrum[k].append(db.getObjList('spec', exactQuery, approxQuery,
-                boundQuery, orderBy="ntails")[0])
+                boundQuery, orderBy="ntails")[-1])
+
+            ntails[k].append(db.getObjList('ntails', exactQuery, approxQuery,
+                boundQuery, orderBy="ntails")[-1])
 
 
     # SPECTRUM
@@ -75,6 +82,10 @@ def plotvsET(ETlist):
             data = sp[:,i]
             plt.plot(xlist, data)
 
+    plt.figure(3)
+    for k in klist:
+        y = array(ntails[k])
+        plt.plot(xlist,y,label="k="+str(k))
 
 
 argv = sys.argv
@@ -102,6 +113,10 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 
 plotvsET(ETlist)
 
+
+
+# NOTE plot of the spectrum
+
 for k in klist:
 
     title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}, maxntails={3},"\
@@ -122,3 +137,20 @@ for k in klist:
         plt.savefig("evenvsET_"+fname)
     else:
         plt.savefig("oddvsET_"+fname)
+
+
+
+
+# NOTE Plot of the number of tails
+
+title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2}".format(g,L,maxntails)
+fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}".format(g,L,maxntails,output)
+loc = "lower right"
+
+plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_{T}$")
+plt.ylabel(r"numtails")
+plt.legend(loc=loc)
+
+plt.savefig("tailsvsET_"+fname)

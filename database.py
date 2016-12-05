@@ -20,12 +20,16 @@ class Database():
 
     # Get a list of all objects satisfying the query
     def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={}, orderBy=None):
-        t1 = [e for e in self.table.find(**exactQuery)]
+
         listRes = []
+        orderKey = []
+
+        t1 = [e for e in self.table.find(**exactQuery)]
+
         for e in t1:
-            if all([abs(e[key]-value)<10.**(-12.)
-                for key,value in approxQuery.items()]) and \
-                    all([value[0]<=e[key]<=value[1] for key,value in boundQuery.items()]):
+            if all([abs(e[key]-value)<10.**(-12.) for key,value in approxQuery.items()]) \
+                and all([value[0]<=e[key]<=value[1] for key,value in boundQuery.items()]):
+
                 if obj=='eigv':
                     listRes.append(scipy.fromstring(e[obj]).reshape(
                         e['neigs'], e['basisSize']))
@@ -34,8 +38,10 @@ class Database():
                 else:
                     listRes.append(e[obj])
 
+                if orderBy!=None:
+                    orderKey.append(e[orderBy])
+
         if orderBy==None:
             return listRes
         else:
-# FIXME ??
-            return [y for (x,y) in sorted(zip(orderBy, listRes))]
+            return [y for (x,y) in sorted(zip(orderKey, listRes),key=lambda pair:pair[0])]
