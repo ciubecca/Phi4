@@ -14,9 +14,9 @@ renlist = ("rentails",)
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-klist = (1,-1)
+klist = (1,)
 
-neigs = 3
+neigs = 1
 
 
 # Ratio between EL and ET
@@ -26,7 +26,7 @@ ratioELpET = 1.5
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-maxntails = 200
+maxntails = 300
 
 
 def fignum(k):
@@ -112,7 +112,6 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 
 
 plotvsET(ETlist)
-
 
 
 # NOTE plot of the spectrum

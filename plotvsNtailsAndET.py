@@ -26,7 +26,7 @@ ratioELpET = 1.5
 ratioELppELp = 1.5
 
 
-maxntails = 300
+maxntails = 100
 step = 10
 startntails = 20
 ntailsList = list(range(startntails, maxntails+step, step))
@@ -34,7 +34,7 @@ ntailsList = {1:ntailsList, -1:ntailsList}
 print("ntailsList", ntailsList)
 
 
-ETlist = [15,20]
+ETlist = [15,20,24]
 print("ETlist", ETlist)
 
 

@@ -18,9 +18,9 @@ klist = (1,-1)
 maxntails = 200
 
 # Ratio between EL and ET
-ratioELET = 1.5
+ratioELET = 2
 # Ratio between ELp and ET
-ratioELpET = 1.5
+ratioELpET = 2
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 

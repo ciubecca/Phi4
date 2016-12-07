@@ -26,7 +26,7 @@ ratioELpET = 1.5
 ratioELppELp = 1.5
 
 
-maxntails = 300
+maxntails = 400
 step = 10
 startntails = 20
 ntailsList = list(range(startntails, maxntails+step, step))
@@ -44,12 +44,10 @@ def fignum(k):
 def plotvsntails(ntailsList):
 
     xlist = {}
-    nonloc3mix, loc3mix, loc3 = True, True, True
 
     db = database.Database()
 
-    exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
-            "ren":"rentails"}
+    exactQuery = {"ren":"rentails"}
     approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET, "ELp":ELp}
     approxQuery["ELpp"] = ELpp
     spectrum = {k:[] for k in klist}
