@@ -15,12 +15,12 @@ m = 1
 klist = (1,-1)
 # Maximum number of tails
 # NOTE The actual number of tails can increase for higher ET
-maxntails = 200
+maxntails = 300
 
 # Ratio between EL and ET
-ratioELET = 2
+ratioELET = 1.5
 # Ratio between ELp and ET
-ratioELpET = 2
+ratioELpET = 1.5
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
@@ -116,9 +116,19 @@ for k in klist:
 
 
         if saveondb:
-            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp, ELpp=ELpp,
-                    ntails=a.ntails, eps=eps, neigs=neigs, basisSize=a.compSize)
+            datadict = dict(k=k, ET=ET, L=L, ren="raw", g=g, neigs=neigs,
+                    basisSize=a.compSize)
+            db.insert(datadict=datadict, spec=a.eigenvalues["raw"][k])
 
+
+            datadict = dict(k=k, ET=ET, L=L, ren="renloc", g=g, eps=eps, neigs=neigs,
+                    basisSize=a.compSize)
+            db.insert(datadict=datadict, spec=a.eigenvalues["renloc"][k])
+
+
+            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp, ELpp=ELpp,
+                    ntails=a.ntails, eps=eps, neigs=neigs, basisSize=a.compSize,
+                    tailsComputedAtET=ETmax, maxntails=maxntails)
             db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
 
 

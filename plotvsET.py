@@ -6,15 +6,16 @@ from scipy import pi, log, log10, array, sqrt, stats
 from matplotlib import rc
 from cycler import cycler
 import database
+from sys import exit
 
 output = "png"
 # renlist = ("raw", "renloc", "rentails")
-renlist = ("rentails",)
+renlist = ("rentails","renloc","raw")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-klist = (1,)
+klist = (1,-1)
 
 neigs = 1
 
@@ -42,47 +43,70 @@ def plotvsET(ETlist):
 
     db = database.Database()
 
-    exactQuery = {"ren":"rentails"}
-    approxQuery = {"g":g, "L":L}
-    boundQuery = {"ntails": (0,maxntails)}
-
-    spectrum = {k:[] for k in klist}
+    spectrum = {k:{ren:[] for ren in renlist} for k in klist}
+    mass = {ren:[] for ren in renlist}
     ntails = {k:[] for k in klist}
 
     for k in klist:
-        exactQuery["k"] = k
 
-        for ET in ETlist:
+        for ren in renlist:
 
-            # print("ET=",ET)
+            for ET in ETlist:
 
-            EL = ratioELET*ET
-            ELp = ratioELpET*ET
-            ELpp = ratioELppELp*ELp
+                # print("ET=",ET)
 
-            approxQuery["ET"] = ET
-            approxQuery["EL"] = EL
-            approxQuery["ELp"] = ELp
-            approxQuery["ELpp"] = ELpp
+                EL = ratioELET*ET
+                ELp = ratioELpET*ET
+                ELpp = ratioELppELp*ELp
+
+                approxQuery = {"g":g, "L":L, "ET":ET}
+                exactQuery = {"k": k, "ren":ren}
+                boundQuery = {}
+
+                if ren=="rentails":
+                    exactQuery["maxntails"] = maxntails
+                    exactQuery["tailsComputedAtET"] = ETmax
+                    approxQuery["EL"] = EL
+                    approxQuery["ELp"] = ELp
+                    approxQuery["ELpp"] = ELpp
 
 
-            # NOTE We select the entry with the highest ntails below maxntails
-            spectrum[k].append(db.getObjList('spec', exactQuery, approxQuery,
-                boundQuery, orderBy="ntails")[-1])
+                try:
+                    spectrum[k][ren].append(db.getObjList('spec', exactQuery, approxQuery,
+                        boundQuery)[0])
+                    ntails[k].append(db.getObjList('ntails', exactQuery, approxQuery,
+                        boundQuery)[0])
+                except IndexError:
+                    print("Not found:", exactQuery, approxQuery)
+                    exit(-1)
 
-            ntails[k].append(db.getObjList('ntails', exactQuery, approxQuery,
-                boundQuery, orderBy="ntails")[-1])
 
+    # Convert to array
+    for k in klist:
+        for ren in renlist:
+            spectrum[k][ren] = array(spectrum[k][ren])
+
+    # Mass
+    if -1 in klist and 1 in klist:
+        for ren in renlist:
+            mass[ren] = spectrum[-1][ren][:,0]-spectrum[1][ren][:,0]
 
     # SPECTRUM
     for k in klist:
         plt.figure(fignum(k))
-        sp = array(spectrum[k])
         for i in range(neigs):
-            data = sp[:,i]
-            plt.plot(xlist, data)
+            data = spectrum[k][ren][:,i]
+            plt.plot(xlist, data, label="ren="+ren)
 
-    plt.figure(3)
+    # MASS
+    if -1 in klist and 1 in klist:
+        plt.figure(3)
+        data = mass[ren]
+        plt.plot(xlist, data, label="ren="+ren)
+
+
+    # Number of tails
+    plt.figure(4)
     for k in klist:
         y = array(ntails[k])
         plt.plot(xlist,y,label="k="+str(k))
@@ -114,42 +138,51 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 plotvsET(ETlist)
 
 
-# NOTE plot of the spectrum
 
-for k in klist:
-
-    title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}, maxntails={3},"\
-                "$E_L/E_T$={4:.1f}, $E_L'/E_T$={5:.1f}, $E_L''/E_T={6:.1f}$"\
-                .format(g,L,k,maxntails,ratioELET,ratioELpET,ratioELppELp)
-    fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}_"\
-                "ELET={3}_ELpET={4}_ELppELp={5}.{6}"\
-                .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp,output)
-    loc = "lower right"
-
-    plt.figure(fignum(k), figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title(title)
-    plt.xlabel(r"$E_{T}$")
-    plt.ylabel(r"$E_i$")
-# plt.legend(loc=loc)
-
-    if k==1:
-        plt.savefig("evenvsET_"+fname)
-    else:
-        plt.savefig("oddvsET_"+fname)
+title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}, maxntails={3},"\
+            "$E_L/E_T$={4:.1f}, $E_L'/E_T$={5:.1f}, $E_L''/E_T={6:.1f}$"\
+            .format(g,L,k,maxntails,ratioELET,ratioELpET,ratioELppELp)
+fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}_"\
+            "ELET={3}_ELpET={4}_ELppELp={5}.{6}"\
+            .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp,output)
+loc = "lower right"
 
 
+# Even eigenvalues
+plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_{T}$")
+plt.ylabel(r"$E_i$ even")
+plt.legend(loc=loc)
+plt.savefig("evenvsET_"+fname)
 
 
-# NOTE Plot of the number of tails
+# Odd eigenvalues
+plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_{T}$")
+plt.ylabel(r"$E_i$ odd")
+plt.legend(loc=loc)
+plt.savefig("oddvsET_"+fname)
 
+
+# Mass
+plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_{T}$")
+plt.ylabel(r"$m_{\rm ph}$")
+plt.legend(loc=loc)
+plt.savefig("massvsET_"+fname)
+
+
+# Plot of the number of tails
 title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2}".format(g,L,maxntails)
 fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}".format(g,L,maxntails,output)
 loc = "lower right"
 
-plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.figure(4, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{T}$")
 plt.ylabel(r"numtails")
 plt.legend(loc=loc)
-
 plt.savefig("tailsvsET_"+fname)
