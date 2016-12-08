@@ -9,15 +9,14 @@ import database
 from sys import exit
 
 output = "png"
-# renlist = ("raw", "renloc", "rentails")
-renlist = ("rentails","renloc","raw")
+renlist = ("raw", "renloc", "rentails")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-klist = (1,-1)
+klist = (1,)
 
-neigs = 1
+neigs = 2
 
 
 # Ratio between EL and ET
@@ -49,10 +48,9 @@ def plotvsET(ETlist):
 
     for k in klist:
 
-        for ren in renlist:
+        for ET in ETlist:
 
-            for ET in ETlist:
-
+            for ren in renlist:
                 # print("ET=",ET)
 
                 EL = ratioELET*ET
@@ -74,8 +72,11 @@ def plotvsET(ETlist):
                 try:
                     spectrum[k][ren].append(db.getObjList('spec', exactQuery, approxQuery,
                         boundQuery)[0])
-                    ntails[k].append(db.getObjList('ntails', exactQuery, approxQuery,
-                        boundQuery)[0])
+
+                    if ren=="rentails":
+                        ntails[k].append(db.getObjList('ntails', exactQuery, approxQuery,
+                            boundQuery)[0])
+
                 except IndexError:
                     print("Not found:", exactQuery, approxQuery)
                     exit(-1)
@@ -94,9 +95,10 @@ def plotvsET(ETlist):
     # SPECTRUM
     for k in klist:
         plt.figure(fignum(k))
-        for i in range(neigs):
-            data = spectrum[k][ren][:,i]
-            plt.plot(xlist, data, label="ren="+ren)
+        for ren in renlist:
+            for i in range(neigs):
+                data = spectrum[k][ren][:,i]
+                plt.plot(xlist, data, label="ren="+ren)
 
     # MASS
     if -1 in klist and 1 in klist:
@@ -139,9 +141,9 @@ plotvsET(ETlist)
 
 
 
-title = r"$g$={0:.1f}, $L$={1:.1f}, $k$={2}, maxntails={3},"\
-            "$E_L/E_T$={4:.1f}, $E_L'/E_T$={5:.1f}, $E_L''/E_T={6:.1f}$"\
-            .format(g,L,k,maxntails,ratioELET,ratioELpET,ratioELppELp)
+title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2},"\
+            "$E_L/E_T$={3:.1f}, $E_L'/E_T$={4:.1f}, $E_L''/E_T={5:.1f}$"\
+            .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp)
 fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}_"\
             "ELET={3}_ELpET={4}_ELppELp={5}.{6}"\
             .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp,output)
@@ -149,30 +151,33 @@ loc = "lower right"
 
 
 # Even eigenvalues
-plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{T}$")
-plt.ylabel(r"$E_i$ even")
-plt.legend(loc=loc)
-plt.savefig("evenvsET_"+fname)
+if 1 in klist:
+    plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_{T}$")
+    plt.ylabel(r"$E_i$ even")
+    plt.legend(loc=loc)
+    plt.savefig("evenvsET_"+fname)
 
 
 # Odd eigenvalues
-plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{T}$")
-plt.ylabel(r"$E_i$ odd")
-plt.legend(loc=loc)
-plt.savefig("oddvsET_"+fname)
+if -1 in klist:
+    plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_{T}$")
+    plt.ylabel(r"$E_i$ odd")
+    plt.legend(loc=loc)
+    plt.savefig("oddvsET_"+fname)
 
 
 # Mass
-plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{T}$")
-plt.ylabel(r"$m_{\rm ph}$")
-plt.legend(loc=loc)
-plt.savefig("massvsET_"+fname)
+if 1 in klist and -1 in klist:
+    plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_{T}$")
+    plt.ylabel(r"$m_{\rm ph}$")
+    plt.legend(loc=loc)
+    plt.savefig("massvsET_"+fname)
 
 
 # Plot of the number of tails

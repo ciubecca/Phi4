@@ -24,7 +24,7 @@ ratioELpET = 1.5
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-neigs = 1
+neigs = 10
 
 argv = sys.argv
 if len(argv) < 5:
