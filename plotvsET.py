@@ -9,14 +9,14 @@ import database
 from sys import exit
 
 output = "png"
-renlist = ("raw", "renloc", "rentails")
+renlist = ("raw", "rentails", "renloc")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-klist = (1,)
+klist = (1,-1)
 
-neigs = 2
+neigs = 1
 
 
 # Ratio between EL and ET
@@ -103,8 +103,9 @@ def plotvsET(ETlist):
     # MASS
     if -1 in klist and 1 in klist:
         plt.figure(3)
-        data = mass[ren]
-        plt.plot(xlist, data, label="ren="+ren)
+        for ren in renlist:
+            data = mass[ren]
+            plt.plot(xlist, data, label="ren="+ren)
 
 
     # Number of tails
@@ -147,7 +148,7 @@ title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2},"\
 fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}_"\
             "ELET={3}_ELpET={4}_ELppELp={5}.{6}"\
             .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp,output)
-loc = "lower right"
+loc = "upper right"
 
 
 # Even eigenvalues
@@ -183,7 +184,6 @@ if 1 in klist and -1 in klist:
 # Plot of the number of tails
 title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2}".format(g,L,maxntails)
 fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}".format(g,L,maxntails,output)
-loc = "lower right"
 
 plt.figure(4, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
