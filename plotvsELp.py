@@ -11,7 +11,7 @@ ntails = {1:117, -1:108}
 
 # List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
 # tlist = ((False,False,False),(True,True,True))
-tlist = ((True,True,True),)
+tlist = ((False,False,False),(True,True,True),)
 
 # Ratio between EL and ET
 ratioELET = 3
@@ -23,11 +23,16 @@ neigs = 2
 klist = (1,-1)
 
 output = "png"
-# renlist = ("raw", "renloc", "rentails")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
+
+def fignum(k):
+    if k==1:
+        return 1
+    elif k==-1:
+        return 2
 
 
 def plotvsELp(ELplist, tlist):
@@ -37,11 +42,15 @@ def plotvsELp(ELplist, tlist):
     db = database.Database()
 
     approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET}
+    exactQuery = {"ren":rentails}
 
     spectrum = {k:{t:[] for t in tlist} for k in klist}
     masses = {k:{t:[] for t in tlist} for k in klist}
 
     for k in klist:
+
+        exactQuery["k"] = k
+        exactQuery["ntails"] = ntails[k]
 
         for ELp in ELplist:
             approxQuery["ELp"] = ELp
@@ -49,16 +58,11 @@ def plotvsELp(ELplist, tlist):
 
             for t in tlist:
                 nonloc3mix, loc3mix, loc3 = t
-                exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
-                    "ren":"rentails"}
+                exactQuery["loc3"] = loc3
+                exactQuery["loc3mix"] = loc3mix
+                exactQuery["nonloc3mix"] = nonloc3mix
 
                 try:
-                    exactQuery["k"] = 1
-                    exactQuery["ntails"] = ntails[1]
-                    spectrum[k][t].append(db.getObjList('spec', exactQuery, approxQuery)[0])
-
-                    exactQuery["k"] = -1
-                    exactQuery["ntails"] = ntails[-1]
                     spectrum[k][t].append(db.getObjList('spec', exactQuery, approxQuery)[0])
 
                 except IndexError:
@@ -68,7 +72,7 @@ def plotvsELp(ELplist, tlist):
     # Convert to array
     for k in klist:
         for t in tlist:
-            spectrum[k][ren] = array(spectrum[k][ren])
+            spectrum[k][t] = array(spectrum[k][t])
 
 
     # Mass
@@ -84,17 +88,18 @@ def plotvsELp(ELplist, tlist):
             masses[k][t] = array(masses[k][t])
 
 
+
     # SPECTRUM
     for k in klist:
         plt.figure(fignum(k))
         for i in range(neigs):
-            for ren in renlist:
-                data = spectrum[k][ren][:,i]
+            for t in tlist:
+                data = spectrum[k][t][:,i]
                 if i==0:
-                    label="ren="+ren
+                    label=t
                 else:
                     label = None
-                plt.plot(xlist, data, label="ren="+ren)
+                plt.plot(xlist, data, label=label)
             plt.gca().set_prop_cycle(None)
 
     # MASS
@@ -104,10 +109,10 @@ def plotvsELp(ELplist, tlist):
             for i in range(neigs):
                 if k==1 and i==0:
                     continue
-                for ren in renlist:
-                    data = masses[k][ren][i]
+                for t in tlist:
+                    data = masses[k][t][i]
                     if i==0:
-                        label="ren="+ren
+                        label=t
                     else:
                         label = None
                     plt.plot(xlist, data, label=label)
@@ -145,7 +150,7 @@ plotvsELp(ELplist, tlist)
 
 title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L''={4} E_L'$".format(g,L,
         ET,EL,ratioELppELp)
-fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}_ELpp/ELp={4}.{5}".format(g,L,ET,EL,
+fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}_ELppELp={4}.{5}".format(g,L,ET,EL,
         ratioELppELp,output)
 loc = "lower right"
 

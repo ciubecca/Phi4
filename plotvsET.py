@@ -111,7 +111,7 @@ def plotvsET(ETlist):
                     label="ren="+ren
                 else:
                     label = None
-                plt.plot(xlist, data, label="ren="+ren)
+                plt.plot(xlist, data, label=label)
             plt.gca().set_prop_cycle(None)
 
     # MASS
