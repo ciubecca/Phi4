@@ -7,15 +7,20 @@ from matplotlib import rc
 from cycler import cycler
 import database
 
+ntails = {1:117, -1:108}
 
-minoverlap = 10**(-2)
 # List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
-tlist = ((False,False,False),(True,True,True))
-# Ratio between ELpp and ELp
-ratio2 = 2.5
-ratio3 = 1.5
-neigs = 1
+# tlist = ((False,False,False),(True,True,True))
+tlist = ((True,True,True),)
 
+# Ratio between EL and ET
+ratioELET = 3
+# Ratio between ELpp and ELp
+ratioELppELp = 1.5
+
+neigs = 2
+
+klist = (1,-1)
 
 output = "png"
 # renlist = ("raw", "renloc", "rentails")
@@ -25,58 +30,94 @@ rc('text', usetex=True)
 
 
 
-def plotvsELp(ELplist, t):
+def plotvsELp(ELplist, tlist):
 
     xlist = ELplist
-    nonloc3mix, loc3mix, loc3 = t
 
     db = database.Database()
 
-    exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
-            "ren":"rentails"}
-    approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET, "minoverlap":minoverlap}
+    approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET}
 
-    oddSp = []
-    evenSp = []
+    spectrum = {k:{t:[] for t in tlist} for k in klist}
+    masses = {k:{t:[] for t in tlist} for k in klist}
 
-    for ELp in ELplist:
-        approxQuery["ELp"] = ELp
-        approxQuery["ELpp"] = ratio3*ELp
+    for k in klist:
 
-        exactQuery["k"] = 1
-        evenSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
+        for ELp in ELplist:
+            approxQuery["ELp"] = ELp
+            approxQuery["ELpp"] = ratioELppELp*ELp
 
-        # exactQuery["k"] = -1
-        # oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
+            for t in tlist:
+                nonloc3mix, loc3mix, loc3 = t
+                exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
+                    "ren":"rentails"}
+
+                try:
+                    exactQuery["k"] = 1
+                    exactQuery["ntails"] = ntails[1]
+                    spectrum[k][t].append(db.getObjList('spec', exactQuery, approxQuery)[0])
+
+                    exactQuery["k"] = -1
+                    exactQuery["ntails"] = ntails[-1]
+                    spectrum[k][t].append(db.getObjList('spec', exactQuery, approxQuery)[0])
+
+                except IndexError:
+                    print("Not found: ", exactQuery, approxQuery)
+                    sys.exit(-1)
+
+    # Convert to array
+    for k in klist:
+        for t in tlist:
+            spectrum[k][ren] = array(spectrum[k][ren])
 
 
-    nonloc3mix, loc3mix, loc3 = t
-    label = str(t)
+    # Mass
+    if -1 in klist and 1 in klist:
+        for k in klist:
+            for t in tlist:
+                for i in range(neigs):
+                    masses[k][t].append(spectrum[k][t][:,i]-spectrum[1][t][:,0])
 
-    evenSp = array(evenSp)
-    oddSp = array(oddSp)
-
-    # EVEN SPECTRUM
-    plt.figure(1)
-
-    for i in range(neigs):
-        data = evenSp[:,i]
-        plt.plot(xlist, data, label=label)
+    # Convert to array
+    for k in klist:
+        for t in tlist:
+            masses[k][t] = array(masses[k][t])
 
 
-    # ODD SPECTRUM
-    # plt.figure(2)
+    # SPECTRUM
+    for k in klist:
+        plt.figure(fignum(k))
+        for i in range(neigs):
+            for ren in renlist:
+                data = spectrum[k][ren][:,i]
+                if i==0:
+                    label="ren="+ren
+                else:
+                    label = None
+                plt.plot(xlist, data, label="ren="+ren)
+            plt.gca().set_prop_cycle(None)
 
-    # for i in range(neigs):
-        # data = oddSp[:,i]
-        # plt.plot(xlist, data, label=label)
-
+    # MASS
+    if -1 in klist and 1 in klist:
+        plt.figure(3)
+        for k in (-1,1):
+            for i in range(neigs):
+                if k==1 and i==0:
+                    continue
+                for ren in renlist:
+                    data = masses[k][ren][i]
+                    if i==0:
+                        label="ren="+ren
+                    else:
+                        label = None
+                    plt.plot(xlist, data, label=label)
+                plt.gca().set_prop_cycle(None)
 
 argv = sys.argv
 
 
 if len(argv) < 6:
-    print(argv[0], "<L> <g> <ET> <ELpmin> <ELpmax> [<EL>]")
+    print(argv[0], "<L> <g> <ET> <ELpmin> <ELpmax>")
     sys.exit(-1)
 
 L = float(argv[1])
@@ -85,12 +126,8 @@ ET = float(argv[3])
 ELpmin = float(argv[4])
 ELpmax = float(argv[5])
 
-try:
-    EL = float(argv[6])
-except IndexError:
-    EL = ratio2*ET
-# ELETdiff = float(argv[5])
 
+EL = ratioELET*ET
 
 ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
 print("ELplist:", ELplist)
@@ -103,30 +140,41 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
     cycler('linestyle', ['-', '--', ':', '-.'])))
 
 
-for t in tlist:
-    plotvsELp(ELplist, t)
+plotvsELp(ELplist, tlist)
 
 
-title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L''={4} E_L'$".format(g,L,ET,EL,ratio3)
-fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}_ratio={4}.{5}".format(g,L,ET,EL,ratio3,output)
+title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L$={3:.1f},$E_L''={4} E_L'$".format(g,L,
+        ET,EL,ratioELppELp)
+fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_EL={3:.1f}_ELpp/ELp={4}.{5}".format(g,L,ET,EL,
+        ratioELppELp,output)
 loc = "lower right"
 
-plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{L}'$")
-plt.ylabel(r"$E_i$ even")
-plt.legend(loc=loc)
+
+# Even eigenvalues
+if 1 in klist:
+    plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_L'$")
+    plt.ylabel(r"$E_i$ even")
+    plt.legend(loc=loc)
+    plt.savefig("evenvsELp_"+fname)
 
 
-plt.savefig("figs/evenSp_"+fname)
+# Odd eigenvalues
+if -1 in klist:
+    plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_L'$")
+    plt.ylabel(r"$E_i$ odd")
+    plt.legend(loc=loc)
+    plt.savefig("oddvsELp_"+fname)
 
 
-
-# plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-# plt.title(title)
-# plt.xlabel(r"$E_{L}'$")
-# plt.ylabel(r"$E_i$ odd")
-# plt.legend(loc=loc)
-
-
-# plt.savefig("figs/oddSp_"+fname)
+# Mass
+if 1 in klist and -1 in klist:
+    plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_L'$")
+    plt.ylabel(r"$m_{\rm ph}$")
+    plt.legend(loc=loc)
+    plt.savefig("massvsELp_"+fname)

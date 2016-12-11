@@ -545,9 +545,8 @@ class Phi4():
 
 
 
-    def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None,
-            eps=None, neigs=10, maxntails=None, loc2=True,
-            loc3=True, loc3mix=True, nonloc3mix=True):
+    def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
+            eps=None, neigs=10, maxntails=None, loc3=True, loc3mix=True, nonloc3mix=True):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number
         ET: ET

@@ -16,11 +16,11 @@ rc('text', usetex=True)
 
 klist = (1,-1)
 
-neigs = 1
+neigs = 2
 
 
 # Ratio between EL and ET
-ratioELET = 1.5
+ratioELET = 3
 # Ratio between ELp and ET
 ratioELpET = 1.5
 # Ratio between ELpp and ELp
@@ -43,7 +43,7 @@ def plotvsET(ETlist):
     db = database.Database()
 
     spectrum = {k:{ren:[] for ren in renlist} for k in klist}
-    mass = {ren:[] for ren in renlist}
+    masses = {k:{ren:[] for ren in renlist} for k in klist}
     ntails = {k:[] for k in klist}
 
     for k in klist:
@@ -87,25 +87,48 @@ def plotvsET(ETlist):
         for ren in renlist:
             spectrum[k][ren] = array(spectrum[k][ren])
 
+
     # Mass
     if -1 in klist and 1 in klist:
+        for k in klist:
+            for ren in renlist:
+                for i in range(neigs):
+                    masses[k][ren].append(spectrum[k][ren][:,i]-spectrum[1][ren][:,0])
+
+    # Convert to array
+    for k in klist:
         for ren in renlist:
-            mass[ren] = spectrum[-1][ren][:,0]-spectrum[1][ren][:,0]
+            masses[k][ren] = array(masses[k][ren])
+
 
     # SPECTRUM
     for k in klist:
         plt.figure(fignum(k))
-        for ren in renlist:
-            for i in range(neigs):
+        for i in range(neigs):
+            for ren in renlist:
                 data = spectrum[k][ren][:,i]
+                if i==0:
+                    label="ren="+ren
+                else:
+                    label = None
                 plt.plot(xlist, data, label="ren="+ren)
+            plt.gca().set_prop_cycle(None)
 
     # MASS
     if -1 in klist and 1 in klist:
         plt.figure(3)
-        for ren in renlist:
-            data = mass[ren]
-            plt.plot(xlist, data, label="ren="+ren)
+        for k in (-1,1):
+            for i in range(neigs):
+                if k==1 and i==0:
+                    continue
+                for ren in renlist:
+                    data = masses[k][ren][i]
+                    if i==0:
+                        label="ren="+ren
+                    else:
+                        label = None
+                    plt.plot(xlist, data, label=label)
+                plt.gca().set_prop_cycle(None)
 
 
     # Number of tails
@@ -143,7 +166,7 @@ plotvsET(ETlist)
 
 
 title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2},"\
-            "$E_L/E_T$={3:.1f}, $E_L'/E_T$={4:.1f}, $E_L''/E_T={5:.1f}$"\
+            "$E_L/E_T$={3:.1f}, $E_L'/E_T$={4:.1f}, $E_L''/E_L'={5:.1f}$"\
             .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp)
 fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}_"\
             "ELET={3}_ELpET={4}_ELppELp={5}.{6}"\

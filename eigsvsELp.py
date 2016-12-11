@@ -18,16 +18,18 @@ m = 1
 # List of parity quantum numbers
 klist = (1,-1)
 # Maximum number of tails
-maxntails = 200
+maxntails = 300
 
-# Ratio between ELpp and ELp
-ratio3 = 1.5
 # Ratio between EL and ET
-ratio2 = 2
+ratioELET = 3
+# Ratio between ELpp and ELp
+ratioELppELp = 1.5
+
 neigs = 10
 
 # List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
-tlist = ((False,False,False),(True,True,False),(True,True,True))
+# tlist = ((False,False,False),(True,True,False),(True,True,True))
+tlist = ((False,False,False),(True,True,True))
 
 
 
@@ -42,14 +44,14 @@ ET = float(argv[3])
 ELpmin = float(argv[4])
 ELpmax = float(argv[5])
 
-# EL is chosen as the maximum ELpp
-EL = ratio2*ET
+EL = ratioELET*ET
+ELppmax = ratioELppELp*ELpmax
 
 ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
 print("ELplist:", ELplist)
 
-print("ELpp/ELp:", ratio3)
-print("EL/ET:", ratio2)
+print("ELpp/ELp:", ratioELppELp)
+print("EL/ET:", ratioELET)
 
 if saveondb:
     db = database.Database()
@@ -78,13 +80,12 @@ for k in klist:
             -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
     basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
     print("Total number of tails:", basisl.size)
-    print(basisl[:10])
 
 
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBases(k, basisl, EL=EL, ELpp=ratio3*ELpmax)
+    a.genHEBases(k, basisl, EL=EL, ELpp=ELppmax)
     print("Size of HE basis:", a.basisH[k].size)
 
     a.computeLEVs(k)
@@ -122,11 +123,11 @@ for k in klist:
 
         for ELp in ELplist:
 
-            ELpp = ratio3*ELp
+            ELpp = ratioELppELp*ELp
             print("ELp={}, ELpp={}".format(ELp,ELpp))
 
             a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                    loc2=True,loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, neigs=neigs)
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, neigs=neigs)
             print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
             print("Number of tails:", a.ntails)

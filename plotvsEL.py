@@ -14,7 +14,7 @@ renlist = ("rentails",)
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-neigs = 1
+neigs = 2
 
 minoverlap = 10**(-2)
 # Ratio between ELpp and ELp
@@ -29,8 +29,8 @@ def plotvsEL(ELlist):
     db = database.Database()
 
     exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
-            "ren":"rentails"}
-    approxQuery = {"g":g, "L":L, "ELp":ELp, "ELpp":ELpp, "ET":ET, "minoverlap":minoverlap}
+            "ren":"rentails", "minoverlap":minoverlap}
+    approxQuery = {"g":g, "L":L, "ELp":ELp, "ELpp":ELpp, "ET":ET}
 
     oddSp = []
     evenSp = []
@@ -105,7 +105,7 @@ plt.ylabel(r"$E_i$ even")
 # plt.legend(loc=loc)
 
 
-plt.savefig("figs/evenSp_"+fname)
+plt.savefig("evenSp_"+fname)
 
 
 
@@ -116,4 +116,4 @@ plt.ylabel(r"$E_i$ odd")
 # plt.legend(loc=loc)
 
 
-plt.savefig("figs/oddSp_"+fname)
+plt.savefig("oddSp_"+fname)
