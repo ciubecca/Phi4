@@ -18,7 +18,7 @@ ratioELET = 3
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-neigs = 2
+neigs = 1
 
 klist = (1,-1)
 
@@ -42,7 +42,7 @@ def plotvsELp(ELplist, tlist):
     db = database.Database()
 
     approxQuery = {"g":g, "L":L, "EL":EL, "ET":ET}
-    exactQuery = {"ren":rentails}
+    exactQuery = {"ren":"rentails"}
 
     spectrum = {k:{t:[] for t in tlist} for k in klist}
     masses = {k:{t:[] for t in tlist} for k in klist}
