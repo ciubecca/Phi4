@@ -14,6 +14,18 @@ from scipy import exp, pi, array
 from scipy.sparse.linalg import LinearOperator
 
 
+
+def msize(m):
+    form =  m.getformat()
+    if form=="coo":
+        return (m.col.nbytes+m.row.nbytes+m.data.nbytes)/1000000
+    elif form == "csr" or form=="csc":
+        return (m.data.nbytes+m.indptr.nbytes+m.indices.nbytes)/1000000
+    else:
+        raise ValueError(form+" not implemented")
+
+
+
 class Phi4():
     """ main class """
     def __init__(self, m, L):
@@ -199,6 +211,8 @@ class Phi4():
 
             self.VLH[k] = Matrix(basis, lookupbasis,
                     self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
+
+            print("self.VLH[k] size", msize(self.VLH[k].M))
 
 #################################
 # Generate the local VhL matrices
