@@ -16,7 +16,7 @@ rc('text', usetex=True)
 
 klist = (1,-1)
 
-neigs = 2
+neigs = 3
 
 
 # Ratio between EL and ET

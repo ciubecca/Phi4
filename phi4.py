@@ -11,6 +11,7 @@ import renorm
 import gc
 from matrix import Matrix
 from scipy import exp, pi, array
+from scipy.sparse.linalg import LinearOperator
 
 
 class Phi4():
@@ -311,7 +312,9 @@ class Phi4():
                 DH3ll = self.DH3ll[k].sub(subbasisl, subbasisl).M
 
 
-            return DH2lL*scipy.sparse.linalg.inv(DH2ll-DH3ll)*DH2Ll
+            invM = scipy.sparse.linalg.inv(DH2ll-DH3ll)
+
+            return DH2lL, invM, DH2Ll
 
 
         elif ren=="renloc":
@@ -566,13 +569,22 @@ class Phi4():
 
         if ren=="raw":
             compH = Hraw
-        else:
+
+        elif ren=="rentails":
+            DH2lL, invM, DH2Ll = self.computeDeltaH(k=k, ET=ET, EL=EL, ren=ren, eps=eps,
+                    maxntails=maxntails, ELp=ELp, ELpp=ELpp, loc2=loc2,
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
+            compH = LinearOperator(Hraw.shape, lambda v: Hraw*v + DH2lL*invM*DH2Ll*v)
+
+        elif ren=="renloc":
             DeltaH = self.computeDeltaH(k=k, ET=ET, EL=EL, ren=ren, eps=eps,
                     maxntails=maxntails, ELp=ELp, ELpp=ELpp, loc2=loc2,
                     loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
             compH = (Hraw + DeltaH)
+        else:
+            raise ValueError()
 
-        self.compSize = compH.shape[0]
+        self.compSize = Hraw.shape[0]
 
         # Seed vector
         v0 = scipy.zeros(subbasisL.size)
