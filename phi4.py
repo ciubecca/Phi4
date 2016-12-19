@@ -168,7 +168,7 @@ class Phi4():
             helper = Vlist[0].helper
 
             # Basis of selected states with energy <= Emax
-            basis[k] = Basis(k, [helper.torepr1(v) for v in vectorset], helper)
+            basis[k] = Basis(k, (helper.torepr1(v) for v in vectorset), helper)
 
 
     # @profile
