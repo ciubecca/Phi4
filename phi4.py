@@ -69,16 +69,14 @@ class Phi4():
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
 
-    def buildMatrix(self, Vlist, basis, lookupbasis, statePos=None,
-            ignKeyErr=False, idxList=None, sumTranspose=False, subDiag=True):
-
+    def buildStatePos(self, basis, lookupbasis):
 
         if basis.helper.nmax > lookupbasis.helper.nmax:
             helper = basis.helper
         else:
             helper = lookupbasis.helper
 
-# Dictionary of positions of states
+        # Dictionary of positions of states
         # Contains also the P-reversed states
         # NOTE: using arrays is much less efficient!
         statePos = {}
@@ -86,9 +84,16 @@ class Phi4():
             statePos[tuple(helper.torepr2(state))] = i
             statePos[tuple(helper.torepr2(state)[::-1])] = i
 
+        return helper, statePos
+
+
+    def buildMatrix(self, Vlist, basis, lookupbasis, statePos=None,
+            ignKeyErr=False, idxList=None, sumTranspose=False, subDiag=True):
+
+        helper, statePos = self.buildStatePos(basis, lookupbasis)
+
         if idxList==None:
             idxList = range(basis.size)
-
 
         # Will construct the sparse matrix in the COO format and then convert it to CSC
         data = []
@@ -103,6 +108,8 @@ class Phi4():
                 data += datapart
                 col += colpart
                 row += [i]*len(colpart)
+
+        del statePos
 
         V = scipy.sparse.coo_matrix((data,(row,col)),
                 shape=(basis.size,lookupbasis.size))

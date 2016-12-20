@@ -39,6 +39,12 @@ class Matrix():
         """ Format conversion """
         return Matrix(self.basisI, self.basisJ, self.M.asformat(form))
 
+    def subIndex(self, Ibounds, Jbounds):
+        """ Returns a submatrix bz bounding row and columns in a given range.
+        It should be faster than the more general sub() routine """
+        raise RuntimeError("Not yet implemented")
+        return
+
     def sub(self, subBasisI, subBasisJ):
         """ This extracts a submatrix given a subspace of
         the initial vector space, both for rows and columns

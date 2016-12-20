@@ -82,6 +82,8 @@ class Basis():
         k: parity quantum number
         stateset: set or list of states in representation 1
         helper: Helper object
+        orderEnergy: if True order the list of vectors in energy
+        calcPos: if True construct the dictionary of the positions of the vectors
         """
         self.k = k
         self.helper = helper
@@ -89,8 +91,9 @@ class Basis():
 
         self.orderEnergy = orderEnergy
         # Order the states in energy
+        # XXX Do we need to create a list?
         if orderEnergy:
-            self.stateList = list(sorted(stateset, key=energy))
+            self.stateList = sorted(stateset, key=energy)
         else:
             self.stateList = list(stateset)
         self.size = len(self.stateList)
@@ -106,11 +109,18 @@ class Basis():
             self.Emax = None
             self.Emin = None
 
-        self.statePos = {}
-        for i,state in enumerate(self.stateList):
-            self.statePos[tuple(helper.torepr2(state))] = i
-            self.statePos[tuple(helper.torepr2(state)[::-1])] = i
+        # if calcPos:
+            # self.statePos = {}
+            # for i,state in enumerate(self.stateList):
+                # self.statePos[tuple(helper.torepr2(state))] = i
+                # self.statePos[tuple(helper.torepr2(state)[::-1])] = i
 
+
+    def energyBounds(Emin, Emax):
+        """ Return the min and max indices for states with energy between
+        Emin and Emax, when self.orderEnergy is True """
+        raise RuntimeError("Not implemented yet")
+        return
 
     @classmethod
     def fromScratch(self, m, L, Emax, occmax=None):
@@ -146,10 +156,10 @@ class Basis():
                 self.orderEnergy)
 
 
-    def lookup(self, state):
-        """ Lookup function to look up the position of a state in the basis,
-        in representation 1"""
-        return self.statePos[tuple(self.helper.torepr2(state))]
+    # def lookup(self, state):
+        # """ Lookup function to look up the position of a state in the basis,
+        # in representation 1"""
+        # return self.statePos[tuple(self.helper.torepr2(state))]
 
 
     def __repr__(self):
