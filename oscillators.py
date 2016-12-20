@@ -161,9 +161,8 @@ class LocOperator():
         return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
-    # @profile
-    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
-                                ignKeyErr=False):
+    def computeMatrixElements(self, basis, i, helper, statePos,
+            lookupEmin, lookupEmax, lookupParityList, ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -177,12 +176,10 @@ class LocOperator():
         Otherwise it should be set to False
         """
 
-
         # List of columns indices of generated basis elements
         col = []
         # List of partial matrix elements
         data = []
-
 
         # I define these local variables outside the loops for performance reasons
         e = basis.energyList[i]
@@ -190,15 +187,16 @@ class LocOperator():
         state = basis.stateList[i]
 
         statevec = helper.torepr2(state)
-        parityList = lookupbasis.parityList
-        Emin = lookupbasis.Emin
-        Emax = lookupbasis.Emax
+        Emin = lookupEmin
+        Emax = lookupEmax
+        parityList = lookupParityList
         nmax = helper.nmax
 
         normFactors = helper.normFactors
 
         # cycle over all the sets of momenta that can be annihilated
-        for dlist in gendlists(state, self.nd, self.nd+self.nc, lookupbasis.helper.nmax):
+# XXX Check: we replaced lookupbasis.helper.nmax with helper.nmax
+        for dlist in gendlists(state, self.nd, self.nd+self.nc, nmax):
 
             k = self.dlistPos[dlist]
 

@@ -2,70 +2,40 @@ import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 
-class Matrix():
-    """ Matrix with specified state bases for row and column indexes.
-    This class is useful to easily extract submatrices """
-    def __init__(self, basisI, basisJ, M):
-        self.basisI = basisI
-        self.basisJ = basisJ
-        self.M = M
-        self.check()
 
-    def check(self):
-        if self.M.shape != (self.basisI.size, self.basisJ.size):
-            raise ValueError('Matrix shape inconsistent with given bases')
+def buildStatePos(basis, helper=None):
+    # Dictionary of positions of states
+    # Contains also the P-reversed states
+    # NOTE: using arrays is much less efficient!
+    statePos = {}
+    if helper==None:
+        helper = basis.helper
 
-    def __add__(self, other):
-        """ Sum of matrices """
-        return Matrix(self.basisI, self.basisJ, self.M+other.M)
-    def __sub__(self, other):
-        return Matrix(self.basisI, self.basisJ, self.M-other.M)
+    for i,state in enumerate(basis.stateList):
+        statePos[tuple(helper.torepr2(state))] = i
+        statePos[tuple(helper.torepr2(state)[::-1])] = i
 
-    def __rmul__(self, other):
-        """ Multiplication of matrix with matrix or number"""
-        if(other.__class__ == self.__class__):
-            return Matrix(other.basisI, self.basisJ, other.M*self.M)
-        else:
-            return Matrix(self.basisI, self.basisJ, self.M*float(other))
+    return statePos
 
-    def __mul__(self, other):
-        """ Multiplication of matrix with matrix or number"""
-        if(other.__class__ == self.__class__):
-            return Matrix(self.basisI, other.basisJ, self.M*other.M)
-        else:
-            return Matrix(self.basisI, self.basisJ, self.M*float(other))
 
-    def to(self, form):
-        """ Format conversion """
-        return Matrix(self.basisI, self.basisJ, self.M.asformat(form))
+class SubmatrixOperator():
 
-    def subIndex(self, Ibounds, Jbounds):
-        """ Returns a submatrix bz bounding row and columns in a given range.
-        It should be faster than the more general sub() routine """
-        raise RuntimeError("Not yet implemented")
-        return
+    def __init__(self, idxList):
+        self.idxList = scipy.array(idxList)
 
-    def sub(self, subBasisI, subBasisJ):
-        """ This extracts a submatrix given a subspace of
-        the initial vector space, both for rows and columns
-        """
+    def fromSubbasis(self, basis, subbasis):
+        statePos = buildStatePos(basis)
+        idxList = [statePos[state] for state in subbasis]
+        return self(idxList)
 
-        if subBasisI == self.basisI:
-            columns = [self.basisJ.lookup(state) for state in subBasisJ]
-            return Matrix(subBasisI, subBasisJ, self.M.tocsc()[:,scipy.array(columns)])
+    def fromEmax(self, basis, Emax):
+        return self(range(basis.imax(Emax)))
 
-        elif subBasisJ == self.basisJ:
-            rows = [self.basisI.lookup(state) for state in subBasisI]
-            return Matrix(subBasisI, subBasisJ, self.M.tocsr()[scipy.array(rows),])
+    def subrows(self, m):
+        return m.tocsr()[self.idxList,]
 
-        else:
-            rows = [self.basisI.lookup(state) for state in subBasisI]
-            columns = [self.basisJ.lookup(state) for state in subBasisJ]
+    def subcolumns(self, m):
+        return m.tocsc()[:,self.idxList]
 
-            return Matrix(subBasisI, subBasisJ, self.M.tocsr()[scipy.array(rows),].
-                                                tocsc()[:,scipy.array(columns)])
-
-    def transpose(self):
-        return Matrix(self.basisJ, self.basisI, self.M.transpose())
-    def inverse(self):
-        return Matrix(self.basisJ, self.basisI, scipy.sparse.linalg.inv(self.M.tocsc()))
+    def sub(self, m):
+        return self.subrows(self.subcolumns(m))

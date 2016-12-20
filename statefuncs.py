@@ -75,9 +75,12 @@ def occn(state):
     return sum(Zn for n,Zn in state)
 
 
+def isSorted(x, key):
+    return all(key(x[i]) <= key(x[i+1]) for i in range(len(x)-1))
+
 class Basis():
     """ Class used to store and compute a basis of states"""
-    def __init__(self, k, stateset, helper, orderEnergy=True):
+    def __init__(self, k, stateset, helper):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
@@ -89,13 +92,11 @@ class Basis():
         self.helper = helper
         energy = helper.energy
 
-        self.orderEnergy = orderEnergy
-        # Order the states in energy
-        # XXX Do we need to create a list?
-        if orderEnergy:
-            self.stateList = sorted(stateset, key=energy)
+        # Avoid creating another list in memory if it already a sorted list
+        if type(stateset)==list and not isSorted(stateSet, energy):
+            self.stateList = stateList
         else:
-            self.stateList = list(stateset)
+            self.stateList = sorted(stateset, key=energy)
         self.size = len(self.stateList)
 
         self.energyList = [energy(state) for state in self.stateList]
@@ -105,22 +106,20 @@ class Basis():
         try:
             self.Emax = max(self.energyList)
             self.Emin = min(self.energyList)
+        # When the basis is empty
         except IndexError:
             self.Emax = None
             self.Emin = None
 
-        # if calcPos:
-            # self.statePos = {}
-            # for i,state in enumerate(self.stateList):
-                # self.statePos[tuple(helper.torepr2(state))] = i
-                # self.statePos[tuple(helper.torepr2(state)[::-1])] = i
-
-
-    def energyBounds(Emin, Emax):
+    def imax(self, Emax):
         """ Return the min and max indices for states with energy between
         Emin and Emax, when self.orderEnergy is True """
-        raise RuntimeError("Not implemented yet")
-        return
+        return bisect.bisect_left(self.energyList, Emax)
+
+    def propagator(self, eps, Emin=None, Emax=None):
+        """ Return the propagator for states between Emin and Emax """
+        v = [1/(eps-e) if Emin<e<=Emax else 0 for e in self.energyList]
+        return scipy.sparse.spdiags(v, 0, self.size, self.size)
 
     @classmethod
     def fromScratch(self, m, L, Emax, occmax=None):
@@ -148,19 +147,6 @@ class Basis():
 
         bases = self.buildBasis(self)
         return {k:self(k,bases[k],helper) for k in (-1,1)}
-
-
-    def sub(self, filterFun):
-        """ Extracts a sub-basis with vectors v such that filterFun(v)=True """
-        return Basis(self.k, filter(filterFun, self.stateList), self.helper,
-                self.orderEnergy)
-
-
-    # def lookup(self, state):
-        # """ Lookup function to look up the position of a state in the basis,
-        # in representation 1"""
-        # return self.statePos[tuple(self.helper.torepr2(state))]
-
 
     def __repr__(self):
         return str(self.stateList)
