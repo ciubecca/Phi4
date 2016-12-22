@@ -516,74 +516,37 @@ def V2OpsHalf(basis):
 
 
 
-def V4OpsSelectedHalf(basis):
-    """ Half of the operators of V4 acting on the "selected" basis of states
-    (e.g. the set of "selected" high-energy tails). It takes into account only the
-    annihilation part.
-    Not all the possible annihilation momenta are included. This method is used
-    to compute Vhh
+def V4OpsSelectedHalf(basis, Emax, idxList=None):
+    """ Selected set of oscillators of half of the V4 operator between selected states
+    basis: basis which is acted upon
+    Emin: minimum energy of the states to be generated
+    Emax: maximal energy of states to be generated
+    idxList: subset of indices of the basis which is acted upon
     """
 
-    helper = basis.helper
+    helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
     nmax = helper.nmax
-    Emax = basis.Emax
     oscEnergy = helper.oscEnergy
 
-    V04 = []
+    if idxList == None:
+        idxList = range(basis.size)
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 4, 4, nmax))
+    opsList = []
 
-    for dlist in dlists:
-        # XXX Some of these elements can be excluded
-        V04.append((dlist,[()]))
+    for nd in (0,1,2):
+        nc = 4-nd
 
-    V04 = LocOperator(V04, 4, 0, helper)
+        dlists = gendlistsfromBasis(basis, idxList, nmax, nd, 4)
+        oscList = []
 
+        for dlist in dlists:
+            clists = [clist for clist in createClistsV4(nmax, dlist, nc) if
+                    oscEnergy(clist) <= Emax+tol]
+            oscList.append((dlist, clists))
 
-    V13 = []
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
 
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 3, 4, nmax))
-
-    for dlist in dlists:
-        k1, k2, k3 = dlist
-
-        k4 = k1+k2+k3
-        clist = (k4,)
-
-        # XXX Some of these elements can be excluded
-        V13.append((dlist,[clist]))
-
-    V13 = LocOperator(V13, 3, 1, helper)
-
-
-    V22 = []
-
-    dlists = set()
-    for state in basis.stateList:
-        dlists.update(gendlists(state, 2, 4, nmax))
-
-    for dlist in dlists:
-        (k1,k2) = dlist
-        V22.append((dlist,[]))
-
-        for k3 in range(max(-nmax+k1+k2,-nmax),
-                min(int(floor((k1+k2)/2)),nmax)+1):
-
-            k4 = k1+k2-k3
-            clist = (k3,k4)
-
-            if oscEnergy(clist) <= Emax + tol \
-                and sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
-                V22[-1][1].append(clist)
-
-
-    V22 = LocOperator(V22, 2, 2, helper)
-
-    return V04, V13, V22
+    return opsList
 
 
 def V2OpsSelectedFull(basis, Emax):
@@ -613,21 +576,27 @@ def V2OpsSelectedFull(basis, Emax):
     return opsList
 
 
-def V4OpsSelectedFull(basis, Emax):
-    """ Selected set of oscillators between some selected low-energy states
-    and states with energy <= Emax
+def V4OpsSelectedFull(basis, Emax, idxList=None):
+    """ Selected set of oscillators of the full V4 operator between some selected states
+    basis: basis which is acted upon
+    Emin: minimum energy of the states to be generated
+    Emax: maximal energy of states to be generated
+    idxList: subset of indices of the basis which is acted upon
     """
 
     helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
     nmax = helper.nmax
     oscEnergy = helper.oscEnergy
 
+    if idxList == None:
+        idxList = range(basis.size)
+
     opsList = []
 
     for nd in (0,1,2,3,4):
         nc = 4-nd
 
-        dlists = gendlistsfromBasis(basis, nmax, nd, 4)
+        dlists = gendlistsfromBasis(basis, idxList, nmax, nd, 4)
         oscList = []
 
         for dlist in dlists:
@@ -669,10 +638,11 @@ def V6OpsSelectedFull(basis, Emax):
 
 
 
-def gendlistsfromBasis(basis, nmax, nd, ntot):
+def gendlistsfromBasis(basis, idxList, nmax, nd, ntot):
     ret = set()
 
-    for state in basis:
+    for i in idxList:
+        state = basis.stateList[i]
         ret.update(gendlists(state=state, nd=nd, ntot=ntot, nmax=nmax))
     return ret
 

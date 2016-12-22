@@ -111,12 +111,14 @@ class Basis():
             self.Emax = None
             self.Emin = None
 
-    def imax(self, Emax):
+    def irange(self, Emin, Emax):
         """ Return the min and max indices for states with energy between
         Emin and Emax, when self.orderEnergy is True """
-        return bisect.bisect_left(self.energyList, Emax)
+        imin = bisect.bisect_left(self.energyList, Emin)
+        imax = bisect.bisect_left(self.energyList, Emax)
+        return imin, imax
 
-    def propagator(self, eps, Emin=None, Emax=None):
+    def propagator(self, eps, Emin, Emax):
         """ Return the propagator for states between Emin and Emax """
         v = [1/(eps-e) if Emin<e<=Emax else 0 for e in self.energyList]
         return scipy.sparse.spdiags(v, 0, self.size, self.size)
