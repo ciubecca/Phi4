@@ -81,6 +81,8 @@ for k in klist:
 
     a.computeLEVs(k)
 
+    sys.exit(-1)
+
     print("Computing high energy matrices...")
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
 # Later we will be varying EL, therefore taking submatrices of these.

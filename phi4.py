@@ -40,15 +40,14 @@ class Phi4():
         self.V = {k:{} for k in {-1,1}}
         self.DeltaH = {}
         self.VLH = {}
-        self.VHl = {}
-        self.Vhl = {2:{}, 4:{}}
-        self.Vll = {}
+        self.VHl = {k:{} for k in (-1,1)}
+        self.Vll = {k:{} for k in (-1,1)}
+        self.VlL = {k:{} for k in (-1,1)}
         self.V0V4 = {}
         self.V2V4 = {}
         self.V4V4 = {}
         # self.VhhDiagList = {}
         self.basisH = {}
-        self.basish = {}
         self.basisl = {}
         self.DH3ll = {k:None for k in (-1,1)}
 
@@ -147,10 +146,10 @@ class Phi4():
         c = MatrixConstructor(basis, lookupbasis)
 
         Vlist = V4OpsSelectedFull(basis, Emax)
-        self.VHl[4][k] = c.buildMatrix(Vlist)*self.L
+        self.VHl[k][4] = c.buildMatrix(Vlist)*self.L
 
-        Vlist = V4OpsSelectedFull(basis, Emax)
-        self.VHl[2][k] = c.buildMatrix(Vlist)*self.L
+        Vlist = V2OpsSelectedFull(basis, Emax)
+        self.VHl[k][2] = c.buildMatrix(Vlist)*self.L
 
         del c
 
@@ -162,7 +161,7 @@ class Phi4():
 
         basis = self.basisH[k]
         lookupbasis = self.basis[k]
-        idxList = range(*basis.irange(Emin=0, Emax=self.EL))
+        idxList = basis.irange((0, Emax))
 
         c = MatrixConstructor(basis, lookupbasis)
 
@@ -257,7 +256,7 @@ class Phi4():
             for n in (0,2,4):
                 VLL[n] = subOPL.sub(self.V[k][n])
 
-            return (VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]).M
+            return VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 
 
     def computeDH2(self, k, ET, EL, eps, loc2):

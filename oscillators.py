@@ -1,5 +1,6 @@
 import scipy
 from math import factorial, floor, sqrt
+import statefuncs
 from statefuncs import Basis
 from collections import Counter
 import itertools
@@ -61,26 +62,72 @@ def repr1torepr3(state):
             # filterDlist(dlistPair[1],ndPair[1],ntotPair[1],nmax))
 
 
+def pickN(state, N, occ):
+    """ Pick all possible subset of particles of a given state """
+    if N==0:
+        return [[]]
+    n,Zn = state[0]
 
-# XXX This is slow!!!
+    r = range(max(0,N-occ+Zn), min(Zn+1,N+1))
+    return [[(n,Zm)]+x for Zm in r for x in pickN(state[1:],N-Zm,occ-Zn)]
+
+
+def pickNM(state, N, M, occ):
+    """ Divide a state into two subsets of particles """
+    if state == []:
+        return [[]]
+    n,Zn = state[0]
+    if N+M == Zn:
+        return [[(n,N,M)]]
+
+    r = range(max(0,N-occ+Zn), min(N+1,Zn+1))
+    return [[(n,Zm,Zn-Zm)]+x for Zm in r for x in pickNM(state[1:],N-Zm,M-Zn+Zm,occ-Zn)]
+
+
+
 def gendlistPairs(state, ndPair, ntotPair, nmax):
 
-    staterepr3 = repr1torepr3(state)
     ndTot = sum(ndPair)
-    if len(staterepr3) < ndTot:
+    occn = statefuncs.occn(state)
+    if occn < ndTot:
         return []
 
-    dlistPairs = set()
+    ret = []
 
-    for dlistTot in set(map(lambda x: tuple(sorted(x)), combinations(staterepr3, ndTot))):
+    for dlistTot in pickN(state, ndTot, occn):
 
-        dlistPairs.update((tuple(sorted(p[:ndPair[0]])),
-            tuple(sorted(p[ndPair[0]:ndPair[0]+ndPair[1]])))
-            for p in permutations(dlistTot))
+        for dlist in pickNM(dlistTot, ndPair[0], ndPair[1], ndTot):
 
-    return (dlistPair for dlistPair in dlistPairs if
-            filterDlist(dlistPair[0],ndPair[0],ntotPair[0],nmax) and
-            filterDlist(dlistPair[1],ndPair[1],ntotPair[1],nmax))
+            dlist1 = tuple(itertools.chain.from_iterable([[n]*Zn1 for n,Zn1,Zn2 in dlist]))
+            dlist2 = tuple(itertools.chain.from_iterable([[n]*Zn2 for n,Zn1,Zn2 in dlist]))
+
+            if filterDlist(dlist1,ndPair[0],ntotPair[0],nmax) and\
+                filterDlist(dlist2,ndPair[1],ntotPair[1],nmax):
+                ret.append((dlist1, dlist2))
+
+    return ret
+
+
+
+# XXX This is slow!!!
+# def gendlistPairs(state, ndPair, ntotPair, nmax):
+
+    # staterepr3 = repr1torepr3(state)
+    # ndTot = sum(ndPair)
+    # if len(staterepr3) < ndTot:
+        # return []
+
+    # dlistPairs = set()
+
+    # for dlistTot in set(map(lambda x: tuple(sorted(x)), combinations(staterepr3, ndTot))):
+
+        # dlistPairs.update((tuple(sorted(p[:ndPair[0]])),
+            # tuple(sorted(p[ndPair[0]:ndPair[0]+ndPair[1]])))
+            # for p in permutations(dlistTot))
+
+    # return (dlistPair for dlistPair in dlistPairs if
+            # filterDlist(dlistPair[0],ndPair[0],ntotPair[0],nmax) and
+            # filterDlist(dlistPair[1],ndPair[1],ntotPair[1],nmax))
 
 
 
@@ -158,7 +205,7 @@ class LocOperator():
         wnlist = set(clist+dlist)
         cosc = Counter(clist)
         dosc = Counter(dlist)
-        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
+        return [(n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist]
 
 
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
@@ -560,7 +607,7 @@ def V2OpsSelectedFull(basis, Emax):
     for nd in (0,1,2):
         nc = 2-nd
 
-        dlists = gendlistsfromBasis(basis, nmax, nd, 2)
+        dlists = gendlistsfromBasis(basis, range(basis.size), nmax, nd, 2)
         oscList = []
 
         for dlist in dlists:
@@ -620,7 +667,7 @@ def V6OpsSelectedFull(basis, Emax):
     for nd in (0,1,2,3,4,5,6):
         nc = 6-nd
 
-        dlists = gendlistsfromBasis(basis, nmax, nd, 6)
+        dlists = gendlistsfromBasis(basis, range(basis.size), nmax, nd, 6)
         # print(dlists)
         oscList = []
 
