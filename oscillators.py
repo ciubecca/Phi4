@@ -161,8 +161,8 @@ class LocOperator():
         return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
-    def computeMatrixElements(self, basis, i, helper, statePos,
-            lookupEmin, lookupEmax, lookupParityList, ignKeyErr=False):
+    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
+            ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -187,12 +187,11 @@ class LocOperator():
         state = basis.stateList[i]
 
         statevec = helper.torepr2(state)
-        Emin = lookupEmin
-        Emax = lookupEmax
-        parityList = lookupParityList
-        nmax = helper.nmax
 
+        parityList = lookupbasis.parityList
+        nmax = helper.nmax
         normFactors = helper.normFactors
+        Emin, Emax = Erange
 
         # cycle over all the sets of momenta that can be annihilated
 # XXX Check: we replaced lookupbasis.helper.nmax with helper.nmax
@@ -330,8 +329,7 @@ class BilocOperator():
         return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
-    # @profile
-    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos,
+    def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
                                 ignKeyErr=True):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
@@ -360,9 +358,8 @@ class BilocOperator():
 
         statevec = helper.torepr2(state)
         parityList = lookupbasis.parityList
-        Emin = lookupbasis.Emin
-        Emax = lookupbasis.Emax
         nmax = helper.nmax
+        Emin, Emax = Erange
 
         normFactors = helper.normFactors
 

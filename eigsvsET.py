@@ -18,7 +18,7 @@ klist = (1,-1)
 maxntails = 300
 
 # Ratio between EL and ET
-ratioELET = 1.5
+ratioELET = 3
 # Ratio between ELp and ET
 ratioELpET = 1.5
 # Ratio between ELpp and ELp
@@ -69,16 +69,15 @@ for k in klist:
     # the vacuum
     vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
             -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
-    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
+    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
     print("ntails:", basisl.size)
 
 
     print("Generating high energy basis for highest Emax...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBases(k, basisl, EL=ELmax, ELpp=ELppmax)
-    print("Size of HE basis for DH2:", a.basisH[k].size)
-    print("Size of HE basis for DH3:", a.basish[k].size)
+    a.genHEBases(k, basisl, EL=ELmax, ELp=ELpmax, ELpp=ELppmax)
+    print("Size of HE basis", a.basisH[k].size)
 
     a.computeLEVs(k)
 

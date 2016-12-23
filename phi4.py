@@ -9,7 +9,7 @@ from collections import Counter
 from operator import attrgetter
 import renorm
 import gc
-from matrix import Matrix
+from matrix import *
 from scipy import exp, pi, array
 from scipy.sparse.linalg import LinearOperator
 
@@ -69,7 +69,6 @@ class Phi4():
         self.basis = Basis.fromScratch(m=self.m, L=self.L, Emax=Emax, occmax=occmax)
 
 
-
     def computePotential(self, k):
         """
         Builds the potential matrices and the free Hamiltonian. In the low-energy sector
@@ -77,11 +76,12 @@ class Phi4():
 
         basis = self.basis[k]
 
-        self.h0[k] = scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size))
+        self.h0[k] = scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size)
 
         c = MatrixConstructor(basis, basis)
         Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
+            print("computing V", n)
             self.V[k][n] = c.buildMatrix(Vlist[n], sumTranspose=True)*self.L
         del c
 
@@ -181,7 +181,7 @@ class Phi4():
         # low-energy states
         ###################################
 
-        subOp = SubmatrixOperator().fromSubbasis(self.basis[k], self.basisl[k])
+        subOp = SubmatrixOperator.fromSubbasis(self.basis[k], self.basisl[k])
 
         self.Vll[k] = {}
         for n in (0,2,4):
@@ -223,13 +223,13 @@ class Phi4():
         """
 
         # These operators allow to take submatrices according to a given energy range
-        subOPL = SubmatrixOperator().fromErange(self.basis[k], (0, ET))
+        subOPL = SubmatrixOperator.fromErange(self.basis[k], (0, ET))
 
         if ren=="rentails":
             if subbasisl==None:
-                subOPl = SubmatrixOperator().fromErange(self.basisl[k], (0,ET))
+                subOPl = SubmatrixOperator.fromErange(self.basisl[k], (0,ET))
             else:
-                subOPl = SubmatrixOperator().fromSubbasis(self.basisl[k], subbasisl)
+                subOPl = SubmatrixOperator.fromSubbasis(self.basisl[k], subbasisl)
 
             DH2ll, DH2Ll = self.computeDH2(k, ET=ET, EL=EL, eps=eps, loc2=loc2)
 
@@ -439,7 +439,7 @@ class Phi4():
         """
 
         # Subset of low energy states
-        subOpL = SubmatrixOperator().fromErange(self.basis[k],(0,ET))
+        subOpL = SubmatrixOperator.fromErange(self.basis[k],(0,ET))
         M = self.h0[k] + self.g4*self.V[k][4]
         Hraw = subOpL.sub(M)
         self.compSize = Hraw.shape[0]

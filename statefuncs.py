@@ -1,3 +1,4 @@
+import bisect
 import scipy
 from scipy import array, pi, sqrt
 from math import floor, factorial
@@ -93,8 +94,8 @@ class Basis():
         energy = helper.energy
 
         # Avoid creating another list in memory if it already a sorted list
-        if type(stateset)==list and not isSorted(stateSet, energy):
-            self.stateList = stateList
+        if type(stateset)==list and isSorted(stateset, energy):
+            self.stateList = stateset
         else:
             self.stateList = sorted(stateset, key=energy)
         self.size = len(self.stateList)
@@ -111,12 +112,14 @@ class Basis():
             self.Emax = None
             self.Emin = None
 
-    def irange(self, Emin, Emax):
+    def irange(self, Erange):
         """ Return the min and max indices for states with energy between
         Emin and Emax, when self.orderEnergy is True """
+        Emin = Erange[0]
+        Emax = Erange[1]
         imin = bisect.bisect_left(self.energyList, Emin)
         imax = bisect.bisect_left(self.energyList, Emax)
-        return imin, imax
+        return range(imin, imax+1)
 
     def propagator(self, eps, Emin, Emax):
         """ Return the propagator for states between Emin and Emax """
