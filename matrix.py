@@ -40,6 +40,7 @@ class SubmatrixOperator():
         return self(basis.irange(Erange))
 
     def subrows(self, m):
+        # print(self.idxList)
         return m.tocsr()[self.idxList,]
 
     def subcolumns(self, m):

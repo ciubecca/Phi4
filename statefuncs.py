@@ -114,12 +114,17 @@ class Basis():
 
     def irange(self, Erange):
         """ Return the min and max indices for states with energy between
-        Emin and Emax, when self.orderEnergy is True """
+        Emin and Emax """
         Emin = Erange[0]
-        Emax = Erange[1]
+        # This is to include any element with E=Emax
+        tol = 10**-10
+        Emax = Erange[1]+tol
+        # print("Erange", Erange)
+        # print("self.Emax", self.Emax)
         imin = bisect.bisect_left(self.energyList, Emin)
         imax = bisect.bisect_left(self.energyList, Emax)
-        return range(imin, imax+1)
+        # print(range(0min, imax))
+        return range(imin, imax)
 
     def propagator(self, eps, Emin, Emax):
         """ Return the propagator for states between Emin and Emax """

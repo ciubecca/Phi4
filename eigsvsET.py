@@ -15,7 +15,7 @@ m = 1
 klist = (1,-1)
 # Maximum number of tails
 # NOTE The actual number of tails can increase for higher ET
-maxntails = 300
+maxntails = 100
 
 # Ratio between EL and ET
 ratioELET = 3
@@ -80,8 +80,6 @@ for k in klist:
     print("Size of HE basis", a.basisH[k].size)
 
     a.computeLEVs(k)
-
-    sys.exit(-1)
 
     print("Computing high energy matrices...")
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
