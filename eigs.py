@@ -6,6 +6,7 @@ import scipy
 import math
 import database
 
+loc3 = False
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = False
@@ -92,9 +93,11 @@ for k in klist:
     print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
     eps = a.eigenvalues["renloc"][k][0]
 
-    a.calcVV3([ELp], eps)
+    if loc3:
+        a.calcVV3([ELp], eps)
 
-    a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps, neigs=neigs)
+    a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
+            neigs=neigs, loc3=loc3)
     print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
 
