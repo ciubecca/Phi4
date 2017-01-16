@@ -6,6 +6,7 @@ import scipy
 import math
 import database
 
+loc3 = False
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = False
@@ -16,12 +17,14 @@ neigs = 1
 # List of parity quantum numbers
 klist = (1,)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
-minoverlap = 10**(-2)
+maxntails = 300
 
-
-# How EL depends on ET
-def el(ET):
-    return ET*3
+# Ratio between EL and ET
+ratioELET = 3
+# Ratio between ELp and ET
+ratioELpET = 1.5
+# Ratio between ELpp and ELp
+ratioELppELp = 1.5
 
 argv = sys.argv
 if len(argv) < 4:
@@ -32,6 +35,9 @@ L = float(argv[1])
 g = float(argv[2])
 ET = float(argv[3])
 
+EL = ratioELET*ET
+ELp = ratioELpET*ET
+ELpp = ratioELppELp*ELp
 
 if saveondb:
     db = database.Database()
@@ -58,70 +64,62 @@ for k in klist:
     eps = a.eigenvalues["raw"][k][0]
 
 
+    # Select a set of tails and construct a Basis object, ordered in overlap with
+    # the vacuum
+    vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
+            -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
+    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
+    print("ntails:", basisl.size)
 
-    # Select a set of tails and construct a Basis object
-    vectorlist = [state for i,state in enumerate(a.basis[k])
-        if abs(a.eigenvectors["raw"][k][0][i]) > minoverlap]
-    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
-    print("Total number of tails:", basisl.size)
-
-
-    EL = el(ET)
-
-    print("ET={}, EL={}".format(ET,EL))
 
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBasis(k, basisl, EL)
+    a.genHEBases(k, basisl, EL=EL, ELpp=ELpp)
     print("Size of HE basis:", a.basisH[k].size)
 
     print("Computing high energy matrices...")
+    a.computeHEVs(k)
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
 # Later we will be varying EL, therefore taking submatrices of these.
 # Computing VHH is expensive
-    a.computeHEVs(k, EL)
 
 
-    # Checks if the eigenvalues we are going to compute are alredy present in
-#the database. If yes, skip them
-    if saveondb:
-        approxQuery = {"g":g, "L":L, "ET":ET, "EL":EL}
-        exactQuery = {"k":k, "ren":"rentails"}
-        if db.getObjList('spec', approxQuery=approxQuery,
-                exactQuery=exactQuery) != []:
-            print("Eigenvalues already present")
-            continue
-
-
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="raw", g=g,
-                spec=a.eigenvalues["raw"][k], eigv=a.eigenvectors["raw"][k],
-                basisSize=a.compSize, neigs=neigs)
+    a.computeLEVs(k)
 
 
 # Compute "local" renormalized eigenvalues for cutoff ET
 # Since we are passing EL=ET to the method call, the matrices VHL, VHH will be computed
 # only in the local approximation
-    a.computeEigval(k, ET, "renloc", ET, eps, neigs=neigs)
+    a.computeEigval(k, ET, "renloc", eps=eps, neigs=neigs)
     print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
     eps = a.eigenvalues["renloc"][k][0]
 
-    if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="renloc", g=g,
-                spec=a.eigenvalues["renloc"][k], eigv=a.eigenvectors["renloc"][k],
-                basisSize=a.compSize, neigs=neigs, EL=ET, eps=eps)
+    if loc3:
+        a.calcVV3([ELp], eps)
 
 # Compute renormalized eigenvalues by computing the fully "non-local" corrections
 # to VHL, VHH up to cutoff EL
-    a.computeEigval(k, ET, "rentails", EL, eps, neigs=neigs)
+    a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps, neigs=neigs,
+            loc3=loc3)
     print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
     print("Number of tails:", a.ntails)
 
     if saveondb:
-        db.insert(k=k, ET=ET, L=L, ren="rentails", g=g,
-                spec=a.eigenvalues["rentails"][k], eigv=a.eigenvectors["rentails"][k],
-                basisSize=a.compSize, neigs=neigs, EL=EL, ntails=a.ntails, eps=eps)
-    else:
-        print(a.vacuumE("rentails"))
+        datadict = dict(k=k, ET=ET, L=L, ren="raw", g=g, neigs=neigs,
+                basisSize=a.compSize)
+        db.insert(datadict=datadict, spec=a.eigenvalues["raw"][k])
+
+
+        datadict = dict(k=k, ET=ET, L=L, ren="renloc", g=g, eps=eps, neigs=neigs,
+                basisSize=a.compSize)
+        db.insert(datadict=datadict, spec=a.eigenvalues["renloc"][k])
+
+
+        datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp, ELpp=ELpp,
+                ntails=a.ntails, eps=eps, neigs=neigs, basisSize=a.compSize,
+                tailsComputedAtET=ETmax, maxntails=maxntails)
+        db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
+
+
