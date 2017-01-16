@@ -12,10 +12,10 @@ saveondb = True
 # saveondb = False
 m = 1
 # List of parity quantum numbers
-klist = (1,-1)
+klist = (1,)
 # Maximum number of tails
 # NOTE The actual number of tails can increase for higher ET
-maxntails = 100
+maxntails = 300
 
 # Ratio between EL and ET
 ratioELET = 3
@@ -76,7 +76,7 @@ for k in klist:
     print("Generating high energy basis for highest Emax...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBases(k, basisl, EL=ELmax, ELp=ELpmax, ELpp=ELppmax)
+    a.genHEBasis(k, basisl, EL=ELmax, ELp=ELpmax, ELpp=ELppmax)
     print("Size of HE basis", a.basisH[k].size)
 
     a.computeLEVs(k)
