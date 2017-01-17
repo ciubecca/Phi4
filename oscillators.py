@@ -586,6 +586,11 @@ def V4OpsSelectedHalf(basis, Emax, idxList=None):
         for dlist in dlists:
             clists = [clist for clist in createClistsV4(nmax, dlist, nc) if
                     oscEnergy(clist) <= Emax+tol]
+            if nd==2:
+                clists = [clist for clist in clists if
+                    sorted([abs(dlist[0]),abs(dlist[1])])<=
+                    sorted([abs(clist[0]),abs(clist[1])]) ]
+
             oscList.append((dlist, clists))
 
         opsList.append(LocOperator(oscList,nd,nc,helper=helper))

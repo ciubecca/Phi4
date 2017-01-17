@@ -7,6 +7,10 @@ import math
 import database
 
 loc3 = False
+loc3mix = True
+nonloc3mix = True
+
+print(loc3, loc3mix, nonloc3mix)
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = False
@@ -19,7 +23,7 @@ klist = (1,)
 maxntails = 300
 
 # Ratio between EL and ET
-ratioELET = 3
+ratioELET = 1.5
 # Ratio between ELp and ET
 ratioELpET = 1.5
 # Ratio between ELpp and ELp
@@ -60,7 +64,7 @@ for k in klist:
 
 
 # Compute the raw eigenvalues for cutoff ET
-    a.computeEigval(k, ET, "raw")
+    a.computeEigval(k, ET, "raw", neigs=neigs)
     print("Raw vacuum:", a.eigenvalues["raw"][k][0])
     eps = a.eigenvalues["raw"][k][0]
 
@@ -97,7 +101,7 @@ for k in klist:
         a.calcVV3([ELp], eps)
 
     a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-            neigs=neigs, loc3=loc3)
+            neigs=neigs, loc3=loc3,loc3mix=loc3mix, nonloc3mix=nonloc3mix)
     print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
 
