@@ -23,11 +23,11 @@ klist = (1,)
 maxntails = 300
 
 # Ratio between EL and ET
-ratioELET = 1.5
+ratioELET = 3
 # Ratio between ELp and ET
-ratioELpET = 1.5
+ratioELpET = 2
 # Ratio between ELpp and ELp
-ratioELppELp = 1.5
+ratioELppELp = 2
 
 
 argv = sys.argv

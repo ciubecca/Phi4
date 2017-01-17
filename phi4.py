@@ -88,6 +88,7 @@ class Phi4():
         self.V[k][0] = scipy.sparse.eye(basis.size)*self.L
 
 
+    # @profile
     def genHEBasis(self, k, basisl, EL, ELp, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -306,8 +307,6 @@ class Phi4():
             VHl[n] = self.VHl[k][n]
             VlH[n] = VHl[n].transpose()
 
-        print("ET, ELp", ET, ELp)
-
         basis = self.basisH[k]
         # List of basis elements on which we will cycle
         fullIdxList = basis.irange((ET,ELp))
@@ -394,6 +393,8 @@ class Phi4():
 # Add the "symmetric local" parts to DH3
 #####################################################
 
+        print("Before adding local", DH3ll)
+
         if loc3:
             Vll = {}
             for n in (0,2,4,6):
@@ -402,6 +403,7 @@ class Phi4():
             V0V4 = self.V0V4[k]
             V2V4 = self.V2V4[k]
             V4V4 = self.V4V4[k]
+
 
             DH3ll += V0V4*self.VV3.V0V4[ELp]*self.g4**3
             DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3
