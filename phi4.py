@@ -137,11 +137,10 @@ class Phi4():
         # Generate the VlH matrices
         #################################
 
-        # print("Computing VHl...")
+        print("Computing VHl...")
 
         basis = self.basisl[k]
         lookupbasis = self.basisH[k]
-        # print("basisH Erange", self.basisH[k].Emin, self.basisH[k].Emax)
         Emax = lookupbasis.Emax
 
         c = MatrixConstructor(basis, lookupbasis)
@@ -186,8 +185,6 @@ class Phi4():
         self.Vll[k] = {}
         for n in (0,2,4):
             self.VlL[k][n] = subOp.subcolumns(self.V[k][n])
-            # print("subOPl.subrows")
-            # print("size of submatrix:", len(subOp.idxList))
             self.Vll[k][n] = subOp.subrows(self.VlL[k][n])
 
 
@@ -229,7 +226,6 @@ class Phi4():
 
         if ren=="rentails":
             if subbasisl==None:
-                # print("self.basisl[k] size", self.basisl[k].size)
                 subOPl = SubmatrixOperator.fromErange(self.basisl[k], (0,ET))
             else:
                 subOPl = SubmatrixOperator.fromSubbasis(self.basisl[k], subbasisl)
@@ -239,29 +235,16 @@ class Phi4():
             DH2ll, DH2Ll = self.computeDH2(k, ET=ET, EL=EL, eps=eps, loc2=loc2)
 
             # Extract the submatrix in the right energy range
-            # print("DH2Ll shape", DH2Ll.shape)
-            # print("subOPL.subcolumns(subOPl.subrows")
-            # print("basisl size:", len(subOPl.idxList))
-            # print("basisL size:", len(subOPL.idxList))
             DH2Ll = subOPL.subcolumns(subOPl.subrows(DH2Ll))
-            # print(DH2Ll.shape)
             DH2lL = DH2Ll.transpose()
 
-            # print("subOPl.sub")
             DH2ll = subOPl.sub(DH2ll)
 
             DH3ll = self.computeDH3(k, ET=ET, ELp=ELp, ELpp=ELpp, eps=eps,
                         loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
-            # print("DH3ll", DH3ll.todense())
             DH3ll = subOPl.sub(DH3ll)
 
             invM = scipy.sparse.linalg.inv((DH2ll-DH3ll).tocsc())
-
-            # print("DH3ll", DH3ll.todense())
-            # print("DH2lL.shape", DH2lL.shape)
-            # print("DH2lL", DH2lL.todense())
-            # print("DH2ll", DH2ll.todense())
-            # print("invM", invM)
 
             return DH2lL, invM, DH2Ll
 
@@ -300,16 +283,13 @@ class Phi4():
         # Dictionary of local renormalization coefficients for the g^2 term
         VV2 = renorm.renVV2(g4=self.g4, EL=EL, eps=eps).VV2
 
-        # print(VHl.shape, propagatorH.shape, VLH.shape)
         DH2Ll = VHl*propagatorH*VLH*self.g4**2
         DH2ll = VHl*propagatorH*VlH*self.g4**2
 
         if loc2:
-            # print(DH2Ll.shape, VLl[0].shape)
             DH2Ll += VV2[0]*VLl[0] + VV2[2]*VLl[2] + VV2[4]*VLl[4]
             DH2ll += VV2[0]*Vll[0] + VV2[2]*Vll[2] + VV2[4]*Vll[4]
 
-        # print(DH2ll.dtype)
         return DH2ll, DH2Ll
 
 
@@ -331,14 +311,9 @@ class Phi4():
         basis = self.basisH[k]
         # List of basis elements on which we will cycle
         fullIdxList = basis.irange((ET,ELp))
-        # print("fullIdxList", list(fullIdxList))
-        # print("basis", self.basisH[k])
-        # print("basis energyList", basis.energyList)
-        # print("subbasis energyList", [basis.energyList[i] for i in fullIdxList])
         idxlen = len(fullIdxList)
         chunklen = min(self.chunklen, idxlen)
         idxLists = [fullIdxList[x:x+chunklen] for x in range(0, idxlen, chunklen)]
-        # print("idxLists", idxLists)
 
 #########################################################################
 # Add the "symmetric" contributions to DH3 by integrating out states with
@@ -347,9 +322,6 @@ class Phi4():
 
 # Propagator and projector over the states between ET and ELp
         propagatorH = basis.propagator(eps, ET, ELp)
-
-        # print("eps", eps)
-        # print(propagatorH)
 
         Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
 
@@ -363,8 +335,6 @@ class Phi4():
 
             VhhHalfPart =  c.buildMatrix(Vlist, ignKeyErr=True, sumTranspose=False,
                     idxList=idxList)*self.L
-
-            # print(VhhHalfPart.tocsc())
 
             VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
                     basis.size)
@@ -389,8 +359,6 @@ class Phi4():
 # Propagator and projector over the states between ELp and ELpp
             propagatorHH = basis.propagator(eps, ELp, ELpp)
 
-            print(propagatorHH)
-
             VhHlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
 
             for i, idxList in enumerate(idxLists):
@@ -399,9 +367,6 @@ class Phi4():
                 VhHPart = c.buildMatrix(VhHlist, ignKeyErr=True, sumTranspose=False,
                         idxList=idxList)*self.L
 
-                # print(VhHPart)
-
-                # XXX Check
                 DH3llPart = VHl[4]*propagatorH*VhHPart*propagatorHH*VlH[4]*self.g4**3
                 DH3llPart += DH3llPart.transpose()
                 DH3ll += DH3llPart
@@ -475,7 +440,6 @@ class Phi4():
         # Subset of low energy states
         subOpL = SubmatrixOperator.fromErange(self.basis[k],(0,ET))
         M = self.h0[k] + self.g4*self.V[k][4]
-        # print("subOPL.sub")
         Hraw = subOpL.sub(M)
         self.compSize = Hraw.shape[0]
 
