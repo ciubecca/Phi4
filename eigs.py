@@ -21,11 +21,11 @@ klist = (1,)
 maxntails = 300
 
 # Ratio between EL and ET
-ratioELET = 3
+ratioELET = 2
 # Ratio between ELp and ET
-ratioELpET = 2
+ratioELpET = 1.5
 # Ratio between ELpp and ELp
-ratioELppELp = 2
+ratioELppELp = 1.5
 
 
 argv = sys.argv
@@ -42,7 +42,7 @@ ELp = ratioELpET*ET
 ELpp = ratioELppELp*ELp
 
 
-@profile
+# @profile
 def main():
 
     if saveondb:

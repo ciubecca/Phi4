@@ -88,7 +88,7 @@ class Phi4():
         self.V[k][0] = scipy.sparse.eye(basis.size)*self.L
 
 
-    @profile
+    # @profile
     def genHEBasis(self, k, basisl, EL, ELp, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -313,6 +313,8 @@ class Phi4():
         idxlen = len(fullIdxList)
         chunklen = min(self.chunklen, idxlen)
         idxLists = [fullIdxList[x:x+chunklen] for x in range(0, idxlen, chunklen)]
+
+        print("Total number of chunks: ", len(idxLists))
 
 #########################################################################
 # Add the "symmetric" contributions to DH3 by integrating out states with
