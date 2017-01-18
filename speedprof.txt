@@ -1,0 +1,87 @@
+Timer unit: 1e-06 s
+
+Total time: 99.2717 s
+File: /Users/lorenzovitale/Phi4/phi4.py
+Function: genHEBasis at line 91
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    91                                               @profile
+    92                                               def genHEBasis(self, k, basisl, EL, ELp, ELpp):
+    93                                                   """ Generate a high-energy basis from a set of tails
+    94                                                   k: parity quantum number
+    95                                                   basisl: Basis instance containing the set of tails
+    96                                                   EL: maximal energy of the generated basis for DH2
+    97                                                   ELpp: maximal energy of the generated basis for DH3
+    98                                                   """
+    99                                           
+   100         1            1      1.0      0.0          self.basisl[k] = basisl
+   101                                           
+   102         1            2      2.0      0.0          self.EL = EL
+   103         1            1      1.0      0.0          self.ELp = ELp
+   104         1           15     15.0      0.0          self.ELpp = ELpp
+   105         1            2      2.0      0.0          Emax = max(EL, ELp, ELpp)
+   106                                           
+   107                                                   # Generate all the operators between the selected states and the states
+   108                                                   # in the range [0, Emax]
+   109         1      3309321 3309321.0      3.3          Vlist = V4OpsSelectedFull(basisl, Emax)
+   110         1            3      3.0      0.0          vectorset = set()
+   111                                           
+   112         6            7      1.2      0.0          for V in Vlist:
+   113   1882004     12207740      6.5     12.3              for v in V.yieldBasis(basisl, Emax):
+   114                                                           # Don't add twice states connected by parity inversion
+   115   1881999      5645563      3.0      5.7                  if v not in vectorset and v[::-1] not in vectorset:
+   116   1129923      1469340      1.3      1.5                      vectorset.add(v)
+   117                                                               # print(type(v[1]))
+   118                                                               # print(sizeof(v[1]))
+   119                                           
+   120         1            1      1.0      0.0          helper = Vlist[0].helper
+   121                                           
+   122                                                   # Basis of selected states with energy <= Emax
+   123         1     76639733 76639733.0     77.2          self.basisH[k] = Basis(k, (helper.torepr1(v) for v in vectorset), helper)
+
+Total time: 104.717 s
+File: genbasis.py
+Function: main at line 39
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    39                                           @profile
+    40                                           def main():
+    41                                           
+    42         1           50     50.0      0.0      a = phi4.Phi4(m, L)
+    43         1        39495  39495.0      0.0      a.buildBasis(Emax=ET)
+    44                                           
+    45                                           
+    46         2            5      2.5      0.0      for k in klist:
+    47                                           
+    48                                                   # Compute the potential matrices in the low-energy space below ET
+    49         1       410892 410892.0      0.4          a.computePotential(k)
+    50                                           
+    51         1           28     28.0      0.0          print("k=", k)
+    52         1            6      6.0      0.0          print("Full basis size: ", a.basis[k].size)
+    53                                           
+    54         1           26     26.0      0.0          a.setCouplings(g4=g)
+    55         1            8      8.0      0.0          print("g=", g)
+    56                                           
+    57                                           
+    58                                           # Compute the raw eigenvalues for cutoff ET
+    59         1         8401   8401.0      0.0          a.computeEigval(k, ET, "raw", neigs=neigs)
+    60         1           35     35.0      0.0          print("Raw vacuum:", a.eigenvalues["raw"][k][0])
+    61         1            2      2.0      0.0          eps = a.eigenvalues["raw"][k][0]
+    62                                           
+    63                                           
+    64                                           
+    65                                                   # Select a set of tails and construct a Basis object
+    66         1          678    678.0      0.0          vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
+    67         1            3      3.0      0.0                  -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
+    68         1         5047   5047.0      0.0          basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
+    69         1           11     11.0      0.0          print("Total number of tails:", basisl.size)
+    70                                           
+    71                                           
+    72         1            4      4.0      0.0          print("Generating high energy basis...")
+    73                                                   # Generate the high-energy "selected" basis by passing a set of tails
+    74                                                   # and a maximum cutoff EL
+    75         1    104252136 104252136.0     99.6          a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
+    76         1           43     43.0      0.0          print("Size of HE basis:", a.basisH[k].size)
+
