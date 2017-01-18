@@ -7,19 +7,11 @@ Raw vacuum: -0.269845166264
 Total number of tails: 300
 Generating high energy basis...
 Size of HE basis: 2525525
-Computing V2V4
-Computing V4V4
-Computing high energy matrices...
-Computing VHl...
-Computing VLH...
-self.VLH[k] size 83.291488
-Local ren vacuum: -0.398753706408
-Calculating VVV renorm coefficients
 Filename: /Users/lorenzovitale/Phi4/phi4.py
 
 Line #    Mem usage    Increment   Line Contents
 ================================================
-    91   71.129 MiB    0.000 MiB       @profile
+    91   71.145 MiB    0.000 MiB       @profile
     92                                 def genHEBasis(self, k, basisl, EL, ELp, ELpp):
     93                                     """ Generate a high-energy basis from a set of tails
     94                                     k: parity quantum number
@@ -28,114 +20,73 @@ Line #    Mem usage    Increment   Line Contents
     97                                     ELpp: maximal energy of the generated basis for DH3
     98                                     """
     99                             
-   100   71.129 MiB    0.000 MiB           self.basisl[k] = basisl
+   100   71.145 MiB    0.000 MiB           self.basisl[k] = basisl
    101                             
-   102   71.129 MiB    0.000 MiB           self.EL = EL
-   103   71.129 MiB    0.000 MiB           self.ELp = ELp
-   104   71.129 MiB    0.000 MiB           self.ELpp = ELpp
-   105   71.129 MiB    0.000 MiB           Emax = max(EL, ELp, ELpp)
+   102   71.145 MiB    0.000 MiB           self.EL = EL
+   103   71.145 MiB    0.000 MiB           self.ELp = ELp
+   104   71.145 MiB    0.000 MiB           self.ELpp = ELpp
+   105   71.145 MiB    0.000 MiB           Emax = max(EL, ELp, ELpp)
    106                             
    107                                     # Generate all the operators between the selected states and the states
    108                                     # in the range [0, Emax]
-   109   89.531 MiB   18.402 MiB           Vlist = V4OpsSelectedFull(basisl, Emax)
-   110   89.531 MiB    0.000 MiB           vectorset = set()
+   109   89.617 MiB   18.473 MiB           Vlist = V4OpsSelectedFull(basisl, Emax)
+   110   89.617 MiB    0.000 MiB           vectorset = set()
    111                             
-   112 2435.191 MiB 2345.660 MiB           for V in Vlist:
-   113 2435.191 MiB    0.000 MiB               for v in V.genBasis(basisl, Emax):
+   112 1256.789 MiB 1167.172 MiB           for V in Vlist:
+   113 1271.754 MiB   14.965 MiB               for v in V.yieldBasis(basisl, Emax):
    114                                             # Don't add twice states connected by parity inversion
-   115 2435.191 MiB    0.000 MiB                   if v not in vectorset and v[::-1] not in vectorset:
-   116 2435.191 MiB    0.000 MiB                       vectorset.add(v)
-   117                             
-   118 2435.191 MiB    0.000 MiB           helper = Vlist[0].helper
+   115 1271.758 MiB    0.004 MiB                   if v not in vectorset and v[::-1] not in vectorset:
+   116 1271.465 MiB   -0.293 MiB                       vectorset.add(v)
+   117                                                 # print(type(v[1]))
+   118                                                 # print(sizeof(v[1]))
    119                             
-   120                                     # Basis of selected states with energy <= Emax
-   121 3562.262 MiB 1127.070 MiB           self.basisH[k] = Basis(k, (helper.torepr1(v) for v in vectorset), helper)
+   120  752.555 MiB -518.910 MiB           helper = Vlist[0].helper
+   121                             
+   122                                     # Basis of selected states with energy <= Emax
+   123 3480.441 MiB 2727.887 MiB           self.basisH[k] = Basis(k, (helper.torepr1(v) for v in vectorset), helper)
 
 
-Filename: eigs.py
+Filename: genbasis.py
 
 Line #    Mem usage    Increment   Line Contents
 ================================================
-    45   60.898 MiB    0.000 MiB   @profile
-    46                             def main():
+    39   60.820 MiB    0.000 MiB   @profile
+    40                             def main():
+    41                             
+    42   60.828 MiB    0.008 MiB       a = phi4.Phi4(m, L)
+    43   61.590 MiB    0.762 MiB       a.buildBasis(Emax=ET)
+    44                             
+    45                             
+    46 2919.469 MiB 2857.879 MiB       for k in klist:
     47                             
-    48   60.898 MiB    0.000 MiB       if saveondb:
-    49                                     db = database.Database()
+    48                                     # Compute the potential matrices in the low-energy space below ET
+    49   69.199 MiB -2850.270 MiB           a.computePotential(k)
     50                             
-    51   60.906 MiB    0.008 MiB       a = phi4.Phi4(m, L)
-    52   61.641 MiB    0.734 MiB       a.buildBasis(Emax=ET)
+    51   69.199 MiB    0.000 MiB           print("k=", k)
+    52   69.199 MiB    0.000 MiB           print("Full basis size: ", a.basis[k].size)
     53                             
-    54                             
-    55   61.641 MiB    0.000 MiB       for k in klist:
+    54   69.199 MiB    0.000 MiB           a.setCouplings(g4=g)
+    55   69.199 MiB    0.000 MiB           print("g=", g)
     56                             
-    57                                     # Compute the potential matrices in the low-energy space below ET
-    58   69.223 MiB    7.582 MiB           a.computePotential(k)
-    59                             
-    60   69.223 MiB    0.000 MiB           print("k=", k)
-    61   69.223 MiB    0.000 MiB           print("Full basis size: ", a.basis[k].size)
+    57                             
+    58                             # Compute the raw eigenvalues for cutoff ET
+    59   71.113 MiB    1.914 MiB           a.computeEigval(k, ET, "raw", neigs=neigs)
+    60   71.137 MiB    0.023 MiB           print("Raw vacuum:", a.eigenvalues["raw"][k][0])
+    61   71.137 MiB    0.000 MiB           eps = a.eigenvalues["raw"][k][0]
     62                             
-    63   69.223 MiB    0.000 MiB           a.setCouplings(g4=g)
-    64   69.223 MiB    0.000 MiB           print("g=", g)
-    65                             
-    66                             
-    67                             # Compute the raw eigenvalues for cutoff ET
-    68   71.105 MiB    1.883 MiB           a.computeEigval(k, ET, "raw", neigs=neigs)
-    69   71.129 MiB    0.023 MiB           print("Raw vacuum:", a.eigenvalues["raw"][k][0])
-    70   71.129 MiB    0.000 MiB           eps = a.eigenvalues["raw"][k][0]
+    63                             
+    64                             
+    65                                     # Select a set of tails and construct a Basis object
+    66   71.145 MiB    0.008 MiB           vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
+    67   71.145 MiB    0.000 MiB                   -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
+    68   71.145 MiB    0.000 MiB           basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
+    69   71.145 MiB    0.000 MiB           print("Total number of tails:", basisl.size)
+    70                             
     71                             
-    72                             
-    73                             
-    74                                     # Select a set of tails and construct a Basis object
-    75   71.129 MiB    0.000 MiB           vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
-    76   71.129 MiB    0.000 MiB                   -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
-    77   71.129 MiB    0.000 MiB           basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
-    78   71.129 MiB    0.000 MiB           print("Total number of tails:", basisl.size)
-    79                             
-    80                             
-    81   71.129 MiB    0.000 MiB           print("Generating high energy basis...")
-    82                                     # Generate the high-energy "selected" basis by passing a set of tails
-    83                                     # and a maximum cutoff EL
-    84 3472.922 MiB 3401.793 MiB           a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
-    85 3472.992 MiB    0.070 MiB           print("Size of HE basis:", a.basisH[k].size)
-    86                             
-    87  671.750 MiB -2801.242 MiB           a.computeLEVs(k)
-    88                             
-    89                             
-    90  671.797 MiB    0.047 MiB           print("Computing high energy matrices...")
-    91                             # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
-    92                             # Later we will be varying EL, therefore taking submatrices of these.
-    93                             # Computing VHH is expensive
-    94 1693.676 MiB 1021.879 MiB           a.computeHEVs(k)
-    95                             
-    96                             
-    97 1662.594 MiB  -31.082 MiB           a.computeEigval(k, ET, "renloc", eps=eps, neigs=neigs)
-    98 1662.609 MiB    0.016 MiB           print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
-    99 1662.609 MiB    0.000 MiB           eps = a.eigenvalues["renloc"][k][0]
-   100                             
-   101 1662.609 MiB    0.000 MiB           if loc3:
-   102                                         a.calcVV3([ELp], eps)
-   103                             
-   104                                     a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-   105                                             neigs=neigs, loc3=loc3,loc3mix=loc3mix, nonloc3mix=nonloc3mix)
-   106                                     print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
-   107                             
-   108                             
-   109                                     print("Number of tails:", a.ntails)
-   110                             
-   111                                     if saveondb:
-   112                                         datadict = dict(k=k, ET=ET, L=L, ren="raw", g=g, neigs=neigs,
-   113                                                 basisSize=a.compSize)
-   114                                         db.insert(datadict=datadict, spec=a.eigenvalues["raw"][k])
-   115                             
-   116                             
-   117                                         datadict = dict(k=k, ET=ET, L=L, ren="renloc", g=g, eps=eps, neigs=neigs,
-   118                                                 basisSize=a.compSize)
-   119                                         db.insert(datadict=datadict, spec=a.eigenvalues["renloc"][k])
-   120                             
-   121                             
-   122                                         datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp, ELpp=ELpp,
-   123                                                 ntails=a.ntails, eps=eps, neigs=neigs, basisSize=a.compSize,
-   124                                                 tailsComputedAtET=ETmax, maxntails=maxntails)
-   125                                         db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
+    72   71.145 MiB    0.000 MiB           print("Generating high energy basis...")
+    73                                     # Generate the high-energy "selected" basis by passing a set of tails
+    74                                     # and a maximum cutoff EL
+    75 2919.367 MiB 2848.223 MiB           a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
+    76 2919.461 MiB    0.094 MiB           print("Size of HE basis:", a.basisH[k].size)
 
 
