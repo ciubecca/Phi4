@@ -36,7 +36,7 @@ ELp = ratioELpET*ET
 ELpp = ratioELppELp*ELp
 
 
-# @profile
+@profile
 def main():
 
     a = phi4.Phi4(m, L)
