@@ -284,7 +284,7 @@ class LocOperator():
     # as Hh = V*Hl
 # TODO Use yield instead of creating multiple overlapping sets
     # @profile
-    def genBasis(self, basis, EL):
+    def yieldBasis(self, basis, EL):
         """ Return a set of tuples of representation 2 states, all of which are not
         connected by spatial parity transformations.
         basis: set of "selected" low energy states on which to act
@@ -292,7 +292,6 @@ class LocOperator():
         """
 
         nmax = self.helper.nmax
-        stateset = set()
 
         for i, state in enumerate(basis):
 
@@ -308,16 +307,10 @@ class LocOperator():
                     newstatevec = statevec[:]
                     for n,Zc,Zd in osc:
                         newstatevec[n+nmax] += Zc-Zd
-                    t1 = tuple(newstatevec)
-                    t2 = tuple(newstatevec[::-1])
-                    if (t1 not in stateset) and (t2 not in stateset):
-                        stateset.add(t1)
+                    yield tuple(newstatevec)
 
         # print("type of data in statevec:", type(statevec[0]))
         # print("type of data in tuples", type(t1[0]))
-
-
-        return stateset
 
 
 
