@@ -283,7 +283,7 @@ class LocOperator():
     # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
     # as Hh = V*Hl
 # TODO Use yield instead of creating multiple overlapping sets
-    @profile
+    # @profile
     def genBasis(self, basis, EL):
         """ Return a set of tuples of representation 2 states, all of which are not
         connected by spatial parity transformations.
@@ -313,8 +313,8 @@ class LocOperator():
                     if (t1 not in stateset) and (t2 not in stateset):
                         stateset.add(t1)
 
-        print("type of data in statevec:", type(statevec[0]))
-        print("type of data in tuples", type(t1[0]))
+        # print("type of data in statevec:", type(statevec[0]))
+        # print("type of data in tuples", type(t1[0]))
 
 
         return stateset
