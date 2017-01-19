@@ -59,8 +59,8 @@ class Helper():
 
     def torepr1(self, state):
         """ Transform state from repr2 to repr1 """
-        return [(self.wnList[i],state[i]) for i in range(2*self.nmax+1)
-            if state[i]!= 0]
+        return tuple((self.wnList[i],state[i]) for i in range(2*self.nmax+1)
+            if state[i]!= 0)
 
     def Emaxtonmax(self, Emax):
         """ return nmax corresponding to given Emax """

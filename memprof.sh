@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CMD="genbasis.py 10 1 15"
+CMD="genbasis.py 10 1 12"
 FNAME="memtest.out"
 
 echo $CMD >> $FNAME

@@ -18,7 +18,7 @@ m = 1
 neigs = 1
 # List of parity quantum numbers
 klist = (1,)
-maxntails = 300
+maxntails = None
 
 # Ratio between EL and ET
 ratioELET = 2
@@ -73,7 +73,9 @@ def main():
 
         # Select a set of tails and construct a Basis object
         vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
-                -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
+                -abs(a.eigenvectors["raw"][k][0][x[0]]))]
+        if maxntails != None:
+            vecotrlist = vectorlist[:maxntails]
         basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
         print("Total number of tails:", basisl.size)
 
