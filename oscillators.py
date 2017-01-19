@@ -48,23 +48,6 @@ def repr1torepr3(state):
 
 
 
-# NOTE Old version
-# def gendlistPairs(state, ndPair, ntotPair, nmax):
-
-    # x = list(itertools.chain.from_iterable([[n]*Zn for n,Zn in state]))
-
-    # if len(x) < sum(ndPair):
-        # return []
-
-    # dlistPairs = set((tuple(sorted(p[:ndPair[0]])),
-        # tuple(sorted(p[ndPair[0]:ndPair[0]+ndPair[1]])))
-        # for p in permutations(x))
-
-    # return (dlistPair for dlistPair in dlistPairs if
-            # filterDlist(dlistPair[0],ndPair[0],ntotPair[0],nmax) and
-            # filterDlist(dlistPair[1],ndPair[1],ntotPair[1],nmax))
-
-
 def pickN(state, N, occ):
     """ Pick all possible subset of particles of a given state """
     if N==0:
@@ -109,28 +92,6 @@ def gendlistPairs(state, ndPair, ntotPair, nmax):
                 ret.append((dlist1, dlist2))
 
     return ret
-
-
-
-# XXX This is slow!!!
-# def gendlistPairs(state, ndPair, ntotPair, nmax):
-
-    # staterepr3 = repr1torepr3(state)
-    # ndTot = sum(ndPair)
-    # if len(staterepr3) < ndTot:
-        # return []
-
-    # dlistPairs = set()
-
-    # for dlistTot in set(map(lambda x: tuple(sorted(x)), combinations(staterepr3, ndTot))):
-
-        # dlistPairs.update((tuple(sorted(p[:ndPair[0]])),
-            # tuple(sorted(p[ndPair[0]:ndPair[0]+ndPair[1]])))
-            # for p in permutations(dlistTot))
-
-    # return (dlistPair for dlistPair in dlistPairs if
-            # filterDlist(dlistPair[0],ndPair[0],ntotPair[0],nmax) and
-            # filterDlist(dlistPair[1],ndPair[1],ntotPair[1],nmax))
 
 
 
@@ -270,11 +231,11 @@ class LocOperator():
 
                 if ignKeyErr:
                     try:
-                        j = statePos[tuple(newstatevec)]
+                        j = statePos[bytes(newstatevec)]
                     except KeyError:
                         continue
                 else:
-                    j = statePos[tuple(newstatevec)]
+                    j = statePos[bytes(newstatevec)]
 
                 x *= parityFactors[p][parityList[j]]
                 data.append(x)

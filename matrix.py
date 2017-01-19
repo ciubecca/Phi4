@@ -18,8 +18,8 @@ def buildStatePos(basis, helper=None, Erange=None):
 
     for i in irange:
         state = basis.stateList[i]
-        statePos[tuple(helper.torepr2(state))] = i
-        statePos[tuple(helper.torepr2(state)[::-1])] = i
+        statePos[bytes(helper.torepr2(state))] = i
+        statePos[bytes(helper.torepr2(state)[::-1])] = i
 
     return statePos
 
@@ -32,7 +32,7 @@ class SubmatrixOperator():
     @classmethod
     def fromSubbasis(self, basis, subbasis):
         statePos = buildStatePos(basis)
-        idxList = [statePos[tuple(basis.helper.torepr2(state))] for state in subbasis]
+        idxList = [statePos[bytes(basis.helper.torepr2(state))] for state in subbasis]
         return self(idxList)
 
     @classmethod
