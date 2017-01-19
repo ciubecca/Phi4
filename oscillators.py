@@ -1,3 +1,5 @@
+import gc
+from sys import getsizeof as sizeof
 import scipy
 from math import factorial, floor, sqrt
 import statefuncs
@@ -35,6 +37,9 @@ def gendlists(state, nd, ntot, nmax):
 
     # XXX no call to list?
     x = itertools.chain.from_iterable([[n]*Zn for n,Zn in state])
+
+
+
     dlists = set(tuple(y) for y in combinations(x,nd))
     # XXX returns a generator expression
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
@@ -282,8 +287,6 @@ class LocOperator():
 
     # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
     # as Hh = V*Hl
-# TODO Use yield instead of creating multiple overlapping sets
-    # @profile
     def yieldBasis(self, basis, EL):
         """ Return a set of tuples of representation 2 states, all of which are not
         connected by spatial parity transformations.
@@ -307,8 +310,10 @@ class LocOperator():
                     newstatevec = statevec[:]
                     for n,Zc,Zd in osc:
                         newstatevec[n+nmax] += Zc-Zd
-                    yield tuple(newstatevec)
+                    yield bytes(newstatevec)
 
+        # print(sizeof(tuple(statevec)))
+        # print(sizeof(tuple(statevec)[1]))
         # print("type of data in statevec:", type(statevec[0]))
         # print("type of data in tuples", type(t1[0]))
 

@@ -88,7 +88,7 @@ class Phi4():
         self.V[k][0] = scipy.sparse.eye(basis.size)*self.L
 
 
-    # @profile
+    @profile
     def genHEBasis(self, k, basisl, EL, ELp, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -114,8 +114,9 @@ class Phi4():
                 # Don't add twice states connected by parity inversion
                 if v not in vectorset and v[::-1] not in vectorset:
                     vectorset.add(v)
-                    # print(type(v[1]))
-                    # print(sizeof(v[1]))
+
+        print("size of tuple in B:", sizeof(v))
+        print("size of tuple element in B:", sizeof(v[0]))
 
         helper = Vlist[0].helper
 

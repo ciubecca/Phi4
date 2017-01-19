@@ -12,14 +12,14 @@ m = 1
 neigs = 1
 # List of parity quantum numbers
 klist = (1,)
-maxntails = 300
+maxntails = None
 
 # Ratio between EL and ET
 ratioELET = 3
 # Ratio between ELp and ET
 ratioELpET = 2
 # Ratio between ELpp and ELp
-ratioELppELp = 2
+ratioELppELp = 1.5
 
 
 argv = sys.argv
@@ -35,6 +35,7 @@ EL = ratioELET*ET
 ELp = ratioELpET*ET
 ELpp = ratioELppELp*ELp
 
+print("EL, ELp, ELpp:", EL, ELp, ELpp)
 
 # @profile
 def main():
@@ -51,6 +52,8 @@ def main():
         print("k=", k)
         print("Full basis size: ", a.basis[k].size)
 
+        print("nmax", a.basis[k].nmax)
+
         a.setCouplings(g4=g)
         print("g=", g)
 
@@ -64,7 +67,9 @@ def main():
 
         # Select a set of tails and construct a Basis object
         vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
-                -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
+                -abs(a.eigenvectors["raw"][k][0][x[0]]))]
+        if maxntails != None:
+            vectorlist = vectorlist[:maxntails]
         basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
         print("Total number of tails:", basisl.size)
 
@@ -75,5 +80,10 @@ def main():
         a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
         print("Size of HE basis:", a.basisH[k].size)
 
+        HEnmax = a.basisH[k].nmax
+        print("nmax of HE basis:", HEnmax)
+        print("Estimated MB size of HE basis in repr2:",
+                8*(HEnmax*2+1)*a.basisH[k].size/10**6)
+        print("Computed MB size of HE basis in repr1:", a.basisH[k].MBsize())
 
 main()

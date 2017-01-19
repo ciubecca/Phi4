@@ -1,4 +1,5 @@
 import bisect
+from sys import getsizeof as sizeof
 import scipy
 from scipy import array, pi, sqrt
 from math import floor, factorial
@@ -92,6 +93,7 @@ class Basis():
         self.k = k
         self.helper = helper
         energy = helper.energy
+        self.nmax = self.helper.nmax
 
         # Avoid creating another list in memory if it already a sorted list
         if type(stateset)==list and isSorted(stateset, energy):
@@ -157,6 +159,10 @@ class Basis():
 
         bases = self.buildBasis(self)
         return {k:self(k,bases[k],helper) for k in (-1,1)}
+
+    def MBsize(self):
+        """ 64 is the size of a tuple of two ints """
+        return sum(64*len(v) for v in self.stateList)/10**6
 
     def __repr__(self):
         return str(self.stateList)
