@@ -159,7 +159,7 @@ class Phi4():
         # Generate the VHL matrix
         ##############################
 
-        print("Computing VLH...")
+        print("Computing VHL...")
 
         basis = self.basis[k]
         lookupbasis = self.basisH[k]
@@ -170,6 +170,7 @@ class Phi4():
 
         c = MatrixConstructor(basis, lookupbasis, Erange=Erange)
 
+        # We just need the full operator
         Vlist = V4OpsSelectedFull(basis, Emax)
         self.VHL[k] = c.buildMatrix(Vlist, ignKeyErr=True)*self.L
         self.VLH[k] = self.VHL[k].transpose()
