@@ -40,6 +40,7 @@ class Phi4():
         self.V = {k:{} for k in {-1,1}}
         self.DeltaH = {}
         self.VLH = {}
+        self.VHL = {}
         self.VHl = {k:{} for k in (-1,1)}
         self.Vll = {k:{} for k in (-1,1)}
         self.VlL = {k:{} for k in (-1,1)}
@@ -122,7 +123,7 @@ class Phi4():
 
 
 # XXX We could compute either Vhl or VHl to save time
-    def computeHEVs(self, k, loc3=True):
+    def computeHEVs(self, k):
         """
         Compute the matrices involving the high-energy states below EL
         k: parity quantum number
@@ -158,23 +159,28 @@ class Phi4():
         # Generate the VHL matrix
         ##############################
 
-        print("Computing VLH...")
+        print("Computing VHL...")
 
-        basis = self.basisH[k]
-        lookupbasis = self.basis[k]
-        idxList = basis.irange((0, self.EL))
+        basis = self.basis[k]
+        lookupbasis = self.basisH[k]
 
-        c = MatrixConstructor(basis, lookupbasis)
+        # We only need this matrix for DH2, not for DH3
+        Emax = self.EL
+        Erange = (0,Emax)
 
-        Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax, idxList=idxList)
-        self.VLH[k] = c.buildMatrix(Vlist, idxList=idxList)*self.L
+        c = MatrixConstructor(basis, lookupbasis, Erange=Erange)
+
+        # We just need the full operator
+        Vlist = V4OpsSelectedFull(basis, Emax)
+        self.VHL[k] = c.buildMatrix(Vlist, ignKeyErr=True)*self.L
+        self.VLH[k] = self.VHL[k].transpose()
 
         del c
 
         print("self.VLH[k] size", msize(self.VLH[k]))
 
 
-    def computeLEVs(self, k, loc3):
+    def computeLEVs(self, k, loc3=True):
 
         ###################################
         # Generate all the "local" matrices on the selected
@@ -200,6 +206,7 @@ class Phi4():
         # Generate all the "bilocal" matrices on the selected
         # low-energy states
         ###################################
+
         if loc3:
             self.V0V4[k] = self.Vll[k][4]*self.L
 

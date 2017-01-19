@@ -5,7 +5,7 @@ import vegas
 from VVVintegrands import *
 from scipy.special import factorial
 
-test = True
+test = False
 
 def ft0(g2, g4, E, m):
     return (g2**2./pi + g4**2.*(-3/(2*pi) + 18/pi**3 * log(E/m)**2))/(E**2.)
