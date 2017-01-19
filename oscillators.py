@@ -36,9 +36,7 @@ def gendlists(state, nd, ntot, nmax):
     """
 
     # XXX no call to list?
-    x = itertools.chain.from_iterable([[n]*Zn for n,Zn in state])
-
-
+    x = itertools.chain.from_iterable(([n]*Zn for n,Zn in state))
 
     dlists = set(tuple(y) for y in combinations(x,nd))
     # XXX returns a generator expression
