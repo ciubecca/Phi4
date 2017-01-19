@@ -40,6 +40,7 @@ class Phi4():
         self.V = {k:{} for k in {-1,1}}
         self.DeltaH = {}
         self.VLH = {}
+        self.VHL = {}
         self.VHl = {k:{} for k in (-1,1)}
         self.Vll = {k:{} for k in (-1,1)}
         self.VlL = {k:{} for k in (-1,1)}
@@ -160,21 +161,25 @@ class Phi4():
 
         print("Computing VLH...")
 
-        basis = self.basisH[k]
-        lookupbasis = self.basis[k]
-        idxList = basis.irange((0, Emax))
+        basis = self.basis[k]
+        lookupbasis = self.basisH[k]
 
-        c = MatrixConstructor(basis, lookupbasis)
+        # We only need this matrix for DH2, not for DH3
+        Emax = self.EL
+        Erange = (0,Emax)
 
-        Vlist = V4OpsSelectedFull(basis, lookupbasis.Emax, idxList=idxList)
-        self.VLH[k] = c.buildMatrix(Vlist, idxList=idxList)*self.L
+        c = MatrixConstructor(basis, lookupbasis, Erange=Erange)
+
+        Vlist = V4OpsSelectedFull(basis, Emax)
+        self.VHL[k] = c.buildMatrix(Vlist, ignKeyErr=True)*self.L
+        self.VLH[k] = self.VHL[k].transpose()
 
         del c
 
         print("self.VLH[k] size", msize(self.VLH[k]))
 
 
-    def computeLEVs(self, k):
+    def computeLEVs(self, k, loc3=True):
 
         ###################################
         # Generate all the "local" matrices on the selected
@@ -193,25 +198,30 @@ class Phi4():
         c = MatrixConstructor(basis, basis)
 
         Vlist = V6OpsSelectedFull(basis, basis.Emax)
-        self.Vll[k][6] = c.buildMatrix(Vlist, ignKeyErr=True, sumTranspose=False)*self.L
+        self.Vll[k][6] = c.buildMatrix(Vlist, ignKeyErr=True,
+                sumTranspose=False)*self.L
 
         ###################################
         # Generate all the "bilocal" matrices on the selected
         # low-energy states
         ###################################
-        self.V0V4[k] = self.Vll[k][4]*self.L
 
-        print("Computing V2V4")
+        if loc3:
+            self.V0V4[k] = self.Vll[k][4]*self.L
 
-        Vlist = V2V4Ops(basis)
-        self.V2V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,sumTranspose=False)*self.L**2
+            print("Computing V2V4")
 
-        print("Computing V4V4")
+            Vlist = V2V4Ops(basis)
+            self.V2V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,
+                    sumTranspose=False)*self.L**2
 
-        Vlist = V4V4Ops(basis)
-        self.V4V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,sumTranspose=False)*self.L**2
+            print("Computing V4V4")
 
-        del c
+            Vlist = V4V4Ops(basis)
+            self.V4V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,
+                    sumTranspose=False)*self.L**2
+
+            del c
 
 
     def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
