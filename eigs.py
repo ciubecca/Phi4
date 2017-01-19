@@ -6,7 +6,7 @@ import scipy
 import math
 import database
 
-loc3 = True
+loc3 = False
 loc3mix = True
 nonloc3mix = True
 
@@ -21,9 +21,9 @@ klist = (1,)
 maxntails = None
 
 # Ratio between EL and ET
-ratioELET = 2
+ratioELET = 3
 # Ratio between ELp and ET
-ratioELpET = 1.5
+ratioELpET = 2
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
@@ -75,7 +75,7 @@ def main():
         vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
                 -abs(a.eigenvectors["raw"][k][0][x[0]]))]
         if maxntails != None:
-            vecotrlist = vectorlist[:maxntails]
+            vectorlist = vectorlist[:maxntails]
         basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
         print("Total number of tails:", basisl.size)
 
@@ -86,7 +86,7 @@ def main():
         a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
         print("Size of HE basis:", a.basisH[k].size)
 
-        a.computeLEVs(k)
+        a.computeLEVs(k, loc3=loc3)
 
 
         print("Computing high energy matrices...")
