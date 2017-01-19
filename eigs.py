@@ -12,7 +12,6 @@ nonloc3mix = True
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = False
-# saveondb = False
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 1
@@ -41,6 +40,7 @@ EL = ratioELET*ET
 ELp = ratioELpET*ET
 ELpp = ratioELppELp*ELp
 
+print("EL, ELp, ELpp", EL, ELp, ELpp)
 
 # @profile
 def main():

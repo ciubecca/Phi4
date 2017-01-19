@@ -162,7 +162,7 @@ class Phi4():
 
         basis = self.basisH[k]
         lookupbasis = self.basis[k]
-        idxList = basis.irange((0, Emax))
+        idxList = basis.irange((0, self.EL))
 
         c = MatrixConstructor(basis, lookupbasis)
 
