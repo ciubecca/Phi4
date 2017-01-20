@@ -26,6 +26,7 @@ def filterDlist(dlist, nd, ntot, nmax):
 
 
 # TODO The speed optimization resulting from using the N-Sum algorithm could be important
+@profile
 def gendlists(state, nd, ntot, nmax):
     """ Generates a list of all the possible combinations of momenta in the state that
     can be annihilated
@@ -171,7 +172,7 @@ class LocOperator():
         dosc = Counter(dlist)
         return [(n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist]
 
-
+    @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
             ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator

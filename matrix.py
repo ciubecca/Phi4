@@ -51,6 +51,7 @@ class SubmatrixOperator():
 
 
 class MatrixConstructor():
+    @profile
     def __init__(self, basis, lookupbasis, Erange=None):
         """
         basis: basis for the row elements
@@ -72,7 +73,7 @@ class MatrixConstructor():
 
         self.statePos = buildStatePos(lookupbasis, self.helper, Erange)
 
-
+    @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False):
         """
         Vlist: list of oscillators

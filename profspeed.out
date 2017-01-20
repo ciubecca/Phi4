@@ -1,0 +1,542 @@
+Timer unit: 1e-06 s
+
+Total time: 39.9071 s
+File: /Users/lorenzovitale/Phi4/matrix.py
+Function: __init__ at line 54
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    54                                               @profile
+    55                                               def __init__(self, basis, lookupbasis, Erange=None):
+    56                                                   """
+    57                                                   basis: basis for the row elements
+    58                                                   lookupbasis: basis for the columns elements
+    59                                                   Emin: minimal energy of the states to be generated
+    60                                                   Emax: maximal energy of the states to be generated
+    61                                                   """
+    62         6            9      1.5      0.0          self.basis = basis
+    63         6            4      0.7      0.0          self.lookupbasis = lookupbasis
+    64                                           
+    65         6           15      2.5      0.0          if basis.helper.nmax > lookupbasis.helper.nmax:
+    66                                                       self.helper = basis.helper
+    67                                                   else:
+    68         6            6      1.0      0.0              self.helper = lookupbasis.helper
+    69                                           
+    70         6            3      0.5      0.0          if Erange==None:
+    71         3            2      0.7      0.0              Erange = (lookupbasis.Emin, lookupbasis.Emax)
+    72         6            5      0.8      0.0          self.Erange = Erange
+    73                                           
+    74         6     39907044 6651174.0    100.0          self.statePos = buildStatePos(lookupbasis, self.helper, Erange)
+
+Total time: 7711.57 s
+File: /Users/lorenzovitale/Phi4/matrix.py
+Function: buildMatrix at line 76
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    76                                               @profile
+    77                                               def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False):
+    78                                                   """
+    79                                                   Vlist: list of oscillators
+    80                                                   ignKeyErr: whether LookupError when generating a state should be ignored (to be used
+    81                                                   when the lookupbasis does not contain all the states between Emin and Emax)
+    82                                                   idxList: list of the row indices to be computed
+    83                                                   sumTranspose: whether the tranpose of the matrix should be added and the diagonal
+    84                                                   subtracted
+    85                                                   """
+    86                                           
+    87        16           25      1.6      0.0          basis = self.basis
+    88        16           19      1.2      0.0          lookupbasis = self.lookupbasis
+    89        16           16      1.0      0.0          Erange = self.Erange
+    90        16           18      1.1      0.0          statePos = self.statePos
+    91        16           18      1.1      0.0          helper = self.helper
+    92                                           
+    93        16           19      1.2      0.0          if idxList==None:
+    94         6           20      3.3      0.0              idxList = range(basis.size)
+    95                                           
+    96                                                   # Will construct the sparse matrix in the COO format and then convert it to CSC
+    97        16           17      1.1      0.0          data = []
+    98        16           14      0.9      0.0          row = []
+    99        16           18      1.1      0.0          col = []
+   100                                           
+   101        81          100      1.2      0.0          for V in Vlist:
+   102    718307       659516      0.9      0.0              for i in idxList:
+   103                                                           colpart, datapart = \
+   104    718242       925411      1.3      0.0                      V.computeMatrixElements(basis,i,lookupbasis, Erange=Erange,
+   105    718242   7696488286  10715.7     99.8                              statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
+   106    718242      1197443      1.7      0.0                  data += datapart
+   107    718242      1299733      1.8      0.0                  col += colpart
+   108    718242      1934387      2.7      0.0                  row += [i]*len(colpart)
+   109                                           
+   110                                                   # XXX Does this sum duplicate entries?
+   111        16      9054321 565895.1      0.1          V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,lookupbasis.size))
+   112                                           
+   113        16           35      2.2      0.0          if sumTranspose:
+   114                                                       # Add the matrix to its transpose and subtract the diagonal
+   115         2         1374    687.0      0.0              diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
+   116         2         7437   3718.5      0.0              return (V+V.transpose()-diag_V)
+   117                                                   else:
+   118        14           11      0.8      0.0              return V
+
+Total time: 82.536 s
+File: /Users/lorenzovitale/Phi4/oscillators.py
+Function: gendlists at line 29
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    29                                           @profile
+    30                                           def gendlists(state, nd, ntot, nmax):
+    31                                               """ Generates a list of all the possible combinations of momenta in the state that
+    32                                               can be annihilated
+    33                                               state: input state in representation 1
+    34                                               nd: number of annihilation operators (number of modes to annihilate)
+    35                                               ntot: total number of annihilation and creation operators
+    36                                               nmax: maximal wavenumber of the "lookup" basis
+    37                                               """
+    38                                           
+    39                                               # XXX no call to list?
+    40   1439014      2935575      2.0      3.6      x = itertools.chain.from_iterable(([n]*Zn for n,Zn in state))
+    41                                           
+    42   1439014     77517279     53.9     93.9      dlists = set(tuple(y) for y in combinations(x,nd))
+    43                                               # XXX returns a generator expression
+    44   1439014      2083186      1.4      2.5      return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
+
+Total time: 3295.45 s
+File: /Users/lorenzovitale/Phi4/oscillators.py
+Function: computeMatrixElements at line 175
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   175                                               @profile
+   176                                               def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
+   177                                                       ignKeyErr=False):
+   178                                                   """ Compute the matrix elements by applying all the oscillators in the operator
+   179                                                   to an element in the basis
+   180                                                   basis: set of states on which the operator acts
+   181                                                   i: index of the state in the basis
+   182                                                   lookupbasis: basis of states corresponding to the column indexes of the matrix
+   183                                                   helper: Helper instance
+   184                                                   statePos: dictionary where the keys are states in representation 2 (in tuple form)
+   185                                                   and the values are their position in the basis
+   186                                                   ignKeyErr: this must be set to True if the action of an oscillators on an input state
+   187                                                   can generate a state not in lookupbasis. This applies only in the computation of Vhh.
+   188                                                   Otherwise it should be set to False
+   189                                                   """
+   190                                           
+   191                                                   # List of columns indices of generated basis elements
+   192    718242       650222      0.9      0.0          col = []
+   193                                                   # List of partial matrix elements
+   194    718242       616983      0.9      0.0          data = []
+   195                                           
+   196                                                   # I define these local variables outside the loops for performance reasons
+   197    718242       970170      1.4      0.0          e = basis.energyList[i]
+   198    718242       727572      1.0      0.0          p = basis.parityList[i]
+   199    718242      2100761      2.9      0.1          state = basis.stateList[i]
+   200                                           
+   201    718242      7208584     10.0      0.2          statevec = helper.torepr2(state)
+   202                                           
+   203    718242       672809      0.9      0.0          parityList = lookupbasis.parityList
+   204    718242       643740      0.9      0.0          nmax = helper.nmax
+   205    718242       638964      0.9      0.0          normFactors = helper.normFactors
+   206    718242       628204      0.9      0.0          Emin, Emax = Erange
+   207                                           
+   208                                                   # cycle over all the sets of momenta that can be annihilated
+   209                                           # XXX Check: we replaced lookupbasis.helper.nmax with helper.nmax
+   210   9295274     81355114      8.8      2.5          for dlist in gendlists(state, self.nd, self.nd+self.nc, nmax):
+   211                                           
+   212   8577032     13397719      1.6      0.4              k = self.dlistPos[dlist]
+   213                                           
+   214                                           # Only select the oscillators such that the sum of the state and oscillator energies
+   215                                           # lies within the bounds of the lookupbasis energies
+   216   8577032     20300886      2.4      0.6              imin = bisect.bisect_left(self.oscEnergies[k], Emin-e-tol)
+   217   8577032     14678376      1.7      0.4              imax = bisect.bisect_left(self.oscEnergies[k], Emax-e+tol)
+   218                                           
+   219   8577032      7851876      0.9      0.2              if imax <= imin:
+   220   4027719      3110368      0.8      0.1                  continue
+   221                                           
+   222   4549313      8844409      1.9      0.3              oscFactors = self.oscFactors[k][imin:imax]
+   223                                           
+   224 125504517    130748206      1.0      4.0              for i, osc in enumerate(self.oscList[k][imin:imax]):
+   225 120955204    196944406      1.6      6.0                  newstatevec = statevec[:]
+   226                                           
+   227 120955204    121735349      1.0      3.7                  x = oscFactors[i]
+   228                                           
+   229 570819366    565295376      1.0     17.2                  for n,Zc,Zd in osc:
+   230 449864162    562839395      1.3     17.1                      newstatevec[n+nmax] += Zc-Zd
+   231 449864162    663790830      1.5     20.1                      x *= normFactors[Zc, Zd, statevec[n+nmax]]
+   232                                           
+   233 120955204    107681732      0.9      3.3                  if ignKeyErr:
+   234 119388783    104844909      0.9      3.2                      try:
+   235 119388783    375221046      3.1     11.4                          j = statePos[bytes(newstatevec)]
+   236  89907267     91575196      1.0      2.8                      except KeyError:
+   237  89907267     87596733      1.0      2.7                          continue
+   238                                                           else:
+   239   1566421      4152087      2.7      0.1                      j = statePos[bytes(newstatevec)]
+   240                                           
+   241  31047937     49987034      1.6      1.5                  x *= parityFactors[p][parityList[j]]
+   242  31047937     36123613      1.2      1.1                  data.append(x)
+   243  31047937     31842638      1.0      1.0                  col.append(j)
+   244                                           
+   245    718242       670445      0.9      0.0          return col, data
+
+Total time: 74.2425 s
+File: /Users/lorenzovitale/Phi4/phi4.py
+Function: genHEBasis at line 92
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    92                                               @profile
+    93                                               def genHEBasis(self, k, basisl, EL, ELp, ELpp):
+    94                                                   """ Generate a high-energy basis from a set of tails
+    95                                                   k: parity quantum number
+    96                                                   basisl: Basis instance containing the set of tails
+    97                                                   EL: maximal energy of the generated basis for DH2
+    98                                                   ELpp: maximal energy of the generated basis for DH3
+    99                                                   """
+   100                                           
+   101         1            2      2.0      0.0          self.basisl[k] = basisl
+   102                                           
+   103         1            2      2.0      0.0          self.EL = EL
+   104         1            1      1.0      0.0          self.ELp = ELp
+   105         1            1      1.0      0.0          self.ELpp = ELpp
+   106         1            2      2.0      0.0          Emax = max(EL, ELp, ELpp)
+   107                                           
+   108                                                   # Generate all the operators between the selected states and the states
+   109                                                   # in the range [0, Emax]
+   110         1      2522982 2522982.0      3.4          Vlist = V4OpsSelectedFull(basisl, Emax)
+   111         1            1      1.0      0.0          vectorset = set()
+   112                                           
+   113         6            7      1.2      0.0          for V in Vlist:
+   114   1532597     13932069      9.1     18.8              for v in V.yieldBasis(basisl, Emax):
+   115                                                           # Don't add twice states connected by parity inversion
+   116   1532592      2347262      1.5      3.2                  if v not in vectorset and v[::-1] not in vectorset:
+   117    749930       765530      1.0      1.0                      vectorset.add(v)
+   118                                           
+   119         1            2      2.0      0.0          helper = Vlist[0].helper
+   120                                           
+   121                                                   # Basis of selected states with energy <= Emax
+   122         1     54674614 54674614.0     73.6          self.basisH[k] = Basis(k, (helper.torepr1(v) for v in vectorset), helper)
+
+Total time: 165.805 s
+File: /Users/lorenzovitale/Phi4/phi4.py
+Function: computeHEVs at line 126
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   126                                               @profile
+   127                                               def computeHEVs(self, k):
+   128                                                   """
+   129                                                   Compute the matrices involving the high-energy states below EL
+   130                                                   k: parity quantum number
+   131                                                   """
+   132                                           
+   133                                                   # NOTE matrix subscript notation:
+   134                                                   # "l": selected low-energy state with energy <= ET
+   135                                                   # "L": generic low-energy state with energy <= ET
+   136                                                   # "h": selected high-energy state with energy <= EL'
+   137                                                   # "H": selected high-energy states with energy <= EL
+   138                                           
+   139                                                   #################################
+   140                                                   # Generate the VlH matrices
+   141                                                   #################################
+   142                                           
+   143         1            8      8.0      0.0          print("Computing VHl...")
+   144                                           
+   145         1            2      2.0      0.0          basis = self.basisl[k]
+   146         1            2      2.0      0.0          lookupbasis = self.basisH[k]
+   147         1            1      1.0      0.0          Emax = lookupbasis.Emax
+   148                                           
+   149         1     12913550 12913550.0      7.8          c = MatrixConstructor(basis, lookupbasis)
+   150                                           
+   151         1      2512124 2512124.0      1.5          Vlist = V4OpsSelectedFull(basis, Emax)
+   152         1     65075136 65075136.0     39.2          self.VHl[k][4] = c.buildMatrix(Vlist)*self.L
+   153                                           
+   154         1       109071 109071.0      0.1          Vlist = V2OpsSelectedFull(basis, Emax)
+   155         1       595936 595936.0      0.4          self.VHl[k][2] = c.buildMatrix(Vlist)*self.L
+   156                                           
+   157         1       158563 158563.0      0.1          del c
+   158                                           
+   159                                                   ##############################
+   160                                                   # Generate the VHL matrix
+   161                                                   ##############################
+   162                                           
+   163         1           36     36.0      0.0          print("Computing VHL...")
+   164                                           
+   165         1            3      3.0      0.0          basis = self.basis[k]
+   166         1            1      1.0      0.0          lookupbasis = self.basisH[k]
+   167                                           
+   168                                                   # We only need this matrix for DH2, not for DH3
+   169         1            1      1.0      0.0          Emax = self.EL
+   170         1            1      1.0      0.0          Erange = (0,Emax)
+   171                                           
+   172         1     13016313 13016313.0      7.9          c = MatrixConstructor(basis, lookupbasis, Erange=Erange)
+   173                                           
+   174                                                   # We just need the full operator
+   175         1      2512772 2512772.0      1.5          Vlist = V4OpsSelectedFull(basis, Emax)
+   176         1     68741614 68741614.0     41.5          self.VHL[k] = c.buildMatrix(Vlist, ignKeyErr=True)*self.L
+   177         1         4642   4642.0      0.0          self.VLH[k] = self.VHL[k].transpose()
+   178                                           
+   179         1       165485 165485.0      0.1          del c
+   180                                           
+   181         1           65     65.0      0.0          print("self.VLH[k] size", msize(self.VLH[k]))
+
+Total time: 7703 s
+File: /Users/lorenzovitale/Phi4/phi4.py
+Function: computeDH3 at line 308
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   308                                               @profile
+   309                                               def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
+   310                                           
+   311         1           32     32.0      0.0          print("Computing DH3")
+   312                                           
+   313         1            4      4.0      0.0          sizel = self.basisl[k].size
+   314         1          169    169.0      0.0          DH3ll = scipy.sparse.csc_matrix((sizel, sizel))
+   315                                           
+   316         1            2      2.0      0.0          VHl = {}
+   317         1            2      2.0      0.0          VlH = {}
+   318         3            4      1.3      0.0          for n in (2,4):
+   319         2            5      2.5      0.0              VHl[n] = self.VHl[k][n]
+   320         2         4007   2003.5      0.0              VlH[n] = VHl[n].transpose()
+   321                                           
+   322         1            2      2.0      0.0          basis = self.basisH[k]
+   323                                                   # List of basis elements on which we will cycle
+   324         1           22     22.0      0.0          fullIdxList = basis.irange((ET,ELp))
+   325         1            2      2.0      0.0          idxlen = len(fullIdxList)
+   326         1            2      2.0      0.0          chunklen = min(self.chunklen, idxlen)
+   327         1           12     12.0      0.0          idxLists = [fullIdxList[x:x+chunklen] for x in range(0, idxlen, chunklen)]
+   328                                           
+   329         1           20     20.0      0.0          print("Total number of chunks: ", len(idxLists))
+   330                                           
+   331                                           #########################################################################
+   332                                           # Add the "symmetric" contributions to DH3 by integrating out states with
+   333                                           # energy ET < E < ELp
+   334                                           #########################################################################
+   335                                           
+   336                                           # Propagator and projector over the states between ET and ELp
+   337         1       345605 345605.0      0.0          propagatorh = basis.propagator(eps, ET, ELp)
+   338                                           
+   339                                                   # XXX Move this inside the cycle and restrict idxList?
+   340         1     13702179 13702179.0      0.2          Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
+   341                                           
+   342         1      1433128 1433128.0      0.0          c = MatrixConstructor(basis, basis, (ET, ELp))
+   343                                           
+   344                                                   ##############################
+   345                                                   # Generate the Vhh matrix
+   346                                                   ##############################
+   347         6           23      3.8      0.0          for i,idxList in enumerate(idxLists):
+   348         5          184     36.8      0.0              print("Doing chunk", i, "for Vhh")
+   349                                           
+   350         5           18      3.6      0.0              VhhHalfPart =  c.buildMatrix(Vlist, ignKeyErr=True, sumTranspose=False,
+   351         5   2522326643 504465328.6     32.7                      idxList=idxList)*self.L
+   352                                           
+   353         5       225590  45118.0      0.0              VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
+   354         5         4018    803.6      0.0                      basis.size)
+   355                                           
+   356         5      4311250 862250.0      0.1              DH3llPart = VHl[4]*propagatorh*VhhHalfPart*propagatorh*VlH[4]*self.g4**3
+   357         5        14306   2861.2      0.0              DH3llPart += DH3llPart.transpose()
+   358         5       811560 162312.0      0.0              DH3llPart -= VHl[4]*propagatorh*VhhDiagPart*propagatorh*VlH[4]*self.g4**3
+   359         5        21695   4339.0      0.0              DH3ll += DH3llPart
+   360                                           
+   361         5        14693   2938.6      0.0              del VhhHalfPart
+   362                                           
+   363         1        12941  12941.0      0.0          del c
+   364                                           
+   365                                           #########################################################################
+   366                                           # Add the "mixed" contributions to DH3 by integrating out states with
+   367                                           # energy ET < E < ELp on one side and ELp < E < EL on the other
+   368                                           #########################################################################
+   369                                           
+   370         1            2      2.0      0.0          if nonloc3mix:
+   371         1     12534184 12534184.0      0.2              c = MatrixConstructor(basis, basis, (ELp, ELpp))
+   372                                           
+   373                                           # Propagator and projector over the states between ELp and ELpp
+   374         1       569582 569582.0      0.0              propagatorH = basis.propagator(eps, ELp, ELpp)
+   375                                           
+   376                                                       # XXX Move this inside the cycle and restrict idxList?
+   377         1     69974837 69974837.0      0.9              VHhlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
+   378                                           
+   379         6           98     16.3      0.0              for i, idxList in enumerate(idxLists):
+   380         5          954    190.8      0.0                  print("doing chunk", i, "for VhH")
+   381                                           
+   382         5          110     22.0      0.0                  VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
+   383         5   5051480163 1010296032.6     65.6                          idxList=idxList)*self.L
+   384                                           
+   385         5     24384262 4876852.4      0.3                  DH3llPart = VHl[4]*propagatorh*VHhPart*propagatorH*VlH[4]*self.g4**3
+   386         5        22262   4452.4      0.0                  DH3llPart += DH3llPart.transpose()
+   387         5        31859   6371.8      0.0                  DH3ll += DH3llPart
+   388                                           
+   389         5        36892   7378.4      0.0                  del VHhPart
+   390                                           
+   391         1       150467 150467.0      0.0              del c
+   392                                           
+   393                                           
+   394                                           #######################################################################
+   395                                           # Add the "mixed" local-nonlocal contributions to DH3 where some states
+   396                                           # are integrated from ET to ELp while others from ELpp to Infinity
+   397                                           ########################################################################
+   398                                           
+   399         1            3      3.0      0.0          if loc3mix:
+   400         1         9277   9277.0      0.0              VV2 = renorm.renVV2(g4=self.g4, EL=ELpp, eps=eps).VV2
+   401                                           
+   402         1       109022 109022.0      0.0              DH3llPart = VHl[2]*VV2[2]*propagatorh*VlH[4]*self.g4
+   403         1       453992 453992.0      0.0              DH3llPart += VHl[4]*VV2[4]*propagatorh*VlH[4]*self.g4
+   404         1         4878   4878.0      0.0              DH3llPart += DH3llPart.transpose()
+   405         1         6007   6007.0      0.0              DH3ll += DH3llPart
+   406                                           
+   407                                           #####################################################
+   408                                           # Add the "symmetric local" parts to DH3
+   409                                           #####################################################
+   410                                           
+   411         1            3      3.0      0.0          if loc3:
+   412                                                       Vll = {}
+   413                                                       for n in (0,2,4,6):
+   414                                                           Vll[n] = self.Vll[k][n]
+   415                                           
+   416                                                       V0V4 = self.V0V4[k]
+   417                                                       V2V4 = self.V2V4[k]
+   418                                                       V4V4 = self.V4V4[k]
+   419                                           
+   420                                           
+   421                                                       DH3ll += V0V4*self.VV3.V0V4[ELp]*self.g4**3
+   422                                                       DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3
+   423                                                       DH3ll += V4V4*self.VV3.V4V4[ELp]*self.g4**3
+   424                                           
+   425                                           
+   426                                                       DH3ll += Vll[0]*self.VV3.VV3loc[0][ELp]*self.g4**3
+   427                                                       DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*self.g4**3
+   428                                                       DH3ll += Vll[4]*self.VV3.VV3loc[4][ELp]*self.g4**3
+   429                                                       DH3ll += Vll[6]*self.VV3.VV3loc[6][ELp]*self.g4**3
+   430                                           
+   431         1            2      2.0      0.0          return DH3ll
+
+Total time: 54.7028 s
+File: /Users/lorenzovitale/Phi4/statefuncs.py
+Function: __init__ at line 85
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    85                                               @profile
+    86                                               def __init__(self, k, stateset, helper):
+    87                                                   """ Standard constructor
+    88                                                   k: parity quantum number
+    89                                                   stateset: set or list of states in representation 1
+    90                                                   helper: Helper object
+    91                                                   orderEnergy: if True order the list of vectors in energy
+    92                                                   calcPos: if True construct the dictionary of the positions of the vectors
+    93                                                   """
+    94         4            9      2.2      0.0          self.k = k
+    95         4            5      1.2      0.0          self.helper = helper
+    96         4            5      1.2      0.0          energy = helper.energy
+    97         4            5      1.2      0.0          self.nmax = self.helper.nmax
+    98                                           
+    99                                                   # Avoid creating another list in memory if it already a sorted list
+   100         4          160     40.0      0.0          if type(stateset)==list and isSorted(stateset, energy):
+   101                                                       self.stateList = stateset
+   102                                                   else:
+   103         4     36941127 9235281.8     67.5              self.stateList = sorted(stateset, key=energy)
+   104         4           15      3.8      0.0          self.size = len(self.stateList)
+   105                                           
+   106         4     10788595 2697148.8     19.7          self.energyList = [energy(state) for state in self.stateList]
+   107         4      3142759 785689.8      5.7          self.occnList = [occn(state) for state in self.stateList]
+   108         4      3691670 922917.5      6.7          self.parityList = [int(state==reverse(state)) for state in self.stateList]
+   109                                           
+   110         4            6      1.5      0.0          try:
+   111         4        28798   7199.5      0.1              self.Emax = max(self.energyList)
+   112         4       109693  27423.2      0.2              self.Emin = min(self.energyList)
+   113                                                   # When the basis is empty
+   114                                                   except IndexError:
+   115                                                       self.Emax = None
+   116                                                       self.Emin = None
+
+Total time: 7991.14 s
+File: eigs.py
+Function: main at line 45
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    45                                           @profile
+    46                                           def main():
+    47                                           
+    48         1            2      2.0      0.0      if saveondb:
+    49                                                   db = database.Database()
+    50                                           
+    51         1           78     78.0      0.0      a = phi4.Phi4(m, L)
+    52         1        73324  73324.0      0.0      a.buildBasis(Emax=ET)
+    53                                           
+    54                                           
+    55         2           27     13.5      0.0      for k in klist:
+    56                                           
+    57                                                   # Compute the potential matrices in the low-energy space below ET
+    58         1      1353421 1353421.0      0.0          a.computePotential(k)
+    59                                           
+    60         1           30     30.0      0.0          print("k=", k)
+    61         1           11     11.0      0.0          print("Full basis size: ", a.basis[k].size)
+    62                                           
+    63         1           11     11.0      0.0          a.setCouplings(g4=g)
+    64         1           11     11.0      0.0          print("g=", g)
+    65                                           
+    66                                           
+    67                                           # Compute the raw eigenvalues for cutoff ET
+    68         1        11602  11602.0      0.0          a.computeEigval(k, ET, "raw", neigs=neigs)
+    69         1           43     43.0      0.0          print("Raw vacuum:", a.eigenvalues["raw"][k][0])
+    70         1            2      2.0      0.0          eps = a.eigenvalues["raw"][k][0]
+    71                                           
+    72                                           
+    73                                           
+    74                                                   # Select a set of tails and construct a Basis object
+    75         1         1141   1141.0      0.0          vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
+    76                                                           -abs(a.eigenvectors["raw"][k][0][x[0]]))]
+    77         1            2      2.0      0.0          if maxntails != None:
+    78                                                       vectorlist = vectorlist[:maxntails]
+    79         1         9602   9602.0      0.0          basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
+    80         1           17     17.0      0.0          print("Total number of tails:", basisl.size)
+    81                                           
+    82                                           
+    83         1            8      8.0      0.0          print("Generating high energy basis...")
+    84                                                   # Generate the high-energy "selected" basis by passing a set of tails
+    85                                                   # and a maximum cutoff EL
+    86         1     77752533 77752533.0      1.0          a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
+    87         1           37     37.0      0.0          print("Size of HE basis:", a.basisH[k].size)
+    88                                           
+    89         1     15999567 15999567.0      0.2          a.computeLEVs(k, loc3=loc3)
+    90                                           
+    91                                           
+    92         1           32     32.0      0.0          print("Computing high energy matrices...")
+    93                                           # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
+    94                                           # Later we will be varying EL, therefore taking submatrices of these.
+    95                                           # Computing VHH is expensive
+    96         1    165810263 165810263.0      2.1          a.computeHEVs(k)
+    97                                           
+    98                                           
+    99         1        26267  26267.0      0.0          a.computeEigval(k, ET, "renloc", eps=eps, neigs=neigs)
+   100         1           39     39.0      0.0          print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
+   101         1            2      2.0      0.0          eps = a.eigenvalues["renloc"][k][0]
+   102                                           
+   103         1            2      2.0      0.0          if loc3:
+   104                                                       a.calcVV3([ELp], eps)
+   105                                           
+   106         1            3      3.0      0.0          a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
+   107         1   7730105090 7730105090.0     96.7                  neigs=neigs, loc3=loc3,loc3mix=loc3mix, nonloc3mix=nonloc3mix)
+   108         1           82     82.0      0.0          print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
+   109                                           
+   110                                           
+   111         1           11     11.0      0.0          print("Number of tails:", a.ntails)
+   112                                           
+   113         1            2      2.0      0.0          if saveondb:
+   114                                                       datadict = dict(k=k, ET=ET, L=L, ren="raw", g=g, neigs=neigs,
+   115                                                               basisSize=a.compSize)
+   116                                                       db.insert(datadict=datadict, spec=a.eigenvalues["raw"][k])
+   117                                           
+   118                                           
+   119                                                       datadict = dict(k=k, ET=ET, L=L, ren="renloc", g=g, eps=eps, neigs=neigs,
+   120                                                               basisSize=a.compSize)
+   121                                                       db.insert(datadict=datadict, spec=a.eigenvalues["renloc"][k])
+   122                                           
+   123                                           
+   124                                                       datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp, ELpp=ELpp,
+   125                                                               ntails=a.ntails, eps=eps, neigs=neigs, basisSize=a.compSize,
+   126                                                               tailsComputedAtET=ET, maxntails=maxntails)
+   127                                                       db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
+

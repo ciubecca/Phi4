@@ -6,7 +6,7 @@ import scipy
 import math
 import database
 
-loc3 = True
+loc3 = False
 loc3mix = True
 nonloc3mix = True
 
@@ -42,7 +42,7 @@ ELpp = ratioELppELp*ELp
 
 print("EL, ELp, ELpp", EL, ELp, ELpp)
 
-# @profile
+@profile
 def main():
 
     if saveondb:
