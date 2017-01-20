@@ -123,6 +123,7 @@ class Phi4():
 
 
 # XXX We could compute either Vhl or VHl to save time
+    # @profile
     def computeHEVs(self, k):
         """
         Compute the matrices involving the high-energy states below EL
@@ -304,7 +305,7 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-
+    # @profile
     def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
 
         print("Computing DH3")
@@ -333,8 +334,9 @@ class Phi4():
 #########################################################################
 
 # Propagator and projector over the states between ET and ELp
-        propagatorH = basis.propagator(eps, ET, ELp)
+        propagatorh = basis.propagator(eps, ET, ELp)
 
+        # XXX Move this inside the cycle and restrict idxList?
         Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
 
         c = MatrixConstructor(basis, basis, (ET, ELp))
@@ -351,9 +353,9 @@ class Phi4():
             VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
                     basis.size)
 
-            DH3llPart = VHl[4]*propagatorH*VhhHalfPart*propagatorH*VlH[4]*self.g4**3
+            DH3llPart = VHl[4]*propagatorh*VhhHalfPart*propagatorh*VlH[4]*self.g4**3
             DH3llPart += DH3llPart.transpose()
-            DH3llPart -= VHl[4]*propagatorH*VhhDiagPart*propagatorH*VlH[4]*self.g4**3
+            DH3llPart -= VHl[4]*propagatorh*VhhDiagPart*propagatorh*VlH[4]*self.g4**3
             DH3ll += DH3llPart
 
             del VhhHalfPart
@@ -369,22 +371,22 @@ class Phi4():
             c = MatrixConstructor(basis, basis, (ELp, ELpp))
 
 # Propagator and projector over the states between ELp and ELpp
-            propagatorHH = basis.propagator(eps, ELp, ELpp)
+            propagatorH = basis.propagator(eps, ELp, ELpp)
 
-            VhHlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
+            # XXX Move this inside the cycle and restrict idxList?
+            VHhlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
 
             for i, idxList in enumerate(idxLists):
                 print("doing chunk", i, "for VhH")
 
-                VhHPart = c.buildMatrix(VhHlist, ignKeyErr=True, sumTranspose=False,
+                VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
                         idxList=idxList)*self.L
 
-                DH3llPart = VHl[4]*propagatorH*VhHPart*propagatorHH*VlH[4]*self.g4**3
+                DH3llPart = VHl[4]*propagatorh*VHhPart*propagatorH*VlH[4]*self.g4**3
                 DH3llPart += DH3llPart.transpose()
                 DH3ll += DH3llPart
 
-                del VhHPart
-                gc.collect()
+                del VHhPart
 
             del c
 
@@ -397,8 +399,8 @@ class Phi4():
         if loc3mix:
             VV2 = renorm.renVV2(g4=self.g4, EL=ELpp, eps=eps).VV2
 
-            DH3llPart = VHl[2]*VV2[2]*propagatorH*VlH[4]*self.g4
-            DH3llPart += VHl[4]*VV2[4]*propagatorH*VlH[4]*self.g4
+            DH3llPart = VHl[2]*VV2[2]*propagatorh*VlH[4]*self.g4
+            DH3llPart += VHl[4]*VV2[4]*propagatorh*VlH[4]*self.g4
             DH3llPart += DH3llPart.transpose()
             DH3ll += DH3llPart
 
