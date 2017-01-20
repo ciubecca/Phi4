@@ -123,7 +123,7 @@ def main():
 
             datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp, ELpp=ELpp,
                     ntails=a.ntails, eps=eps, neigs=neigs, basisSize=a.compSize,
-                    tailsComputedAtET=ETmax, maxntails=maxntails)
+                    tailsComputedAtET=ET, maxntails=maxntails)
             db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
 
 
