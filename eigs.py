@@ -6,7 +6,7 @@ import scipy
 import math
 import database
 
-loc3 = True
+loc3 = False
 loc3mix = True
 nonloc3mix = True
 

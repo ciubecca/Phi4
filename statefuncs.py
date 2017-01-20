@@ -161,8 +161,12 @@ class Basis():
         return {k:self(k,bases[k],helper) for k in (-1,1)}
 
     def MBsize(self):
+        ret = 0
         """ 64 is the size of a tuple of two ints """
-        return sum(64*len(v) for v in self.stateList)/10**6
+        ret += sum(64*len(v) for v in self.stateList)/10**6
+        # Add the memory of the auxiliary vectors
+        ret += self.size*32/10**6
+        return ret
 
     def __repr__(self):
         return str(self.stateList)

@@ -1,3 +1,4 @@
+import gc
 import statefuncs
 import phi4
 import renorm
@@ -37,7 +38,7 @@ ELpp = ratioELppELp*ELp
 
 print("EL, ELp, ELpp:", EL, ELp, ELpp)
 
-# @profile
+@profile
 def main():
 
     a = phi4.Phi4(m, L)
@@ -79,6 +80,8 @@ def main():
         # and a maximum cutoff EL
         a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
         print("Size of HE basis:", a.basisH[k].size)
+
+        gc.collect()
 
         HEnmax = a.basisH[k].nmax
         print("nmax of HE basis:", HEnmax)
