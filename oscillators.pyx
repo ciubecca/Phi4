@@ -11,6 +11,8 @@ from itertools import combinations, islice, permutations
 from scipy import exp, pi, array
 from scipy.special import binom
 import bisect
+cimport cython
+from libc.stdlib cimport malloc, free
 
 tol = 10**(-10)
 
@@ -189,6 +191,10 @@ class LocOperator():
         """
 
         cdef double x
+        cdef int* statevec
+        cdef int* newstatevec
+
+        statevec = <int *>
 
         # List of columns indices of generated basis elements
         col = []
@@ -200,7 +206,7 @@ class LocOperator():
         p = basis.parityList[i]
         state = basis.stateList[i]
 
-        statevec = helper.torepr2(state)
+        statevec = bytes(helper.torepr2(state))
 
         parityList = lookupbasis.parityList
         nmax = helper.nmax
