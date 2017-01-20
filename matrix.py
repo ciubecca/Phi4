@@ -51,7 +51,7 @@ class SubmatrixOperator():
 
 
 class MatrixConstructor():
-    @profile
+    # @profile
     def __init__(self, basis, lookupbasis, Erange=None):
         """
         basis: basis for the row elements

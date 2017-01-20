@@ -42,7 +42,7 @@ ELpp = ratioELppELp*ELp
 
 print("EL, ELp, ELpp", EL, ELp, ELpp)
 
-@profile
+# @profile
 def main():
 
     if saveondb:

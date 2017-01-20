@@ -1,4 +1,5 @@
 import scipy
+# import pyximport; pyximport.install()
 import scipy.sparse.linalg
 import scipy.sparse
 import math
@@ -89,7 +90,7 @@ class Phi4():
         self.V[k][0] = scipy.sparse.eye(basis.size)*self.L
 
 
-    @profile
+    # @profile
     def genHEBasis(self, k, basisl, EL, ELp, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -123,7 +124,7 @@ class Phi4():
 
 
 # XXX We could compute either Vhl or VHl to save time
-    @profile
+    # @profile
     def computeHEVs(self, k):
         """
         Compute the matrices involving the high-energy states below EL
@@ -225,7 +226,6 @@ class Phi4():
 
             del c
 
-
     def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
             nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None):
         """
@@ -305,7 +305,7 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-    @profile
+    # @profile
     def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
 
         print("Computing DH3")
