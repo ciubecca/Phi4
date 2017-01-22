@@ -1,0 +1,52 @@
+Timer unit: 1e-06 s
+
+Total time: 184.659 s
+File: /Users/lorenzovitale/Phi4/matrix.py
+Function: buildMatrix at line 76
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    76                                               @profile
+    77                                               def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False):
+    78                                                   """
+    79                                                   Vlist: list of oscillators
+    80                                                   ignKeyErr: whether LookupError when generating a state should be ignored (to be used
+    81                                                   when the lookupbasis does not contain all the states between Emin and Emax)
+    82                                                   idxList: list of the row indices to be computed
+    83                                                   sumTranspose: whether the tranpose of the matrix should be added and the diagonal
+    84                                                   subtracted
+    85                                                   """
+    86                                           
+    87        12           37      3.1      0.0          basis = self.basis
+    88        12           15      1.2      0.0          lookupbasis = self.lookupbasis
+    89        12           13      1.1      0.0          Erange = self.Erange
+    90        12           27      2.2      0.0          statePos = self.statePos
+    91        12           13      1.1      0.0          helper = self.helper
+    92                                           
+    93        12           14      1.2      0.0          if idxList==None:
+    94         6           21      3.5      0.0              idxList = range(basis.size)
+    95                                           
+    96                                                   # Will construct the sparse matrix in the COO format and then convert it to CSC
+    97        12           11      0.9      0.0          data = []
+    98        12            9      0.8      0.0          row = []
+    99        12           13      1.1      0.0          col = []
+   100                                           
+   101        61           70      1.1      0.0          for V in Vlist:
+   102    350470       274931      0.8      0.1              for i in idxList:
+   103                                                           colpart, datapart = \
+   104    350421       374188      1.1      0.2                      V.computeMatrixElements(basis,i,lookupbasis, Erange=Erange,
+   105    350421    179214910    511.4     97.1                              statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
+   106    350421       547991      1.6      0.3                  data += datapart
+   107    350421       468792      1.3      0.3                  col += colpart
+   108    350421       752825      2.1      0.4                  row += [i]*len(colpart)
+   109                                           
+   110                                                   # XXX Does this sum duplicate entries?
+   111        12      3019351 251612.6      1.6          V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,lookupbasis.size))
+   112                                           
+   113        12           27      2.2      0.0          if sumTranspose:
+   114                                                       # Add the matrix to its transpose and subtract the diagonal
+   115         2         1259    629.5      0.0              diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
+   116         2         4681   2340.5      0.0              return (V+V.transpose()-diag_V)
+   117                                                   else:
+   118        10            8      0.8      0.0              return V
+

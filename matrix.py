@@ -73,7 +73,7 @@ class MatrixConstructor():
 
         self.statePos = buildStatePos(lookupbasis, self.helper, Erange)
 
-    # @profile
+    @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False):
         """
         Vlist: list of oscillators
