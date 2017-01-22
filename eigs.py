@@ -69,7 +69,7 @@ def main():
         print("Raw vacuum:", a.eigenvalues["raw"][k][0])
         eps = a.eigenvalues["raw"][k][0]
 
-
+        # return
 
         # Select a set of tails and construct a Basis object
         vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:

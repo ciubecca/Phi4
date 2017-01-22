@@ -82,7 +82,6 @@ class Phi4():
         c = MatrixConstructor(basis, basis)
         Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
-            print("computing V", n)
             self.V[k][n] = c.buildMatrix(Vlist[n], sumTranspose=True)*self.L
         del c
 

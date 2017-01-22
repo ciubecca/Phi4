@@ -1,3 +1,4 @@
+# cython: profile=True
 import gc
 from sys import getsizeof as sizeof
 import scipy
@@ -8,13 +9,15 @@ from collections import Counter
 import itertools
 from statefuncs import Helper
 from itertools import combinations, islice, permutations
-from scipy import exp, pi, array
+from scipy import exp, pi
 from scipy.special import binom
 import bisect
 cimport cython
 from libc.stdlib cimport malloc, free
+from cpython cimport array as carray
+# import carray
 
-tol = 10**(-10)
+cdef double tol = 0.000000001
 
 
 def filterDlist(dlist, nd, ntot, nmax):
@@ -87,8 +90,10 @@ def gendlistPairs(state, ndPair, ntotPair, nmax):
 
         for dlist in pickNM(dlistTot, ndPair[0], ndPair[1], ndTot):
 
-            dlist1 = tuple(itertools.chain.from_iterable([[n]*Zn1 for n,Zn1,Zn2 in dlist]))
-            dlist2 = tuple(itertools.chain.from_iterable([[n]*Zn2 for n,Zn1,Zn2 in dlist]))
+            dlist1 = tuple(itertools.chain.from_iterable([[n]*Zn1
+                for n,Zn1,Zn2 in dlist]))
+            dlist2 = tuple(itertools.chain.from_iterable([[n]*Zn2
+                for n,Zn1,Zn2 in dlist]))
 
             if filterDlist(dlist1,ndPair[0],ntotPair[0],nmax) and\
                 filterDlist(dlist2,ndPair[1],ntotPair[1],nmax):
@@ -172,7 +177,9 @@ class LocOperator():
         wnlist = set(clist+dlist)
         cosc = Counter(clist)
         dosc = Counter(dlist)
-        return [(n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist]
+        
+        return scipy.array([[n,cosc.get(n,0),dosc.get(n,0)] for n in wnlist], 
+                dtype=scipy.int8)
 
     # @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
@@ -191,10 +198,12 @@ class LocOperator():
         """
 
         cdef double x
-        cdef int* statevec
-        cdef int* newstatevec
-
-        statevec = <int *>
+        cdef carray.array statevec
+        cdef carray.array newstatevec
+        cdef char[:,:] osc
+        cdef char n, Zc, Zd
+        cdef int ii
+        cdef double[:,:,:] normFactors
 
         # List of columns indices of generated basis elements
         col = []
@@ -206,7 +215,7 @@ class LocOperator():
         p = basis.parityList[i]
         state = basis.stateList[i]
 
-        statevec = bytes(helper.torepr2(state))
+        statevec = carray.array('b', helper.torepr2(state))
 
         parityList = lookupbasis.parityList
         nmax = helper.nmax
@@ -228,13 +237,19 @@ class LocOperator():
                 continue
 
             oscFactors = self.oscFactors[k][imin:imax]
+            oscList = self.oscList[k][imin:imax]
 
-            for i, osc in enumerate(self.oscList[k][imin:imax]):
-                newstatevec = statevec[:]
+            for i in range(len(oscList)):
+                osc = oscList[i]
+
+                newstatevec = carray.copy(statevec)
 
                 x = oscFactors[i]
 
-                for n,Zc,Zd in osc:
+                for ii in range(osc.shape[0]):
+                    n = osc[ii, 0]
+                    Zc = osc[ii, 1]
+                    Zd = osc[ii, 2]
                     newstatevec[n+nmax] += Zc-Zd
                     x *= normFactors[Zc, Zd, statevec[n+nmax]]
 
@@ -280,10 +295,6 @@ class LocOperator():
                         newstatevec[n+nmax] += Zc-Zd
                     yield bytes(newstatevec)
 
-        # print(sizeof(tuple(statevec)))
-        # print(sizeof(tuple(statevec)[1]))
-        # print("type of data in statevec:", type(statevec[0]))
-        # print("type of data in tuples", type(t1[0]))
 
 
 
@@ -645,7 +656,6 @@ def V6OpsSelectedFull(basis, Emax):
         nc = 6-nd
 
         dlists = gendlistsfromBasis(basis, range(basis.size), nmax, nd, 6)
-        # print(dlists)
         oscList = []
 
         for dlist in dlists:
@@ -782,12 +792,8 @@ def createClistsV6(nmax, dlist, nc):
 def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
     ret = set()
 
-    # print("nmax", nmax)
-    # print("ndPair", ndPair)
-    # print("ntotPair", ntotPair)
 
     for state in basis:
-        # print(state)
         ret.update(gendlistPairs(state=state, ndPair=ndPair,
             ntotPair=ntotPair, nmax=nmax))
     return ret
@@ -816,7 +822,6 @@ def V2V4Ops(basis):
 
             ncPair = tuple(ntot-nd for ntot,nd in zip(ntotPair,ndPair))
 
-            # print(nd1, nd2)
             dlistPairs = gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair)
 
             JointOscList = []
