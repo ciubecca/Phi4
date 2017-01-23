@@ -225,6 +225,7 @@ class Phi4():
 
             del c
 
+    @profile
     def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
             nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None):
         """
@@ -256,6 +257,12 @@ class Phi4():
                         loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
             DH3ll = subOPl.sub(DH3ll)
 
+            # XXX This should not be needed anymore
+            del self.basisH[k]
+            gc.collect()
+
+            # XXX Note: this could take a lot of memory if there are many tails,
+            # because the inverse matrix is not sparse
             invM = scipy.sparse.linalg.inv((DH2ll-DH3ll).tocsc())
 
             return DH2lL, invM, DH2Ll
@@ -304,7 +311,7 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-    # @profile
+    @profile
     def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
 
         print("Computing DH3")
@@ -359,6 +366,7 @@ class Phi4():
 
             del VhhHalfPart
 
+        del Vlist
         del c
 
 #########################################################################
@@ -388,7 +396,7 @@ class Phi4():
                 del VHhPart
 
             del c
-
+            del VHhlist
 
 #######################################################################
 # Add the "mixed" local-nonlocal contributions to DH3 where some states
@@ -426,6 +434,7 @@ class Phi4():
             DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*self.g4**3
             DH3ll += Vll[4]*self.VV3.VV3loc[4][ELp]*self.g4**3
             DH3ll += Vll[6]*self.VV3.VV3loc[6][ELp]*self.g4**3
+
 
         return DH3ll
 

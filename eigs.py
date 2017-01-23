@@ -6,12 +6,12 @@ import scipy
 import math
 import database
 
-loc3 = True
+loc3 = False
 loc3mix = True
 nonloc3mix = True
 
 # Whether we should save the results in the database data/spectra.db
-saveondb = True
+saveondb = False
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 1
@@ -48,7 +48,7 @@ ELpp = ratioELppELp*ELp
 
 print("EL, ELp, ELpp", EL, ELp, ELpp)
 
-# @profile
+@profile
 def main():
 
     if saveondb:
