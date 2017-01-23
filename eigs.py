@@ -11,7 +11,7 @@ loc3mix = True
 nonloc3mix = True
 
 # Whether we should save the results in the database data/spectra.db
-saveondb = False
+saveondb = True
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 1
@@ -35,6 +35,12 @@ if len(argv) < 4:
 L = float(argv[1])
 g = float(argv[2])
 ET = float(argv[3])
+
+print("klist", klist)
+
+print("maxntails", maxntails)
+
+print("L, g, ET", L, g, ET)
 
 EL = ratioELET*ET
 ELp = ratioELpET*ET
