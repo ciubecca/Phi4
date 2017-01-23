@@ -19,7 +19,6 @@ from cpython cimport array as carray
 
 cdef double tol = 0.000000001
 
-
 def filterDlist(dlist, nd, ntot, nmax):
     # TODO This can be sped up with the n-SUM algorithm
     if nd==ntot:
@@ -47,10 +46,6 @@ def gendlists(state, nd, ntot, nmax):
     dlists = set(tuple(y) for y in combinations(x,nd))
     # XXX returns a generator expression
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
-
-
-def repr1torepr3(state):
-    return list(itertools.chain.from_iterable([n]*Zn for n,Zn in state))
 
 
 
