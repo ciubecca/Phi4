@@ -5,8 +5,6 @@ import vegas
 from VVVintegrands import *
 from scipy.special import factorial
 
-test = True
-
 def ft0(g2, g4, E, m):
     return (g2**2./pi + g4**2.*(-3/(2*pi) + 18/pi**3 * log(E/m)**2))/(E**2.)
 
@@ -46,12 +44,18 @@ class renVV2():
     def om(x):
         return sqrt(self.m**2+x**2)
 
+class renVV3Test():
+    def __init__(self, ETlist):
+        self.VV3loc = {n : {ET:1 for ET in ETlist} for n in (0,2,4,6)}
+        self.V0V4 = {ET: 1 for ET in ETlist}
+        self.V2V4 = {ET: 1 for ET in ETlist}
+        self.V4V4 = {ET: 1 for ET in ETlist}
+
+
 
 class renVV3():
     def __init__(self, ETlist, m, eps):
         self.neval = 10000
-        if test:
-            self.neval = 10
 
         self.ETlist = ETlist
 
@@ -78,8 +82,6 @@ class renVV3():
 
 
         self.neval = 1000
-        if test:
-            self.neval = 10
 # Local corrections to V6
         self.VV3loc[6] = self.computeIntegral(1, phi6_1)
 # NOTE This is overestimated
@@ -91,8 +93,6 @@ class renVV3():
             for n in self.VV3loc.keys()}
 
         self.neval = 10000
-        if test:
-            self.neval = 10
         # Bilocal corrections
         self.V0V4 = self.computeIntegral(3, phi0phi4_1)
         self.V2V4 = self.computeIntegral(2, phi2phi4_1)

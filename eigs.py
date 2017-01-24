@@ -9,6 +9,8 @@ import database
 loc3 = True
 loc3mix = True
 nonloc3mix = True
+# Whether the MonteCarlo integrals should be actually evaluated
+test = False
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = False
@@ -107,7 +109,7 @@ def main():
         eps = a.eigenvalues["renloc"][k][0]
 
         if loc3:
-            a.calcVV3([ELp], eps)
+            a.calcVV3([ELp], eps, test=test)
 
         a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
                 neigs=neigs, loc3=loc3,loc3mix=loc3mix, nonloc3mix=nonloc3mix)
