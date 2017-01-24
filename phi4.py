@@ -6,6 +6,7 @@ import math
 from math import factorial
 from statefuncs import Basis, Helper
 from oscillators import *
+from bilocal import *
 from collections import Counter
 from operator import attrgetter
 import renorm
@@ -223,9 +224,11 @@ class Phi4():
             self.V4V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,
                     sumTranspose=False)*self.L**2
 
+            print(self.V4V4[k])
+
             del c
 
-    @profile
+    # @profile
     def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
             nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None):
         """
@@ -311,7 +314,7 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-    @profile
+    # @profile
     def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
 
         print("Computing DH3")
