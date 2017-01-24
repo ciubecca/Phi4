@@ -179,7 +179,7 @@ class Phi4():
 
         del c
 
-        print("self.VLH[k] size", msize(self.VLH[k]))
+        # print("self.VLH[k] size", msize(self.VLH[k]))
 
 
     def computeLEVs(self, k, loc3=True):
@@ -440,9 +440,12 @@ class Phi4():
         return DH3ll
 
 
-    def calcVV3(self, ELplist, eps):
+    def calcVV3(self, ELplist, eps, test=False):
         print("Calculating VVV renorm coefficients")
-        self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ELplist)
+        if test == True:
+            self.VV3 =  renorm.renVV3Test(ETlist=ELplist)
+        else:
+            self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ELplist)
 
 
     def setCouplings(self, g0=0, g2=0, g4=0):
