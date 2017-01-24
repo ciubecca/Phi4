@@ -224,8 +224,6 @@ class Phi4():
             self.V4V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,
                     sumTranspose=False)*self.L**2
 
-            print(self.V4V4[k])
-
             del c
 
     # @profile

@@ -5,6 +5,6 @@ from Cython.Build import cythonize
 # directive_defaults['linetrace'] = True
 
 setup(
-    ext_modules = cythonize("oscillators.pyx")
+    ext_modules = cythonize("me.pyx")
 )
 

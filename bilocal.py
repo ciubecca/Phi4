@@ -15,6 +15,8 @@ from oscillators import *
 
 tol = 0.000000001
 
+# XXX Check
+parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 
 def pickN(state, N, occ):
     """ Pick all possible subset of particles of a given state """
