@@ -19,9 +19,34 @@ cdef double tol = 0.000000001
 
 parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 
+def filterDlist(dlist, nd, ntot, nmax):
+    # TODO This can be sped up with the n-SUM algorithm
+    if nd==ntot:
+        return sum(dlist)==0
+    elif nd==ntot-1:
+        return abs(sum(dlist))<=nmax
+    else:
+        return True
 
-cdef computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
-    ignKeyErr, nd, nc, dlistPos, oscFactors, oscList):
+
+# TODO The speed optimization resulting from using the N-Sum algorithm could be important
+def gendlists(state, nd, ntot, nmax):
+    """ Generates a list of all the possible combinations of momenta in the state that
+    can be annihilated
+    state: input state in representation 1
+    nd: number of annihilation operators (number of modes to annihilate)
+    ntot: total number of annihilation and creation operators
+    nmax: maximal wavenumber of the "lookup" basis
+    """
+
+    x = itertools.chain.from_iterable(([n]*Zn for n,Zn in state))
+
+    dlists = set(tuple(y) for y in combinations(x,nd))
+    return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
+
+
+def computeME(basis, i, lookupbasis, helper, statePos, Erange,
+    ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -77,7 +102,7 @@ cdef computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange
             oscListSub = oscList[k][imin:imax]
 
             for i in range(len(oscListSub)):
-                osc = oscList[i]
+                osc = oscListSub[i]
 
                 newstatevec = carray.copy(statevec)
 

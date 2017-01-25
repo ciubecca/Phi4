@@ -90,7 +90,7 @@ class testPhi4(unittest.TestCase):
         e = a.eigenvalues["rentails"][k][0]
 
         print(e)
-        npt.assert_almost_equal(e,-0.253704432028)
+        npt.assert_almost_equal(e,-0.253704432028, decimal=10)
 
     def testAll(self):
         self.testRaw()

@@ -12,43 +12,14 @@ from scipy import exp, pi
 from scipy.special import binom
 import bisect
 import me
+from me import *
 
-double tol = 0.000000001
-
-def filterDlist(dlist, nd, ntot, nmax):
-    # TODO This can be sped up with the n-SUM algorithm
-    if nd==ntot:
-        return sum(dlist)==0
-    elif nd==ntot-1:
-        return abs(sum(dlist))<=nmax
-    else:
-        return True
-
-
-# TODO The speed optimization resulting from using the N-Sum algorithm could be important
-# @profile
-def gendlists(state, nd, ntot, nmax):
-    """ Generates a list of all the possible combinations of momenta in the state that
-    can be annihilated
-    state: input state in representation 1
-    nd: number of annihilation operators (number of modes to annihilate)
-    ntot: total number of annihilation and creation operators
-    nmax: maximal wavenumber of the "lookup" basis
-    """
-
-    # XXX no call to list?
-    x = itertools.chain.from_iterable(([n]*Zn for n,Zn in state))
-
-    dlists = set(tuple(y) for y in combinations(x,nd))
-    # XXX returns a generator expression
-    return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
+tol = 0.000000001
 
 
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
     return factorial(len(x))/scipy.prod(list(map(factorial,Counter(x).values())))
-
-
 
 
 class LocOperator():
@@ -136,10 +107,9 @@ class LocOperator():
         Otherwise it should be set to False
         """
 
-        return computeME(basis, i, lookupbasis, helper, statePos, Erange, ignKeyErr,
-                self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList)
-
-
+        return me.computeME(basis, i, lookupbasis, helper, statePos, Erange,
+                ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors,
+                self.oscList, self.oscEnergies)
 
 
     # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
