@@ -28,7 +28,7 @@ class LocOperator():
     This is convenient to compute matrix elements and generate the high-energy basis
     from a set of tails
     """
-
+    @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -91,7 +91,7 @@ class LocOperator():
         return scipy.array([[n,cosc.get(n,0),dosc.get(n,0)] for n in wnlist],
                 dtype=scipy.int8)
 
-    # @profile
+    @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
             ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
@@ -114,6 +114,7 @@ class LocOperator():
 
     # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
     # as Hh = V*Hl
+    @profile
     def yieldBasis(self, basis, EL):
         """ Return a set of tuples of representation 2 states, all of which are not
         connected by spatial parity transformations.
@@ -251,7 +252,7 @@ def V2OpsHalf(basis):
 
 
 
-
+@profile
 def V4OpsSelectedHalf(basis, Emax, idxList=None):
     """ Selected set of oscillators of half of the V4 operator between selected states
     basis: basis which is acted upon
@@ -317,6 +318,7 @@ def V2OpsSelectedFull(basis, Emax):
     return opsList
 
 
+@profile
 def V4OpsSelectedFull(basis, Emax, idxList=None):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
@@ -377,7 +379,7 @@ def V6OpsSelectedFull(basis, Emax):
     return opsList
 
 
-
+@profile
 def gendlistsfromBasis(basis, idxList, nmax, nd, ntot):
     ret = set()
 

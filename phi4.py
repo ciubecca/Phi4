@@ -90,7 +90,7 @@ class Phi4():
         self.V[k][0] = scipy.sparse.eye(basis.size)*self.L
 
 
-    # @profile
+    @profile
     def genHEBasis(self, k, basisl, EL, ELp, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -124,7 +124,7 @@ class Phi4():
 
 
 # XXX We could compute either Vhl or VHl to save time
-    # @profile
+    @profile
     def computeHEVs(self, k):
         """
         Compute the matrices involving the high-energy states below EL
@@ -181,7 +181,7 @@ class Phi4():
 
         # print("self.VLH[k] size", msize(self.VLH[k]))
 
-
+    @profile
     def computeLEVs(self, k, loc3=True):
 
         ###################################
@@ -226,7 +226,7 @@ class Phi4():
 
             del c
 
-    # @profile
+    @profile
     def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
             nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None):
         """
@@ -280,7 +280,7 @@ class Phi4():
 
             return VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 
-
+    @profile
     def computeDH2(self, k, ET, EL, eps, loc2):
 
         propagatorH = self.basisH[k].propagator(eps, ET, EL)
@@ -312,7 +312,7 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-    # @profile
+    @profile
     def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
 
         print("Computing DH3")
@@ -453,6 +453,7 @@ class Phi4():
         self.g2 = g2
         self.g4 = g4
 
+    @profile
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
             eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True, nonloc3mix=True):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL

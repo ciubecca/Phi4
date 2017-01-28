@@ -40,7 +40,7 @@ def pickNM(state, N, M, occ):
     return [[(n,Zm,Zn-Zm)]+x for Zm in r for x in pickNM(state[1:],N-Zm,M-Zn+Zm,occ-Zn)]
 
 
-
+@profile
 def gendlistPairs(state, ndPair, ntotPair, nmax):
 
     ndTot = sum(ndPair)
@@ -67,6 +67,7 @@ def gendlistPairs(state, ndPair, ntotPair, nmax):
 
 
 class BilocOperator():
+    @profile
     def __init__(self, JointOscList, ndPair, ncPair, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -127,6 +128,7 @@ class BilocOperator():
         return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
+    @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
                                 ignKeyErr=True):
         """ Compute the matrix elements by applying all the oscillators in the operator
@@ -202,7 +204,7 @@ class BilocOperator():
         return col, data
 
 
-
+@profile
 def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
     ret = set()
 
@@ -255,7 +257,7 @@ def V2V4Ops(basis):
     return opsList
 
 
-
+@profile
 def V4V4Ops(basis):
     """
     Bilocal operators of :V4 V4:

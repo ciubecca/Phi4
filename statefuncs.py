@@ -82,7 +82,7 @@ def isSorted(x, key):
 
 class Basis():
     """ Class used to store and compute a basis of states"""
-    # @profile
+    @profile
     def __init__(self, k, stateset, helper):
         """ Standard constructor
         k: parity quantum number
