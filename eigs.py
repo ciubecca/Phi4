@@ -7,16 +7,20 @@ import scipy
 import math
 import database
 
-memdbg = True
-loc3 = True
+memdbg = False
 # Whether the MonteCarlo integrals should be actually evaluated
-test = True
+test = False
 
 if test:
-    warnings.warn("This is a test run!")
+    warnings.warn("Monte Carlo is OFF")
+if memdbg:
+    warnings.warn("Running with memory debugging")
 
 # Whether we should save the results in the database data/spectra.db
-saveondb = False
+saveondb = True
+if not saveondb:
+    warnings.warn("Saving on database is OFF")
+
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 1
@@ -93,7 +97,7 @@ def main():
         if memdbg:
             print("memory taken before computeLEVs", memory_usage())
 
-        a.computeLEVs(k, basisl, loc3=loc3)
+        a.computeLEVs(k, basisl)
 
 
         if memdbg:
