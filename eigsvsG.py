@@ -49,8 +49,6 @@ ET = float(argv[3])
 
 print("klist", klist)
 
-print("maxntails", maxntails)
-
 print("L, g, ET", L, g, ET)
 
 EL = ratioELET*ET
@@ -82,8 +80,8 @@ def main():
 
 # Compute the raw eigenvalues for cutoff ET
         a.computeEigval(k, ET, "raw", neigs=neigs)
-        print("Raw vacuum:", [a.eigenvalues[g]["raw"][k][0] for g in glist])
-        eps = {g: a.eigenvalues[g]["raw"][k][0] for g in glist}
+        epsraw = {g: a.eigenvalues[g]["raw"][k][0] for g in glist}
+        print("Raw vacuum:", epsraw)
 
         # return
 
@@ -115,16 +113,16 @@ def main():
 # Computing VHH is expensive
         a.computeHEVs(k)
 
-        a.computeEigval(k, ET, "renloc", eps=eps, neigs=neigs)
-        print("Local ren vacuum:", [a.eigenvalues[g]["renloc"][k][0] for g in glist])
-        eps = [g: a.eigenvalues[g]["renloc"][k][0] for g in glist]
+        a.computeEigval(k, ET, "renloc", eps=epsraw, neigs=neigs)
+        eps = {g: a.eigenvalues[g]["renloc"][k][0] for g in glist}
+        print("Local ren vacuum:", eps)
 
-        a.calcVV3([ELp], eps, test=test)
+        a.calcVV3(ELp, eps, test=test)
 
         a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
                 neigs=neigs, memdbg=memdbg)
-        print("Non-Local ren vacuum:", [g: a.eigenvalues[g]["rentails"][k][0]
-            for g in glist])
+        print("Non-Local ren vacuum:", {g: a.eigenvalues[g]["rentails"][k][0]
+            for g in glist})
 
         print("Number of tails:", a.ntails)
 
@@ -134,15 +132,13 @@ def main():
                         basisSize=a.compSize)
                 db.insert(datadict=datadict, spec=a.eigenvalues[g]["raw"][k])
 
-
-                datadict = dict(k=k, ET=ET, L=L, ren="renloc", g=g, eps=eps, neigs=neigs,
-                        basisSize=a.compSize)
+                datadict = dict(k=k, ET=ET, L=L, ren="renloc", g=g, eps=epsraw[g],
+                        neigs=neigs, basisSize=a.compSize)
                 db.insert(datadict=datadict, spec=a.eigenvalues[g]["renloc"][k])
 
-
-                datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp, ELpp=ELpp,
-                        ntails=a.ntails, eps=eps, neigs=neigs, basisSize=a.compSize,
-                        tailsComputedAtET=ET, maxntails=None)
+                datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp,
+                        ELpp=ELpp, ntails=a.ntails, eps=eps[g], neigs=neigs,
+                        basisSize=a.compSize, tailsComputedAtET=ET, maxntails=None)
                 db.insert(datadict=datadict, spec=a.eigenvalues[g]["rentails"][k])
 
 

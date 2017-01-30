@@ -58,6 +58,7 @@ class renVV3():
         self.neval = 10000
 
         self.glist = glist
+        self.ET = ET
 
         self.m = m
         self.eps = eps
@@ -105,6 +106,8 @@ class renVV3():
 
 
     def computeIntegral(self, nvar, integrand):
+        glist = self.glist
+
         cut=pi/2
         # integral variables mapped to the tangent to x:(-infinity,infinity)
         # replaced by x=tan(y) with y:(-pi/2,pi/2)
