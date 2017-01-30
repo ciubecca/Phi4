@@ -6,6 +6,7 @@ import sys
 import scipy
 import math
 import database
+from profile_support import *
 
 # saveondb = False
 m = 1
@@ -75,18 +76,14 @@ def main():
         print("Total number of tails:", basisl.size)
 
 
+        a.computeLEVs(k=k, basisl=basisl, loc3=False)
+
         print("Generating high energy basis...")
         # Generate the high-energy "selected" basis by passing a set of tails
         # and a maximum cutoff EL
-        a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
+        a.genHEBasis(k, EL=EL, ELp=ELp, ELpp=ELpp)
         print("Size of HE basis:", a.basisH[k].size)
 
-        gc.collect()
-
-        HEnmax = a.basisH[k].nmax
-        print("nmax of HE basis:", HEnmax)
-        print("Estimated MB size of HE basis in repr2:",
-                8*(HEnmax*2+1)*a.basisH[k].size/10**6)
-        print("Computed MB size of HE basis in repr1:", a.basisH[k].MBsize())
+        print("Memory: ", memory_usage())
 
 main()

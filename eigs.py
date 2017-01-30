@@ -1,4 +1,5 @@
 import statefuncs
+from  profile_support import *
 import phi4
 import renorm
 import sys
@@ -6,11 +7,13 @@ import scipy
 import math
 import database
 
+memdbg = True
 loc3 = True
-loc3mix = True
-nonloc3mix = True
 # Whether the MonteCarlo integrals should be actually evaluated
-test = False
+test = True
+
+if test:
+    warnings.warn("This is a test run!")
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = False
@@ -87,7 +90,14 @@ def main():
         basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
         print("Total number of tails:", basisl.size)
 
+        if memdbg:
+            print("memory taken before computeLEVs", memory_usage())
+
         a.computeLEVs(k, basisl, loc3=loc3)
+
+
+        if memdbg:
+            print("memory taken before genHEBasis", memory_usage())
 
         print("Generating high energy basis...")
         # Generate the high-energy "selected" basis by passing a set of tails
@@ -96,6 +106,8 @@ def main():
         print("Size of HE basis:", a.basisH[k].size)
 
 
+        if memdbg:
+            print("memory taken before computeHEVs", memory_usage())
 
         print("Computing high energy matrices...")
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
@@ -103,16 +115,14 @@ def main():
 # Computing VHH is expensive
         a.computeHEVs(k)
 
-
         a.computeEigval(k, ET, "renloc", eps=eps, neigs=neigs)
         print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
         eps = a.eigenvalues["renloc"][k][0]
 
-        if loc3:
-            a.calcVV3([ELp], eps, test=test)
+        a.calcVV3([ELp], eps, test=test)
 
         a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                neigs=neigs, loc3=loc3,loc3mix=loc3mix, nonloc3mix=nonloc3mix)
+                neigs=neigs, memdbg=memdbg)
         print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
 
 

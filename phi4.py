@@ -1,5 +1,6 @@
 import scipy
-# import pyximport; pyximport.install()
+from profile_support import *
+import pyximport; pyximport.install()
 import scipy.sparse.linalg
 import scipy.sparse
 import math
@@ -238,7 +239,8 @@ class Phi4():
 
     # @profile
     def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
-            nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None):
+            nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None,
+            memdbg=False):
         """
         Compute the full DeltaH = DH2 * (DH2-DH3)^-1 * DH2  matrix
         subbasisl: explicit set of tails used in the computation. If not specified,
@@ -265,7 +267,8 @@ class Phi4():
             DH2ll = subOPl.sub(DH2ll)
 
             DH3ll = self.computeDH3(k, ET=ET, ELp=ELp, ELpp=ELpp, eps=eps,
-                        loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
+                        loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix,
+                        memdbg=memdbg)
             DH3ll = subOPl.sub(DH3ll)
 
             # XXX This should not be needed anymore
@@ -274,7 +277,15 @@ class Phi4():
 
             # XXX Note: this could take a lot of memory if there are many tails,
             # because the inverse matrix is not sparse
+            if memdbg:
+                print("memory before inversion", memory_usage())
+            # Convert to dense, because the inverse will be dense
             invM = scipy.sparse.linalg.inv((DH2ll-DH3ll).tocsc())
+            #TODO Make this work
+            # invM = scipy.linalg.inv((DH2ll-DH3ll).todense())
+            # print(invM.shape)
+            if memdbg:
+                print("memory after inversion", memory_usage())
 
             return DH2lL, invM, DH2Ll
 
@@ -323,12 +334,15 @@ class Phi4():
         return DH2ll, DH2Ll
 
     # @profile
-    def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix):
+    def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix, memdbg):
 
         print("Computing DH3")
 
         sizel = self.basisl[k].size
         DH3ll = scipy.sparse.csc_matrix((sizel, sizel))
+
+        if memdbg:
+            print("memory before computing Vhh", memory_usage())
 
         VHl = {}
         VlH = {}
@@ -384,6 +398,8 @@ class Phi4():
 # Add the "mixed" contributions to DH3 by integrating out states with
 # energy ET < E < ELp on one side and ELp < E < EL on the other
 #########################################################################
+        if memdbg:
+            print("memory before computing VhH", memory_usage())
 
         if nonloc3mix:
             c = MatrixConstructor(basis, basis, (ELp, ELpp))
@@ -464,7 +480,8 @@ class Phi4():
         self.g4 = g4
 
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
-            eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True, nonloc3mix=True):
+            eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True,
+            nonloc3mix=True, memdbg=False):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         k: parity quantum number
         ET: ET
@@ -486,7 +503,9 @@ class Phi4():
         elif ren=="rentails":
             DH2lL, invM, DH2Ll = self.computeDeltaH(k=k, ET=ET, EL=EL, ren=ren, eps=eps,
                     subbasisl=subbasisl, ELp=ELp, ELpp=ELpp, loc2=loc2,
-                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
+            # print(DH2lL.shape, invM.shape, DH2Ll.shape)
+            # print(Hraw.shape)
             compH = LinearOperator(Hraw.shape, lambda v: Hraw*v + DH2lL*invM*DH2Ll*v)
 
         elif ren=="renloc":
