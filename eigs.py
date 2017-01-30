@@ -87,14 +87,14 @@ def main():
         basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
         print("Total number of tails:", basisl.size)
 
+        a.computeLEVs(k, basisl, loc3=loc3)
 
         print("Generating high energy basis...")
         # Generate the high-energy "selected" basis by passing a set of tails
         # and a maximum cutoff EL
-        a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
+        a.genHEBasis(k, EL=EL, ELp=ELp, ELpp=ELpp)
         print("Size of HE basis:", a.basisH[k].size)
 
-        a.computeLEVs(k, loc3=loc3)
 
 
         print("Computing high energy matrices...")

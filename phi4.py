@@ -91,7 +91,7 @@ class Phi4():
 
 
     # @profile
-    def genHEBasis(self, k, basisl, EL, ELp, ELpp):
+    def genHEBasis(self, k, EL, ELp, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
         basisl: Basis instance containing the set of tails
@@ -99,7 +99,7 @@ class Phi4():
         ELpp: maximal energy of the generated basis for DH3
         """
 
-        self.basisl[k] = basisl
+        basisl = self.basisl[k]
 
         self.EL = EL
         self.ELp = ELp
@@ -182,12 +182,14 @@ class Phi4():
         # print("self.VLH[k] size", msize(self.VLH[k]))
 
 
-    def computeLEVs(self, k, loc3=True):
+    def computeLEVs(self, k, basisl, loc3=True):
 
         ###################################
         # Generate all the "local" matrices on the selected
         # low-energy states
         ###################################
+
+        self.basisl[k] = basisl
 
         subOp = SubmatrixOperator.fromSubbasis(self.basis[k], self.basisl[k])
 
@@ -220,9 +222,17 @@ class Phi4():
 
             print("Computing V4V4")
 
-            Vlist = V4V4Ops(basis)
-            self.V4V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,
-                    sumTranspose=False)*self.L**2
+            sizel = self.basisl[k].size
+            self.V4V4[k] = scipy.sparse.csc_matrix((sizel, sizel))
+
+            # Vlist = V4V4Ops(basis)
+            # self.V4V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,
+                    # sumTranspose=False)*self.L**2
+            for nd1 in (0,1,2,3,4):
+                for nd2 in (0,1,2,3,4):
+                    Vlist = V4V4Ops(basis,nd1,nd2)
+                    self.V4V4[k] += c.buildMatrix(Vlist,ignKeyErr=True,
+                        sumTranspose=False)*self.L**2
 
             del c
 

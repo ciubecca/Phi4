@@ -256,7 +256,7 @@ def V2V4Ops(basis):
 
 
 
-def V4V4Ops(basis):
+def V4V4Ops(basis, nd1, nd2):
     """
     Bilocal operators of :V4 V4:
     """
@@ -270,28 +270,26 @@ def V4V4Ops(basis):
 
     opsList = []
 
-    for nd1 in (0,1,2,3,4):
-        for nd2 in (0,1,2,3,4):
-            ndPair = (nd1,nd2)
+    ndPair = (nd1,nd2)
 
-            ncPair = tuple(ntot-nd for ntot,nd in zip(ntotPair,ndPair))
+    ncPair = tuple(ntot-nd for ntot,nd in zip(ntotPair,ndPair))
 
-            dlistPairs = gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair)
+    dlistPairs = gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair)
 
-            JointOscList = []
+    JointOscList = []
 
-            for dlistPair in dlistPairs:
+    for dlistPair in dlistPairs:
 
-                x1 = createClistsV4(nmax, dlistPair[0], ncPair[0])
-                x2 = createClistsV4(nmax, dlistPair[1], ncPair[1])
+        x1 = createClistsV4(nmax, dlistPair[0], ncPair[0])
+        x2 = createClistsV4(nmax, dlistPair[1], ncPair[1])
 
 
-                clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
-                        if oscEnergy(clist1)+oscEnergy(clist2) <= Emax+tol]
+        clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
+                if oscEnergy(clist1)+oscEnergy(clist2) <= Emax+tol]
 
-                JointOscList.append((dlistPair, clistPairs))
+        JointOscList.append((dlistPair, clistPairs))
 
-            opsList.append(BilocOperator(JointOscList,ndPair,ncPair,helper=helper))
+    opsList.append(BilocOperator(JointOscList,ndPair,ncPair,helper=helper))
 
     return opsList
 

@@ -79,8 +79,8 @@ class testPhi4(unittest.TestCase):
             vectorlist = vectorlist[:maxntails]
         basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper)
 
-        a.genHEBasis(k, basisl, EL=EL, ELp=ELp, ELpp=ELpp)
-        a.computeLEVs(k)
+        a.computeLEVs(k, basisl)
+        a.genHEBasis(k, EL=EL, ELp=ELp, ELpp=ELpp)
         a.computeHEVs(k)
 
         a.calcVV3([ELp], eps, test=True)
