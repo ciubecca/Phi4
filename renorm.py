@@ -45,19 +45,19 @@ class renVV2():
         return sqrt(self.m**2+x**2)
 
 class renVV3Test():
-    def __init__(self, ETlist):
-        self.VV3loc = {n : {ET:1 for ET in ETlist} for n in (0,2,4,6)}
-        self.V0V4 = {ET: 1 for ET in ETlist}
-        self.V2V4 = {ET: 1 for ET in ETlist}
-        self.V4V4 = {ET: 1 for ET in ETlist}
+    def __init__(self, glist):
+        self.VV3loc = {n : {g:1 for g in glist} for n in (0,2,4,6)}
+        self.V0V4 = {g: 1 for g in glist}
+        self.V2V4 = {g: 1 for g in glist}
+        self.V4V4 = {g: 1 for g in glist}
 
 
 
 class renVV3():
-    def __init__(self, ETlist, m, eps):
+    def __init__(self, glist, m, eps, ET):
         self.neval = 10000
 
-        self.ETlist = ETlist
+        self.glist = glist
 
         self.m = m
         self.eps = eps
@@ -89,7 +89,7 @@ class renVV3():
 
 
 # Convert to dict
-        self.VV3loc = {n: {ET: self.VV3loc[n][i] for i,ET in enumerate(self.ETlist)}
+        self.VV3loc = {n: {g: self.VV3loc[n][i] for i,g in enumerate(self.glist)}
             for n in self.VV3loc.keys()}
 
         self.neval = 10000
@@ -99,9 +99,9 @@ class renVV3():
         self.V4V4 = self.computeIntegral(1, phi4phi4_1)
 
         # Convert to dict
-        self.V0V4 = {ET: self.V0V4[i] for i,ET in enumerate(self.ETlist)}
-        self.V2V4 = {ET: self.V2V4[i] for i,ET in enumerate(self.ETlist)}
-        self.V4V4 = {ET: self.V4V4[i] for i,ET in enumerate(self.ETlist)}
+        self.V0V4 = {ET: self.V0V4[i] for i,g in enumerate(self.glist)}
+        self.V2V4 = {ET: self.V2V4[i] for i,g in enumerate(self.glist)}
+        self.V4V4 = {ET: self.V4V4[i] for i,g in enumerate(self.glist)}
 
 
     def computeIntegral(self, nvar, integrand):
@@ -110,17 +110,18 @@ class renVV3():
         # replaced by x=tan(y) with y:(-pi/2,pi/2)
         neval = self.neval
         nitn = 10
-        eps = self.eps
-        ET = self.ETlist[0]
+        eps = self.eps[glist[0]]
+        ET = self.ET
 
         ret = []
         integ = vegas.Integrator([[-cut,cut]]*nvar)
 
         # step 1 -- adapt to phi0_1; discard results
         integ(lambda x: integrand(ET,eps,x), nitn=nitn, neval=neval)
-        for ET in self.ETlist:
+
+        for g in self.glist:
         # step 2 -- integ has adapted to phi0_1; keep results
-            result = integ(lambda x: integrand(ET,eps,x), nitn=nitn, neval=neval)
+            result = integ(lambda x: integrand(ET,eps[g],x), nitn=nitn, neval=neval)
             ret.append(result.mean)
 
         return array(ret)
@@ -128,4 +129,3 @@ class renVV3():
 
     def om(x):
         return sqrt(self.m**2+x**2)
-

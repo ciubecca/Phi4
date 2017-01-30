@@ -61,8 +61,6 @@ class Phi4():
 # the local approximation
 # "rentails" are the eigenvalues where the DH2, DH3 corrections are computed exactly up
 # to EL
-        self.eigenvalues = {"raw":{}, "renloc":{}, "rentails":{}}
-        self.eigenvectors = {"raw":{}, "renloc":{}, "rentails":{}}
 
         scipy.set_printoptions(precision=15)
 
@@ -280,14 +278,13 @@ class Phi4():
             if memdbg:
                 print("memory before inversion", memory_usage())
             # Convert to dense, because the inverse will be dense
-            invM = scipy.sparse.linalg.inv((DH2ll-DH3ll).tocsc())
             #TODO Make this work
             # invM = scipy.linalg.inv((DH2ll-DH3ll).todense())
             # print(invM.shape)
             if memdbg:
                 print("memory after inversion", memory_usage())
 
-            return DH2lL, invM, DH2Ll
+            return DH2lL, DH2ll, DH3ll, DH2Ll
 
 
         elif ren=="renloc":
@@ -304,7 +301,7 @@ class Phi4():
 
     def computeDH2(self, k, ET, EL, eps, loc2):
 
-        propagatorH = self.basisH[k].propagator(eps, ET, EL)
+        propagatorH = {g: self.basisH[k].propagator(eps[g], ET, EL) for g in glist}
 
         VHl = self.VHl[k][4]
         VlH = VHl.transpose()
@@ -322,14 +319,19 @@ class Phi4():
         # Construct DH2
         #######################################
         # Dictionary of local renormalization coefficients for the g^2 term
-        VV2 = renorm.renVV2(g4=self.g4, EL=EL, eps=eps).VV2
 
-        DH2Ll = VHl*propagatorH*VLH*self.g4**2
-        DH2ll = VHl*propagatorH*VlH*self.g4**2
+        DH2Ll = {}
+        DH2ll = {}
 
-        if loc2:
-            DH2Ll += VV2[0]*VLl[0] + VV2[2]*VLl[2] + VV2[4]*VLl[4]
-            DH2ll += VV2[0]*Vll[0] + VV2[2]*Vll[2] + VV2[4]*Vll[4]
+        for g in glist:
+            VV2 = renorm.renVV2(g4=g, EL=EL, eps=eps[g]).VV2
+
+            DH2Ll[g] = VHl*propagatorH*VLH*g**2
+            DH2ll[g] = VHl*propagatorH*VlH*g**2
+
+            if loc2:
+                DH2Ll[g] += VV2[0]*VLl[0] + VV2[2]*VLl[2] + VV2[4]*VLl[4]
+                DH2ll[g] += VV2[0]*Vll[0] + VV2[2]*Vll[2] + VV2[4]*Vll[4]
 
         return DH2ll, DH2Ll
 
@@ -339,7 +341,7 @@ class Phi4():
         print("Computing DH3")
 
         sizel = self.basisl[k].size
-        DH3ll = scipy.sparse.csc_matrix((sizel, sizel))
+        DH3ll[g] = {g: scipy.sparse.csc_matrix((sizel, sizel)) for g in glist}
 
         if memdbg:
             print("memory before computing Vhh", memory_usage())
@@ -365,7 +367,7 @@ class Phi4():
 #########################################################################
 
 # Propagator and projector over the states between ET and ELp
-        propagatorh = basis.propagator(eps, ET, ELp)
+        propagatorh = {g: basis.propagator(eps[g], ET, ELp) for g in glist}
 
         # XXX Move this inside the cycle and restrict idxList?
         Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
@@ -384,12 +386,15 @@ class Phi4():
             VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
                     basis.size)
 
-            DH3llPart = VHl[4]*propagatorh*VhhHalfPart*propagatorh*VlH[4]*self.g4**3
-            DH3llPart += DH3llPart.transpose()
-            DH3llPart -= VHl[4]*propagatorh*VhhDiagPart*propagatorh*VlH[4]*self.g4**3
-            DH3ll += DH3llPart
+            for g in glist:
+                DH3llPart = VHl[4]*propagatorh[g]*VhhHalfPart*propagatorh[g]
+                    *VlH[4]*g**3
+                DH3llPart += DH3llPart.transpose()
+                DH3llPart -= VHl[4]*propagatorh[g]*VhhDiagPart*propagatorh[g]
+                    *VlH[4]*g**3
+                DH3ll[g] += DH3llPart
 
-            del VhhHalfPart
+                del VhhHalfPart
 
         del Vlist
         del c
@@ -405,7 +410,7 @@ class Phi4():
             c = MatrixConstructor(basis, basis, (ELp, ELpp))
 
 # Propagator and projector over the states between ELp and ELpp
-            propagatorH = basis.propagator(eps, ELp, ELpp)
+            propagatorH = {g: basis.propagator(eps[g], ELp, ELpp) for g in glist}
 
             # XXX Move this inside the cycle and restrict idxList?
             VHhlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
@@ -416,9 +421,11 @@ class Phi4():
                 VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
                         idxList=idxList)*self.L
 
-                DH3llPart = VHl[4]*propagatorh*VHhPart*propagatorH*VlH[4]*self.g4**3
-                DH3llPart += DH3llPart.transpose()
-                DH3ll += DH3llPart
+                for g in glist:
+                    DH3llPart = VHl[4]*propagatorh[g]*VHhPart*propagatorH[g]*VlH[4]\
+                        *g**3
+                    DH3llPart += DH3llPart.transpose()
+                    DH3ll[g] += DH3llPart
 
                 del VHhPart
 
@@ -431,12 +438,13 @@ class Phi4():
 ########################################################################
 
         if loc3mix:
-            VV2 = renorm.renVV2(g4=self.g4, EL=ELpp, eps=eps).VV2
+            for g in glist:
+                VV2 = renorm.renVV2(g4=g, EL=ELpp, eps=eps[g]).VV2
 
-            DH3llPart = VHl[2]*VV2[2]*propagatorh*VlH[4]*self.g4
-            DH3llPart += VHl[4]*VV2[4]*propagatorh*VlH[4]*self.g4
-            DH3llPart += DH3llPart.transpose()
-            DH3ll += DH3llPart
+                DH3llPart = VHl[2]*VV2[2]*propagatorh[g]*VlH[4]*g
+                DH3llPart += VHl[4]*VV2[4]*propagatorh[g]*VlH[4]*g
+                DH3llPart += DH3llPart.transpose()
+                DH3ll[g] += DH3llPart
 
 #####################################################
 # Add the "symmetric local" parts to DH3
@@ -451,28 +459,31 @@ class Phi4():
             V2V4 = self.V2V4[k]
             V4V4 = self.V4V4[k]
 
+            for g in glist:
+                DH3ll += V0V4*self.VV3.V0V4[ELp]*g**3
+                DH3ll += V2V4*self.VV3.V2V4[ELp]*g**3
+                DH3ll += V4V4*self.VV3.V4V4[ELp]*g**3
 
-            DH3ll += V0V4*self.VV3.V0V4[ELp]*self.g4**3
-            DH3ll += V2V4*self.VV3.V2V4[ELp]*self.g4**3
-            DH3ll += V4V4*self.VV3.V4V4[ELp]*self.g4**3
-
-
-            DH3ll += Vll[0]*self.VV3.VV3loc[0][ELp]*self.g4**3
-            DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*self.g4**3
-            DH3ll += Vll[4]*self.VV3.VV3loc[4][ELp]*self.g4**3
-            DH3ll += Vll[6]*self.VV3.VV3loc[6][ELp]*self.g4**3
-
+                DH3ll += Vll[0]*self.VV3.VV3loc[0][ELp]*g**3
+                DH3ll += Vll[2]*self.VV3.VV3loc[2][ELp]*g**3
+                DH3ll += Vll[4]*self.VV3.VV3loc[4][ELp]*g**3
+                DH3ll += Vll[6]*self.VV3.VV3loc[6][ELp]*g**3
 
         return DH3ll
 
 
-    def calcVV3(self, ELplist, eps, test=False):
+    def calcVV3(self, ELp, eps, test=False):
         print("Calculating VVV renorm coefficients")
         if test == True:
-            self.VV3 =  renorm.renVV3Test(ETlist=ELplist)
+            self.VV3 =  renorm.renVV3Test()
         else:
-            self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ELplist)
+            self.VV3 =  renorm.renVV3(m=self.m, ET=ET, eps=eps, glist=glist)
 
+    def setglist(self, glist):
+        self.glist = glist
+
+        self.eigenvalues = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
+        self.eigenvectors = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
 
     def setCouplings(self, g0=0, g2=0, g4=0):
         self.g0 = g0
@@ -493,48 +504,49 @@ class Phi4():
 
         # Subset of low energy states
         subOpL = SubmatrixOperator.fromErange(self.basis[k],(0,ET))
-        M = self.h0[k] + self.g4*self.V[k][4]
-        Hraw = subOpL.sub(M)
+        M = [g: self.h0[k] + g*self.V[k][4] for g in glist]
+        Hraw = [g: subOpL.sub(M) for g in glist]
         self.compSize = Hraw.shape[0]
-
-        if ren=="raw":
-            compH = Hraw
-
-        elif ren=="rentails":
-            DH2lL, invM, DH2Ll = self.computeDeltaH(k=k, ET=ET, EL=EL, ren=ren, eps=eps,
-                    subbasisl=subbasisl, ELp=ELp, ELpp=ELpp, loc2=loc2,
-                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
-            # print(DH2lL.shape, invM.shape, DH2Ll.shape)
-            # print(Hraw.shape)
-            compH = LinearOperator(Hraw.shape, lambda v: Hraw*v + DH2lL*invM*DH2Ll*v)
-
-        elif ren=="renloc":
-            DeltaH = self.computeDeltaH(k=k, ET=ET, ren=ren, eps=eps, loc2=loc2)
-            compH = (Hraw + DeltaH)
-
-        else:
-            raise ValueError()
 
         # Seed vector
         v0 = scipy.zeros(self.compSize)
         for i in range(min(10,len(v0))):
             v0[i] = 1.
 
-        (self.eigenvalues[ren][k], eigenvectorstranspose) = \
-            scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
+        if ren=="raw":
+            compH = Hraw
+
+        elif ren=="renloc":
+            DeltaH = self.computeDeltaH(k=k, ET=ET, ren=ren, eps=eps, loc2=loc2)
+            compH = {g: (Hraw[g] + DeltaH[g]) for g in glist}
+
+        elif ren=="rentails":
+# We invert the matrices one by one to save memory
+            DH2lL, DH2ll, DH3ll, DH2Ll =
+                self.computeDeltaH(k=k, ET=ET, EL=EL, ren=ren, eps=eps,
+                    subbasisl=subbasisl, ELp=ELp, ELpp=ELpp, loc2=loc2,
+                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
+
+            for g in glist:
+                invM = scipy.sparse.linalg.inv((DH2ll[g]-DH3ll[g]).tocsc())
+
+                compH = LinearOperator(Hraw[g].shape,
+                        lambda v: Hraw[g]*v + DH2lL[g]*invM*DH2Ll[g]*v)
+
+                (self.eigenvalues[g][ren][k], eigenvectorstranspose) = \
+                    scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
                         which='SA', return_eigenvectors=True)
 
-        self.eigenvectors[ren][k] = eigenvectorstranspose.T
+                self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
 
-    def vacuumE(self, ren):
-        return self.eigenvalues[ren][1][0]
-        # The vacuum is K-even
+        else:
+            raise ValueError()
 
-    def spectrum(self, k, ren):
-        eigs = self.eigenvalues[ren][k]
-        # Subtract vacuum energies
-        if k==1:
-            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs[1:]])
-        elif k==-1:
-            return scipy.array([x-self.vacuumE(ren=ren) for x in eigs])
+        for g in glist:
+
+            (self.eigenvalues[g][ren][k], eigenvectorstranspose) = \
+                scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
+                        which='SA', return_eigenvectors=True)
+
+            self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
 
