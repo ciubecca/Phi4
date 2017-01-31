@@ -100,9 +100,9 @@ class renVV3():
         self.V4V4 = self.computeIntegral(1, phi4phi4_1)
 
         # Convert to dict
-        self.V0V4 = {ET: self.V0V4[i] for i,g in enumerate(self.glist)}
-        self.V2V4 = {ET: self.V2V4[i] for i,g in enumerate(self.glist)}
-        self.V4V4 = {ET: self.V4V4[i] for i,g in enumerate(self.glist)}
+        self.V0V4 = {g: self.V0V4[i] for i,g in enumerate(self.glist)}
+        self.V2V4 = {g: self.V2V4[i] for i,g in enumerate(self.glist)}
+        self.V4V4 = {g: self.V4V4[i] for i,g in enumerate(self.glist)}
 
 
     def computeIntegral(self, nvar, integrand):
@@ -124,7 +124,8 @@ class renVV3():
 
         for g in self.glist:
         # step 2 -- integ has adapted to phi0_1; keep results
-            result = integ(lambda x: integrand(ET,eps[g],x), nitn=nitn, neval=neval)
+            result = integ(lambda x: integrand(ET,self.eps[g],x), nitn=nitn,
+                    neval=neval)
             ret.append(result.mean)
 
         return array(ret)
