@@ -64,7 +64,7 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         cdef carray.array statevec, newstatevec
         cdef char[:,:] osc
         cdef char n, Zc, Zd
-        cdef int ii
+        cdef int ii, jj, jjj
         cdef double[:,:,:] normFactors
 
         # List of columns indices of generated basis elements
@@ -112,8 +112,10 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
                     n = osc[ii, 0]
                     Zc = osc[ii, 1]
                     Zd = osc[ii, 2]
-                    newstatevec[n+nmax] += Zc-Zd
-                    x *= normFactors[Zc, Zd, statevec[n+nmax]]
+                    jj = n+nmax
+                    newstatevec[jj] += Zc-Zd
+                    jjj =  statevec[jj]
+                    x *= normFactors[Zc, Zd, jjj]
 
                 if ignKeyErr:
                     try:
