@@ -39,17 +39,16 @@ ratioELppELp = 1.5
 
 
 argv = sys.argv
-if len(argv) < 4:
-    print(argv[0], "<L> <g> <ET>")
+if len(argv) < 3:
+    print(argv[0], "<L> <ET>")
     sys.exit(-1)
 
 L = float(argv[1])
-g = float(argv[2])
-ET = float(argv[3])
+ET = float(argv[2])
 
 print("klist", klist)
 
-print("L, g, ET", L, g, ET)
+print("L, ET", L, ET)
 
 EL = ratioELET*ET
 ELp = ratioELpET*ET
