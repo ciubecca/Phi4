@@ -98,6 +98,11 @@ class BilocOperator():
         def pairOscEnergy(pair):
             return oscEnergy(pair[0])+oscEnergy(pair[1])
 
+        clists = set(clist for _,clistPairs in JointOscList for clistPair in clistPairs
+                for clist in clistPair)
+        coscFactors = {clist: bose(clist)*reduce(mul,(1/sqrt(2*omega(n)*L) for n in clist),1)
+                        for clist in clists}
+
         for i, (dlistPair,clistPairs) in enumerate(JointOscList):
             clistPairs = list(sorted(clistPairs, key=pairOscEnergy))
 
@@ -115,11 +120,8 @@ class BilocOperator():
                     *reduce(mul,(1/sqrt(2*omega(n)*L) for n in dlist),1)
                     for dlist,nc,nd in zip(dlistPair,ncPair,ndPair)))
 
-            # Use dictionary not to compute the same several times?
-            self.oscFactors.append([
-                c*reduce(mul, (bose(clist)*\
-                    reduce(mul, (1/sqrt(2*omega(n)*L) for n in clist), 1)
-                    for clist in clistPair)) for clistPair in clistPairs])
+            self.oscFactors.append([c*coscFactors[clistPair[0]]*coscFactors[clistPair[1]]
+                    for clistPair in clistPairs])
 
 
 
