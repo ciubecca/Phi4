@@ -1,3 +1,4 @@
+from profile_support import *
 import gc
 from sys import getsizeof as sizeof
 import scipy
@@ -8,6 +9,7 @@ from collections import Counter
 import itertools
 from statefuncs import Helper
 from itertools import combinations, islice, permutations
+from itertools import groupby
 from scipy import exp, pi
 from scipy.special import binom
 import bisect
@@ -16,10 +18,12 @@ from me import *
 
 tol = 0.000000001
 
-
+@profile
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
-    return factorial(len(x))/scipy.prod(list(map(factorial,Counter(x).values())))
+    return factorial(len(x))/scipy.prod(
+        [factorial(sum(1 for _ in group)) for key, group in groupby(x)]
+        )
 
 
 class LocOperator():
