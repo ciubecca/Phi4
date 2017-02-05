@@ -103,39 +103,35 @@ class BilocOperator():
 
             self.dlistPairPos[dlistPair] = i
 
-            self.oscList.append([self.torepr1(clistPair,dlistPair)
+            dlist = tuple(sorted(dlistPair[0]+dlistPair[1]))
+            dosc = Counter(dlist)
+            self.oscList.append([self.torepr1(clistPair,dlist,dosc)
                 for clistPair in clistPairs])
 
             self.oscEnergies.append([pairOscEnergy(clistPair)-pairOscEnergy(dlistPair)
                 for clistPair in clistPairs])
 
-            c = reduce(mul, (bose(dlist)*reduce(mul,(1/sqrt(2*omega(n)*L) for n in dlist),1)
-                    for dlist in dlistPair))
+            c = reduce(mul, (bose(dlist)*binom(nc+nd,nc)\
+                    *reduce(mul,(1/sqrt(2*omega(n)*L) for n in dlist),1)
+                    for dlist,nc,nd in zip(dlistPair,ncPair,ndPair)))
 
+            # Use dictionary not to compute the same several times?
             self.oscFactors.append([
-                c*reduce(mul, (bose(clist)*binom(nc+nd,nc)*\
+                c*reduce(mul, (bose(clist)*\
                     reduce(mul, (1/sqrt(2*omega(n)*L) for n in clist), 1)
-                    for clist,nc,nd in zip(clistPair,ncPair,ndPair)))
-                        for clistPair in clistPairs])
-
-            # self.oscFactors.append([
-                # reduce(mul, (bose(clist)*bose(dlist)*binom(nc+nd,nc)*\
-                    # reduce(mul, (1/sqrt(2*omega(n)*L) for n in clist+dlist))
-                    # for clist,dlist,nc,nd in zip(clistPair,dlistPair,ncPair,ndPair)))
-                        # for clistPair in clistPairs])
+                    for clist in clistPair)) for clistPair in clistPairs])
 
 
-    def torepr1(self, clistPair, dlistPair):
+
+    def torepr1(self, clistPair, dlist, dosc):
         """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
         tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
         the creation and annihilation momenta
         Zc and Zd are respectively the number of creation and annihilation operators at
         wavenumber n """
         clist = tuple(sorted(clistPair[0]+clistPair[1]))
-        dlist = tuple(sorted(dlistPair[0]+dlistPair[1]))
         wnlist = set(clist+dlist)
         cosc = Counter(clist)
-        dosc = Counter(dlist)
         return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
@@ -267,7 +263,7 @@ def V2V4Ops(basis):
     return opsList
 
 
-@profile
+# @profile
 def V4V4Ops(basis, nd1, nd2):
     """
     Bilocal operators of :V4 V4:

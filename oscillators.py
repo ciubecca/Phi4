@@ -18,7 +18,6 @@ from me import *
 
 tol = 0.000000001
 
-@profile
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
     return factorial(len(x))/scipy.prod(
