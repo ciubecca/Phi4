@@ -93,25 +93,25 @@ class BilocOperator():
         self.oscEnergies = []
         self.oscFactors = []
 
-        oscEnergy = helper.oscEnergy
+        oscEnergyDict = helper.oscEnergyDict
 
         def pairOscEnergy(pair):
-            return oscEnergy(pair[0])+oscEnergy(pair[1])
+            return oscEnergyDict[pair[0]]+oscEnergyDict[pair[1]]
 
         clists = set(clist for _,clistPairs in JointOscList for clistPair in clistPairs
                 for clist in clistPair)
         coscFactors = {clist: bose(clist)*reduce(mul,(1/sqrt(2*omega(n)*L) for n in clist),1)
                         for clist in clists}
+        coscCounters = {clist:Counter(clist) for clist in clists}
 
         for i, (dlistPair,clistPairs) in enumerate(JointOscList):
-            clistPairs = list(sorted(clistPairs, key=pairOscEnergy))
+            clistPairs = sorted(clistPairs, key=pairOscEnergy)
 
             self.dlistPairPos[dlistPair] = i
 
-            dlist = tuple(sorted(dlistPair[0]+dlistPair[1]))
-            dosc = Counter(dlist)
-            self.oscList.append([self.torepr1(clistPair,dlist,dosc)
-                for clistPair in clistPairs])
+            dosc = Counter(dlistPair[0]+dlistPair[1])
+            self.oscList.append([self.torepr1(coscCounters[clistPair[0]],
+                coscCounters[clistPair[1]],dosc) for clistPair in clistPairs])
 
             self.oscEnergies.append([pairOscEnergy(clistPair)-pairOscEnergy(dlistPair)
                 for clistPair in clistPairs])
@@ -123,20 +123,30 @@ class BilocOperator():
             self.oscFactors.append([c*coscFactors[clistPair[0]]*coscFactors[clistPair[1]]
                     for clistPair in clistPairs])
 
-
-
-    def torepr1(self, clistPair, dlist, dosc):
+    @profile
+    def torepr1(self, cosc1, cosc2, dosc):
         """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
         tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
         the creation and annihilation momenta
         Zc and Zd are respectively the number of creation and annihilation operators at
         wavenumber n """
-        clist = tuple(sorted(clistPair[0]+clistPair[1]))
-        wnlist = set(clist+dlist)
-        cosc = Counter(clist)
-        return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
+        wnlist = set(tuple(cosc1.keys())+tuple(cosc2.keys())+tuple(dosc.keys()))
+        return list((n,cosc1.get(n,0)+cosc2.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
+    # @profile
+    # def torepr1(self, clistPair, dlist, dosc):
+        # """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
+        # tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
+        # the creation and annihilation momenta
+        # Zc and Zd are respectively the number of creation and annihilation operators at
+        # wavenumber n """
+        # clist = tuple(sorted(clistPair[0]+clistPair[1]))
+        # wnlist = set(clist+dlist)
+        # cosc = Counter(clist)
+        # return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
+
+    @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
                                 ignKeyErr=True):
         """ Compute the matrix elements by applying all the oscillators in the operator
@@ -231,7 +241,7 @@ def V2V4Ops(basis):
     helper = basis.helper
     nmax = helper.nmax
     Emax = basis.Emax
-    oscEnergy = helper.oscEnergy
+    oscEnergyDict = helper.oscEnergyDict
 
     ntotPair = (2,4)
 
@@ -256,7 +266,7 @@ def V2V4Ops(basis):
 
 
                 clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
-                        if oscEnergy(clist1)+oscEnergy(clist2) <= Emax+tol]
+                        if oscEnergyDict[clist1]+oscEnergyDict[clist2] <= Emax+tol]
 
                 JointOscList.append((dlistPair, clistPairs))
 
@@ -265,7 +275,7 @@ def V2V4Ops(basis):
     return opsList
 
 
-# @profile
+@profile
 def V4V4Ops(basis, nd1, nd2):
     """
     Bilocal operators of :V4 V4:
@@ -274,7 +284,7 @@ def V4V4Ops(basis, nd1, nd2):
     helper = basis.helper
     nmax = helper.nmax
     Emax = basis.Emax
-    oscEnergy = helper.oscEnergy
+    oscEnergyDict = helper.oscEnergyDict
 
     ntotPair = (4,4)
 
@@ -295,7 +305,7 @@ def V4V4Ops(basis, nd1, nd2):
 
 
         clistPairs = [(clist1,clist2) for clist1 in x1 for clist2 in x2
-                if oscEnergy(clist1)+oscEnergy(clist2) <= Emax+tol]
+                if oscEnergyDict[clist1]+oscEnergyDict[clist2] <= Emax+tol]
 
         JointOscList.append((dlistPair, clistPairs))
 

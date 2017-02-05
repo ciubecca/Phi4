@@ -181,6 +181,7 @@ class Phi4():
         # print("self.VLH[k] size", msize(self.VLH[k]))
 
 
+    @profile
     def computeLEVs(self, k, basisl, loc3=True):
 
         ###################################
@@ -211,6 +212,9 @@ class Phi4():
         ###################################
 
         if loc3:
+
+            basis.helper.calcOscEnergyDict()
+
             self.V0V4[k] = self.Vll[k][4]*self.L
 
             print("Computing V2V4")
@@ -224,9 +228,6 @@ class Phi4():
             sizel = self.basisl[k].size
             self.V4V4[k] = scipy.sparse.csc_matrix((sizel, sizel))
 
-            # Vlist = V4V4Ops(basis)
-            # self.V4V4[k] = c.buildMatrix(Vlist,ignKeyErr=True,
-                    # sumTranspose=False)*self.L**2
             for nd1 in (0,1,2,3,4):
                 for nd2 in (0,1,2,3,4):
                     Vlist = V4V4Ops(basis,nd1,nd2)

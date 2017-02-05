@@ -43,6 +43,28 @@ class Helper():
         """ Energy of an oscillator (ordered tuple of momenta) """
         return sum(self.omega(n) for n in wnlist)
 
+
+
+    def calcOscEnergyDict(self):
+        clists = []
+        nmax = self.nmax
+
+        clists.append(())
+
+        for k1 in range(-nmax,nmax+1):
+            clists.append((k1,))
+
+            for k2 in range(k1,nmax+1):
+                clists.append((k1,k2))
+
+                for k3 in range(k2,nmax+1):
+                    clists.append((k1,k2,k3))
+
+                    for k4 in range(k3,nmax+1):
+                        clists.append((k1,k2,k3,k4))
+
+        self.oscEnergyDict = {clist: self.oscEnergy(clist) for clist in clists}
+
     def _omega(self, n):
         return sqrt(self.m**2+((2*pi/self.L)*n)**2)
 
