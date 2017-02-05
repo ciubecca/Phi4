@@ -69,7 +69,7 @@ def gendlistPairs(state, ndPair, ntotPair, nmax):
 
 
 class BilocOperator():
-    @profile
+    # @profile
     def __init__(self, JointOscList, ndPair, ncPair, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -122,8 +122,7 @@ class BilocOperator():
 
             self.oscFactors.append([c*coscFactors[clistPair[0]]*coscFactors[clistPair[1]]
                     for clistPair in clistPairs])
-
-    @profile
+    # @profile
     def torepr1(self, cosc1, cosc2, dosc):
         """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
         tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
@@ -134,19 +133,7 @@ class BilocOperator():
         return list((n,cosc1.get(n,0)+cosc2.get(n,0),dosc.get(n,0)) for n in wnlist)
 
 
-    # @profile
-    # def torepr1(self, clistPair, dlist, dosc):
-        # """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
-        # tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
-        # the creation and annihilation momenta
-        # Zc and Zd are respectively the number of creation and annihilation operators at
-        # wavenumber n """
-        # clist = tuple(sorted(clistPair[0]+clistPair[1]))
-        # wnlist = set(clist+dlist)
-        # cosc = Counter(clist)
-        # return list((n,cosc.get(n,0),dosc.get(n,0)) for n in wnlist)
-
-    @profile
+    #@profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
                                 ignKeyErr=True):
         """ Compute the matrix elements by applying all the oscillators in the operator
@@ -275,7 +262,7 @@ def V2V4Ops(basis):
     return opsList
 
 
-@profile
+# @profile
 def V4V4Ops(basis, nd1, nd2):
     """
     Bilocal operators of :V4 V4:
