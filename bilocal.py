@@ -1,3 +1,4 @@
+from functools import reduce
 import gc
 from sys import getsizeof as sizeof
 import scipy
@@ -12,6 +13,7 @@ from scipy import exp, pi
 from scipy.special import binom
 import bisect
 from oscillators import *
+from operator import mul
 
 tol = 0.000000001
 
@@ -67,6 +69,7 @@ def gendlistPairs(state, ndPair, ntotPair, nmax):
 
 
 class BilocOperator():
+    @profile
     def __init__(self, JointOscList, ndPair, ncPair, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -106,11 +109,20 @@ class BilocOperator():
             self.oscEnergies.append([pairOscEnergy(clistPair)-pairOscEnergy(dlistPair)
                 for clistPair in clistPairs])
 
+            c = reduce(mul, (bose(dlist)*reduce(mul,(1/sqrt(2*omega(n)*L) for n in dlist),1)
+                    for dlist in dlistPair))
+
             self.oscFactors.append([
-                scipy.prod([bose(clist)*bose(dlist)*binom(nc+nd,nc)*\
-                    scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
-                    for clist,dlist,nc,nd in zip(clistPair,dlistPair,ncPair,ndPair)])
+                c*reduce(mul, (bose(clist)*binom(nc+nd,nc)*\
+                    reduce(mul, (1/sqrt(2*omega(n)*L) for n in clist), 1)
+                    for clist,nc,nd in zip(clistPair,ncPair,ndPair)))
                         for clistPair in clistPairs])
+
+            # self.oscFactors.append([
+                # reduce(mul, (bose(clist)*bose(dlist)*binom(nc+nd,nc)*\
+                    # reduce(mul, (1/sqrt(2*omega(n)*L) for n in clist+dlist))
+                    # for clist,dlist,nc,nd in zip(clistPair,dlistPair,ncPair,ndPair)))
+                        # for clistPair in clistPairs])
 
 
     def torepr1(self, clistPair, dlistPair):
@@ -255,7 +267,7 @@ def V2V4Ops(basis):
     return opsList
 
 
-
+@profile
 def V4V4Ops(basis, nd1, nd2):
     """
     Bilocal operators of :V4 V4:
