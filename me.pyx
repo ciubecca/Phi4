@@ -1,9 +1,9 @@
-#cython: profile=True
-#cython: linetrace=True
-#distutils: define_macros=CYTHON_TRACE_NOGIL=1
+##cython: profile=True
+##cython: linetrace=True
+##distutils: define_macros=CYTHON_TRACE_NOGIL=1
 import gc
 from sys import getsizeof as sizeof
-import scipy
+import scipy, numpy
 from math import factorial, floor, sqrt
 import statefuncs
 from statefuncs import Basis
@@ -67,9 +67,10 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         cdef array.array statevec, newstatevec
         cdef char *cstatevec
         cdef char *cnewstatevec
-        # cdef char[:,:] osc
-        cdef char n, Zc, Zd, nmax
-        cdef int ii, jj, jjj
+        cdef char[:,:] osc
+        cdef float[:] oscFactorsSub
+        cdef char Zc, Zd, nmax
+        cdef int z, ii, jjj
         cdef double[:,:,:] normFactors
 
         # List of columns indices of generated basis elements
@@ -90,9 +91,6 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         normFactors = helper.normFactors
         Emin, Emax = Erange
 
-        # newstatevec = array.clone(statevec, 2*nmax+1, zero=False)
-        # cnewstatevec = newstatevec
-
         # cycle over all the sets of momenta that can be annihilated
 # XXX Check: we replaced lookupbasis.helper.nmax with helper.nmax
         for dlist in gendlists(state, nd, nd+nc, nmax):
@@ -107,25 +105,23 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
             if imax <= imin:
                 continue
 
-            oscFactorsSub = oscFactors[k][imin:imax]
+            oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
 
-            for i in range(len(oscListSub)):
-                osc = oscListSub[i]
+            for z in range(len(oscListSub)):
+                osc = oscListSub[z]
 
                 newstatevec = array.copy(statevec)
                 cnewstatevec = newstatevec.data.as_chars
 
-                x = oscFactorsSub[i]
+                x = oscFactorsSub[z]
 
                 for ii in range(osc.shape[0]):
-                    n = osc[ii, 0]
                     Zc = osc[ii, 1]
                     Zd = osc[ii, 2]
-                    jj = n+nmax
+                    jj = osc[ii, 0]+nmax
                     cnewstatevec[jj] += Zc-Zd
-                    jjj =  cstatevec[jj]
-                    x *= normFactors[Zc, Zd, jjj]
+                    x *= normFactors[Zc, Zd, cstatevec[jj]]
 
                 if ignKeyErr:
                     try:
