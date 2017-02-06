@@ -17,12 +17,12 @@ neigs = 1
 # List of parity quantum numbers
 klist = (1,)
 # Minimum overlap with the raw vacuum for selecting a state in the tails
-maxntails = 300
+maxntails = None
 
 # Ratio between EL and ET
 ratioELET = 3
 # Ratio between ELp and ET
-ratioELpET = 1.5
+ratioELpET = 2
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
@@ -67,7 +67,9 @@ for k in klist:
     # Select a set of tails and construct a Basis object, ordered in overlap with
     # the vacuum
     vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
-            -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
+            -abs(a.eigenvectors["raw"][k][0][x[0]]))]
+    if maxntails!=None:
+        vectorlist = vectorlist[:maxntails]
     basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
     print("ntails:", basisl.size)
 
