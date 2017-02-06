@@ -4,7 +4,6 @@ import scipy
 from math import factorial, floor, sqrt
 import statefuncs
 from statefuncs import Basis
-from collections import Counter
 import itertools
 from statefuncs import Helper
 from itertools import combinations, islice, permutations
@@ -13,7 +12,8 @@ from scipy.special import binom
 import bisect
 from oscillators import *
 cimport cython
-from cpython cimport array as carray
+from cpython cimport array as array
+import array
 
 cdef double tol = 0.000000001
 
@@ -61,10 +61,11 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         """
 
         cdef double x
-        cdef carray.array statevec, newstatevec
+        cdef array.array statevec, newstatevec
+        cdef char[:] cstatevec, cnewstatevec
         cdef char[:,:] osc
-        cdef char n, Zc, Zd
-        cdef int ii, j, jj, jjj
+        cdef char n, Zc, Zd, nmax
+        cdef int ii, jj, jjj
         cdef double[:,:,:] normFactors
 
         # List of columns indices of generated basis elements
@@ -77,7 +78,9 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         p = basis.parityList[i]
         state = basis.stateList[i]
 
-        statevec = carray.array('b', helper.torepr2(state))
+        statevec = array.array('b', helper.torepr2(state))
+        cstatevec = statevec
+        # statevec = bytes(helper.torepr2(state))
 
         parityList = lookupbasis.parityList
         nmax = helper.nmax
@@ -104,7 +107,8 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
             for i in range(len(oscListSub)):
                 osc = oscListSub[i]
 
-                newstatevec = carray.copy(statevec)
+                newstatevec = array.copy(statevec)
+                cnewstatevec = newstatevec
 
                 x = oscFactorsSub[i]
 
@@ -113,8 +117,8 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
                     Zc = osc[ii, 1]
                     Zd = osc[ii, 2]
                     jj = n+nmax
-                    newstatevec[jj] += Zc-Zd
-                    jjj =  statevec[jj]
+                    cnewstatevec[jj] += Zc-Zd
+                    jjj =  cstatevec[jj]
                     x *= normFactors[Zc, Zd, jjj]
 
                 if ignKeyErr:

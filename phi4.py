@@ -1,6 +1,6 @@
 import scipy
 from profile_support import *
-import pyximport; pyximport.install()
+# import pyximport; pyximport.install()
 import scipy.sparse.linalg
 import scipy.sparse
 import math
