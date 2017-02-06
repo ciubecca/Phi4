@@ -545,9 +545,12 @@ class Phi4():
 
 
 
-    def calcVV3(self, ELplist, eps):
+    def calcVV3(self, ELplist, eps, test=False):
         print("Calculating VVV renorm coefficients")
-        self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ELplist)
+        if test == True:
+            self.VV3 =  renorm.renVV3Test(ETlist=ELplist)
+        else:
+            self.VV3 =  renorm.renVV3(m=self.m, eps=eps, ETlist=ELplist)
 
 
         # print("Bilocal g^3 ren coefficients: ", self.VV3.V0V4, self.VV3.V2V4, self.VV3.V4V4)
