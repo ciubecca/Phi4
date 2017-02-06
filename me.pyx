@@ -64,7 +64,7 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         cdef carray.array statevec, newstatevec
         cdef char[:,:] osc
         cdef char n, Zc, Zd
-        cdef int ii, jj, jjj
+        cdef int ii, j, jj, jjj
         cdef double[:,:,:] normFactors
 
         # List of columns indices of generated basis elements
