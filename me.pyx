@@ -18,7 +18,7 @@ cimport cython
 from cpython cimport array as array
 import array
 
-tol = 0.000000001
+cdef double tol = 0.000000001
 
 parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 

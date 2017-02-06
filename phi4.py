@@ -120,6 +120,7 @@ class Phi4():
 
         # Basis of selected states with energy <= Emax
         self.basisH[k] = Basis(k, vectorset, helper, repr1=False, repr1Emax=ELp)
+        # self.basisH[k] = Basis(k, map(helper.torepr1, vectorset), helper)
 
 
 # XXX We could compute either Vhl or VHl to save time
