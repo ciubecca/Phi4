@@ -8,6 +8,7 @@ from itertools import combinations
 import itertools
 import numpy as np
 
+tol = 10**-10
 
 class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
@@ -35,6 +36,10 @@ class Helper():
     def energy(self, state):
         """ Computes energy of state in Repr1 """
         return sum(Zn*self.omega(n) for n,Zn in state)
+
+    def energy2(self, state):
+        """ Computes energy of state in Repr2 """
+        return sum(Zn*self.omega(n-self.nmax) for n,Zn in enumerate(state))
 
     def totalWN(self, state):
         return sum(Zn*n for n,Zn in state)
@@ -105,7 +110,7 @@ def isSorted(x, key):
 class Basis():
     """ Class used to store and compute a basis of states"""
     # @profile
-    def __init__(self, k, stateset, helper):
+    def __init__(self, k, stateset, helper, repr1=True, repr1Emax=None):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
@@ -115,40 +120,40 @@ class Basis():
         """
         self.k = k
         self.helper = helper
-        energy = helper.energy
         self.nmax = self.helper.nmax
 
-        # Avoid creating another list in memory if it already a sorted list
-        if type(stateset)==list and isSorted(stateset, energy):
-            self.stateList = stateset
-        else:
+        if repr1:
+            energy = helper.energy
             self.stateList = sorted(stateset, key=energy)
-        self.size = len(self.stateList)
+            self.energyList = [energy(state) for state in self.stateList]
+            self.occnList = [occn(state) for state in self.stateList]
+            self.parityList = [int(state==reverse(state)) for state in self.stateList]
+            self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
+            self.repr1 = True
+        # We don't transform to repr1 all the states, but only those
+        # we'll cycle over
+        else:
+            energy = helper.energy2
+            self.repr2List = sorted(stateset, key=energy)
+            self.stateList = [helper.torepr1(state) for state in self.repr2List if
+                    energy(state)<=repr1Emax+tol]
+            self.occnList = [sum(state) for state in self.repr2List]
+            self.parityList = [int(state==state[::-1]) for state in self.repr2List]
+            self.energyList = [energy(state) for state in self.repr2List]
+            self.repr1 = False
 
-        self.energyList = [energy(state) for state in self.stateList]
-        self.occnList = [occn(state) for state in self.stateList]
-        self.parityList = [int(state==reverse(state)) for state in self.stateList]
 
-        try:
-            self.Emax = max(self.energyList)
-            self.Emin = min(self.energyList)
-        # When the basis is empty
-        except IndexError:
-            self.Emax = None
-            self.Emin = None
+        self.size = len(self.energyList)
+        self.Emax = max(self.energyList)
+        self.Emin = min(self.energyList)
 
     def irange(self, Erange):
         """ Return the min and max indices for states with energy between
         Emin and Emax """
         Emin = Erange[0]
-        # This is to include any element with E=Emax
-        tol = 10**-10
         Emax = Erange[1]+tol
-        # print("Erange", Erange)
-        # print("self.Emax", self.Emax)
         imin = bisect.bisect_left(self.energyList, Emin)
         imax = bisect.bisect_left(self.energyList, Emax)
-        # print(range(0min, imax))
         return range(imin, imax)
 
     def propagator(self, eps, Emin, Emax):

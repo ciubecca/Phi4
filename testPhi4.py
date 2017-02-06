@@ -9,22 +9,23 @@ import unittest
 from numpy import testing as npt
 
 class testPhi4(unittest.TestCase):
-    def __init__(self):
+    def __init__(self, L, g, ET, eigs):
         self.m = 1
         self.neigs = 1
         self.k = 1
         m = self.m
         k = self.k
         neigs = self.neigs
+        self.maxntails = None
+        maxntails = self.maxntails
         ratioELET = 3
         ratioELpET = 2
         ratioELppELp = 1.5
-        self.L = 8
-        self.g = 1.5
-        self.ET = 8
-        L = self.L
-        g = self.g
-        ET = self.ET
+        self.L = L
+        self.g = g
+        self.ET = ET
+
+        self.eigs = eigs
 
         self.EL = ratioELET*ET
         self.ELp = ratioELpET*ET
@@ -43,25 +44,26 @@ class testPhi4(unittest.TestCase):
 
     def testRaw(self):
         a = self.a
+        eigs = self.eigs
 
         a.computeEigval(self.k, self.ET, "raw", neigs=self.neigs)
         self.eps = {self.g: a.eigenvalues[self.g]["raw"][self.k][0]}
 
-        print(self.eps)
-        npt.assert_almost_equal(self.eps[self.g],-0.227383547671)
+        npt.assert_almost_equal(self.eps[self.g],eigs[0])
 
 
     def testLoc(self):
+        eigs = self.eigs
         a = self.a
         k = self.k
         self.a.computeEigval(self.k, self.ET, "renloc", eps=self.eps, neigs=self.neigs)
         self.eps = {self.g: a.eigenvalues[self.g]["renloc"][k][0]}
 
-        print(self.eps)
-        npt.assert_almost_equal(self.eps[self.g], -0.802968006439)
+        npt.assert_almost_equal(self.eps[self.g], eigs[1])
 
 
     def testTails(self):
+        eigs = self.eigs
         a = self.a
         k = self.k
         ET = self.ET
@@ -82,14 +84,23 @@ class testPhi4(unittest.TestCase):
                 neigs=self.neigs)
         e = a.eigenvalues[self.g]["rentails"][k][0]
 
-        print(e)
-        npt.assert_almost_equal(e,-0.253704432028, decimal=10)
+        npt.assert_almost_equal(e,eigs[2], decimal=8)
 
     def testAll(self):
         self.testRaw()
         self.testLoc()
         self.testTails()
 
+Llist = [5, 8, 10.5]
+ETlist = [5, 8, 10.5]
+glist = [0.5, 1, 1.5]
 
-t = testPhi4()
-t.testAll()
+eigslist = [
+[-0.00268222083952, -0.0609692033023,-0.0117915038649],
+[-0.11259005032, -0.348246045516, -0.127496055308],
+[-0.437287334374, -0.958064275124, -0.493868803234]
+]
+
+for L, ET, g, eigs in zip(Llist, ETlist, glist, eigslist):
+    t = testPhi4(L, g, ET, eigs)
+    t.testAll()
