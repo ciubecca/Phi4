@@ -213,7 +213,7 @@ class BilocOperator():
 def gendlistPairsfromBasis(basis, nmax, ndPair, ntotPair):
     ret = set()
 
-    for state in basis:
+    for state in basis.stateList:
         ret.update(gendlistPairs(state=state, ndPair=ndPair,
             ntotPair=ntotPair, nmax=nmax))
     return ret

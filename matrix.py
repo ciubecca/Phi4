@@ -16,16 +16,10 @@ def buildStatePos(basis, helper=None, Erange=None):
     else:
         irange = basis.irange(Erange)
 
-    if basis.repr1 == True:
-        for i in irange:
-            state = basis.stateList[i]
-            statePos[bytes(helper.torepr2(state))] = i
-            statePos[bytes(helper.torepr2(state)[::-1])] = i
-    else:
-        for i in irange:
-            state = basis.repr2List[i]
-            statePos[state] = i
-            statePos[state[::-1]] = i
+    for i in irange:
+        state = basis.repr2List[i]
+        statePos[state] = i
+        statePos[state[::-1]] = i
 
     return statePos
 
@@ -38,7 +32,7 @@ class SubmatrixOperator():
     @classmethod
     def fromSubbasis(self, basis, subbasis):
         statePos = buildStatePos(basis)
-        idxList = [statePos[bytes(basis.helper.torepr2(state))] for state in subbasis]
+        idxList = [statePos[state] for state in subbasis.repr2List]
         return self(idxList)
 
     @classmethod

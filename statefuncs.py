@@ -199,10 +199,6 @@ class Basis():
     def __repr__(self):
         return str(self.stateList)
 
-    def __getitem__(self,index):
-        return self.stateList[index]
-
-
     def genRMlist(self, RMstate=[], n=1):
         """ Recursive function generating all the states starting from RMstate, by adding
         any number of particles with wavenumber n.

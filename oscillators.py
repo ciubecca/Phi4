@@ -126,7 +126,7 @@ class LocOperator():
 
         nmax = self.helper.nmax
 
-        for i, state in enumerate(basis):
+        for i, state in enumerate(basis.stateList):
 
             statevec = self.helper.torepr2(state)
             e = basis.energyList[i]

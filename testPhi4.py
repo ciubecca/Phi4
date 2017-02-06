@@ -91,9 +91,9 @@ class testPhi4(unittest.TestCase):
         self.testLoc()
         self.testTails()
 
-Llist = [5, 8, 10.5]
-ETlist = [5, 8, 10.5]
-glist = [0.5, 1, 1.5]
+Llist = [5, 8, 10.5, 10]
+ETlist = [5, 8, 10.5, 14]
+glist = [0.5, 1, 1.5, 2]
 
 eigslist = [
 [-0.00268222083952, -0.0609692033023,-0.0117915038649],
