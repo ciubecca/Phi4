@@ -1,3 +1,6 @@
+#cython: profile=True
+#cython: linetrace=True
+#distutils: define_macros=CYTHON_TRACE_NOGIL=1
 import gc
 from sys import getsizeof as sizeof
 import scipy
@@ -62,8 +65,9 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
 
         cdef double x
         cdef array.array statevec, newstatevec
-        cdef char[:] cstatevec, cnewstatevec
-        cdef char[:,:] osc
+        cdef char *cstatevec
+        cdef char *cnewstatevec
+        # cdef char[:,:] osc
         cdef char n, Zc, Zd, nmax
         cdef int ii, jj, jjj
         cdef double[:,:,:] normFactors
@@ -79,13 +83,15 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         state = basis.stateList[i]
 
         statevec = array.array('b', helper.torepr2(state))
-        cstatevec = statevec
-        # statevec = bytes(helper.torepr2(state))
-
+        cstatevec = statevec.data.as_chars
+        
         parityList = lookupbasis.parityList
         nmax = helper.nmax
         normFactors = helper.normFactors
         Emin, Emax = Erange
+
+        # newstatevec = array.clone(statevec, 2*nmax+1, zero=False)
+        # cnewstatevec = newstatevec
 
         # cycle over all the sets of momenta that can be annihilated
 # XXX Check: we replaced lookupbasis.helper.nmax with helper.nmax
@@ -108,7 +114,7 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
                 osc = oscListSub[i]
 
                 newstatevec = array.copy(statevec)
-                cnewstatevec = newstatevec
+                cnewstatevec = newstatevec.data.as_chars
 
                 x = oscFactorsSub[i]
 

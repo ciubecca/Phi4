@@ -8,16 +8,20 @@ import math
 import database
 
 glist = scipy.linspace(0.5, 3, 6)
+glist = scipy.linspace(1, 1, 1)
 print("glist", glist)
 
 memdbg = False
-# Whether the MonteCarlo integrals should be actually evaluated
-test = False
-
-if test:
-    warnings.warn("Monte Carlo is OFF")
 if memdbg:
     warnings.warn("Running with memory debugging")
+# Whether the MonteCarlo integrals should be actually evaluated
+test = False
+if test:
+    warnings.warn("Monte Carlo is OFF")
+loc3 = False
+if not loc3:
+    warnings.warn("Not including local correction to DH3")
+
 
 # Whether we should save the results in the database data/spectra.db
 saveondb = True
@@ -91,7 +95,7 @@ def main():
         if memdbg:
             print("memory taken before computeLEVs", memory_usage())
 
-        a.computeLEVs(k, basisl)
+        a.computeLEVs(k, basisl, loc3=loc3)
 
         if memdbg:
             print("memory taken before genHEBasis", memory_usage())
@@ -116,10 +120,11 @@ def main():
         eps = {g: a.eigenvalues[g]["renloc"][k][0] for g in glist}
         print("Local ren vacuum:", eps)
 
-        a.calcVV3(ELp, eps, test=test)
+        if loc3:
+            a.calcVV3(ELp, eps, test=test)
 
         a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                neigs=neigs, memdbg=memdbg)
+                neigs=neigs, memdbg=memdbg, loc3=loc3)
         print("Non-Local ren vacuum:", {g: a.eigenvalues[g]["rentails"][k][0]
             for g in glist})
 
