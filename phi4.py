@@ -1,6 +1,5 @@
 import scipy
 from profile_support import *
-# import pyximport; pyximport.install()
 import scipy.sparse.linalg
 import scipy.sparse
 import math
@@ -18,6 +17,7 @@ from scipy.sparse.linalg import LinearOperator
 from sys import getsizeof as sizeof
 from multiprocessing import Pool
 from functools import partial
+import psutil
 
 
 def msize(m):
@@ -29,7 +29,11 @@ def msize(m):
     else:
         raise ValueError(form+" not implemented")
 
-
+def printMemoryUsage():
+    print("Memory of parent process in MB: ", memory_usage()[0])
+    print("Parent + children  memory in MB: ",
+            memory_usage()[0] +
+            sum(memory_usage(child.pid)[0] for child in psutil.Process().children()))
 
 class Phi4():
     """ main class """
@@ -185,7 +189,6 @@ class Phi4():
 
         del c
 
-        # print("self.VLH[k] size", msize(self.VLH[k]))
 
 
     @profile
@@ -285,14 +288,10 @@ class Phi4():
 
             # XXX Note: this could take a lot of memory if there are many tails,
             # because the inverse matrix is not sparse
-            if memdbg:
-                print("memory before inversion", memory_usage())
+            if memdbg: printMemoryUsage()
             # Convert to dense, because the inverse will be dense
             #TODO Make this work
             # invM = scipy.linalg.inv((DH2ll-DH3ll).todense())
-            # print(invM.shape)
-            if memdbg:
-                print("memory after inversion", memory_usage())
 
             return DH2lL, DH2ll, DH3ll, DH2Ll
 
@@ -362,8 +361,7 @@ class Phi4():
         sizel = self.basisl[k].size
         DH3ll = {g: scipy.sparse.csc_matrix((sizel, sizel)) for g in glist}
 
-        if memdbg:
-            print("memory before computing Vhh", memory_usage())
+        if memdbg: printMemoryUsage()
 
         VHl = {}
         VlH = {}
@@ -434,8 +432,7 @@ class Phi4():
 # Add the "mixed" contributions to DH3 by integrating out states with
 # energy ET < E < ELp on one side and ELp < E < EL on the other
 #########################################################################
-        if memdbg:
-            print("memory before computing VhH", memory_usage())
+        if memdbg: printMemoryUsage()
 
         if nonloc3mix:
             c = MatrixConstructor(basis, basis, (ELp, ELpp))

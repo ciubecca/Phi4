@@ -8,10 +8,9 @@ import math
 import database
 
 glist = scipy.linspace(0.5, 3, 6)
-glist = scipy.linspace(1, 1, 1)
 print("glist", glist)
 
-memdbg = False
+memdbg = True
 if memdbg:
     warnings.warn("Running with memory debugging")
 # Whether the MonteCarlo integrals should be actually evaluated
@@ -24,7 +23,7 @@ if not loc3:
 
 
 # Whether we should save the results in the database data/spectra.db
-saveondb = True
+saveondb = False
 if not saveondb:
     warnings.warn("Saving on database is OFF")
 
