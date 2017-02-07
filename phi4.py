@@ -188,7 +188,7 @@ class Phi4():
         # print("self.VLH[k] size", msize(self.VLH[k]))
 
 
-    @profile
+    # @profile
     def computeLEVs(self, k, basisl, loc3=True):
 
         ###################################

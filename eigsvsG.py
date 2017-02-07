@@ -8,10 +8,9 @@ import math
 import database
 
 glist = scipy.linspace(0.5, 3, 6)
-glist = scipy.linspace(1, 1, 1)
 print("glist", glist)
 
-memdbg = False
+memdbg = True
 if memdbg:
     warnings.warn("Running with memory debugging")
 # Whether the MonteCarlo integrals should be actually evaluated
