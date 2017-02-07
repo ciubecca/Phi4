@@ -498,10 +498,6 @@ class Phi4():
         self.eigenvalues = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
         self.eigenvectors = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
 
-    def setCouplings(self, g0=0, g2=0, g4=0):
-        self.g0 = g0
-        self.g2 = g2
-        self.g4 = g4
 
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
             eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True,
