@@ -87,7 +87,7 @@ for k in klist:
 # Computing VHH is expensive
 
 
-    a.computeLEVs(k)
+    a.computeLEVs(k, loc3=loc3)
 
 
 # Compute "local" renormalized eigenvalues for cutoff ET

@@ -231,7 +231,7 @@ class Phi4():
                     self.buildMatrix(Vlist, basis, lookupbasis)*self.L)
 
 
-    def computeLEVs(self, k):
+    def computeLEVs(self, k, loc3):
 
         ###################################
         # Generate all the "local" matrices on the selected
@@ -242,6 +242,9 @@ class Phi4():
         self.Vll[k] = {}
         for n in (0,2,4):
             self.Vll[k][n] = self.V[k][n].sub(basis, basis)
+
+        if loc3==False:
+            return
 
         # Vlist = V6OpsSelectedHalf(basis)
         Vlist = V6OpsSelectedFull(basis, self.basis[k].Emax)
