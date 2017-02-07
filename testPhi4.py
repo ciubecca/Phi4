@@ -103,5 +103,7 @@ eigslist = [
 ]
 
 for L, ET, g, eigs in list(zip(Llist, ETlist, glist, eigslist)):
+    print("Testing L={}, ET={}, g={} ...".format(L,ET,g))
     t = testPhi4(L, g, ET, eigs)
     t.testAll()
+    print("PASSED")

@@ -16,6 +16,8 @@ from matrix import *
 from scipy import exp, pi, array
 from scipy.sparse.linalg import LinearOperator
 from sys import getsizeof as sizeof
+from multiprocessing import Pool
+from functools import partial
 
 
 def msize(m):
@@ -37,6 +39,11 @@ class Phi4():
         self.L = L
 # Maximum dimension of the chunks for computing Vhh
         self.chunklen = 20000
+# Number of processes to spawn
+        self.nproc = 4
+        print("Number of parallel processes:", self.nproc)
+# Initialize the child processes. NOTE Doing it now could save memory
+        self.pool = Pool(self.nproc)
 
         self.basis = {}
         self.h0 = {}
@@ -50,7 +57,6 @@ class Phi4():
         self.V0V4 = {}
         self.V2V4 = {}
         self.V4V4 = {}
-        # self.VhhDiagList = {}
         self.basisH = {}
         self.basisl = {}
         self.DH3ll = {k:None for k in (-1,1)}
@@ -383,33 +389,45 @@ class Phi4():
         propagatorh = {g: basis.propagator(eps[g], ET, ELp) for g in glist}
 
         # XXX Move this inside the cycle and restrict idxList?
-        Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
+        Vhhlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
 
         c = MatrixConstructor(basis, basis, (ET, ELp))
 
         ##############################
         # Generate the Vhh matrix
         ##############################
-        for i,idxList in enumerate(idxLists):
-            print("Doing chunk", i, "for Vhh")
 
-            VhhHalfPart =  c.buildMatrix(Vlist, ignKeyErr=True, sumTranspose=False,
-                    idxList=idxList)*self.L
+        if self.nproc>1:
+            f = partial(buildMatrixChunk, L=self.L, glist=glist, Vlist=Vhhlist,
+                    VL=VHl[4], VR=VlH[4], propL=propagatorh, propR=propagatorh,
+                    c=c, subDiag=True)
 
-            VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
-                    basis.size)
+            DH3llchunks = self.pool.map(f, idxLists)
 
             for g in glist:
-                DH3llPart = VHl[4]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
-                    *VlH[4]*g**3
-                DH3llPart += DH3llPart.transpose()
-                DH3llPart -= VHl[4]*propagatorh[g]*VhhDiagPart*propagatorh[g]\
-                    *VlH[4]*g**3
-                DH3ll[g] += DH3llPart
+                DH3ll[g] += sum(chunk[g] for chunk in DH3llchunks)
 
-            del VhhHalfPart
+        else:
+            for i,idxList in enumerate(idxLists):
+                print("Doing chunk", i, "for Vhh")
 
-        del Vlist
+                VhhHalfPart =  c.buildMatrix(Vhhlist, ignKeyErr=True,
+                        sumTranspose=False, idxList=idxList)*self.L
+
+                VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
+                        basis.size)
+
+                for g in glist:
+                    DH3llPart = VHl[4]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
+                        *VlH[4]*g**3
+                    DH3llPart += DH3llPart.transpose()
+                    DH3llPart -= VHl[4]*propagatorh[g]*VhhDiagPart*propagatorh[g]\
+                        *VlH[4]*g**3
+                    DH3ll[g] += DH3llPart
+
+                del VhhHalfPart
+
+        del Vhhlist
         del c
 
 #########################################################################
@@ -428,19 +446,30 @@ class Phi4():
             # XXX Move this inside the cycle and restrict idxList?
             VHhlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
 
-            for i, idxList in enumerate(idxLists):
-                print("doing chunk", i, "for VhH")
+            if self.nproc>1:
+                f = partial(buildMatrixChunk, L=self.L, glist=glist, Vlist=VHhlist,
+                        VL=VHl[4], VR=VlH[4], propL=propagatorh, propR=propagatorH,
+                        c=c, subDiag=False)
 
-                VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
-                        idxList=idxList)*self.L
+                DH3llchunks = self.pool.map(f, idxLists)
 
                 for g in glist:
-                    DH3llPart = VHl[4]*propagatorh[g]*VHhPart*propagatorH[g]*VlH[4]\
-                        *g**3
-                    DH3llPart += DH3llPart.transpose()
-                    DH3ll[g] += DH3llPart
+                    DH3ll[g] += sum(chunk[g] for chunk in DH3llchunks)
 
-                del VHhPart
+            else:
+                for i, idxList in enumerate(idxLists):
+                    print("doing chunk", i, "for VhH")
+
+                    VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
+                            idxList=idxList)*self.L
+
+                    for g in glist:
+                        DH3llPart = VHl[4]*propagatorh[g]*VHhPart*propagatorH[g]*VlH[4]\
+                            *g**3
+                        DH3llPart += DH3llPart.transpose()
+                        DH3ll[g] += DH3llPart
+
+                    del VHhPart
 
             del c
             del VHhlist

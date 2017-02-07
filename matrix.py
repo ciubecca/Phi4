@@ -119,3 +119,23 @@ class MatrixConstructor():
 
     def __del__(self):
         del self.statePos
+
+
+def buildMatrixChunk(idxList, L, glist, Vlist, VL, VR, propL, propR, c, subDiag):
+
+    VHalfPart =  c.buildMatrix(Vlist, ignKeyErr=True, sumTranspose=False,
+            idxList=idxList)*L
+
+    if subDiag:
+        VDiagPart = scipy.sparse.spdiags(VHalfPart.diagonal(),0,c.basis.size,
+                c.basis.size)
+
+    DH3llchunk = {}
+
+    for g in glist:
+        DH3llchunk[g] = VL*propL[g]*VHalfPart*propR[g]*VR*g**3
+        DH3llchunk[g] += DH3llchunk[g].transpose()
+        if subDiag:
+            DH3llchunk[g] -= VL*propL[g]*VDiagPart*propR[g]*VR*g**3
+
+    return DH3llchunk
