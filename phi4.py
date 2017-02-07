@@ -191,7 +191,7 @@ class Phi4():
 
 
 
-    @profile
+    # @profile
     def computeLEVs(self, k, basisl, loc3=True):
 
         ###################################
