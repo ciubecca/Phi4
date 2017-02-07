@@ -91,16 +91,17 @@ class testPhi4(unittest.TestCase):
         self.testLoc()
         self.testTails()
 
-Llist = [5, 8, 10.5, 10]
-ETlist = [5, 8, 10.5, 14]
-glist = [0.5, 1, 1.5, 2]
+Llist = [5, 8, 10.5, 10, 10]
+ETlist = [5, 8, 10.5, 14, 14]
+glist = [0.5, 1, 1.5, 2, 2]
 
 eigslist = [
 [-0.00268222083952, -0.0609692033023,-0.0117915038649],
 [-0.11259005032, -0.348246045516, -0.127496055308],
-[-0.437287334374, -0.958064275124, -0.493868803234]
+[-0.437287334374, -0.958064275124, -0.493868803234],
+[-0.919579558503, -1.55598186578, -0.922438806401]
 ]
 
-for L, ET, g, eigs in zip(Llist, ETlist, glist, eigslist):
+for L, ET, g, eigs in list(zip(Llist, ETlist, glist, eigslist)):
     t = testPhi4(L, g, ET, eigs)
     t.testAll()
