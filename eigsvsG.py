@@ -14,10 +14,10 @@ memdbg = False
 if memdbg:
     warnings.warn("Running with memory debugging")
 # Whether the MonteCarlo integrals should be actually evaluated
-test = True
+test = False
 if test:
     warnings.warn("Monte Carlo is OFF")
-loc3 = False
+loc3 = True
 if not loc3:
     warnings.warn("Not including local correction to DH3")
 
