@@ -498,6 +498,7 @@ class Phi4():
         self.eigenvectors = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
 
 
+    @profile
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
             eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True,
             nonloc3mix=True, memdbg=False):
@@ -537,11 +538,14 @@ class Phi4():
                     subbasisl=subbasisl, ELp=ELp, ELpp=ELpp, loc2=loc2,
                     loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
 
+            print("Diagonalizing matrices...")
+
             for g in glist:
                 invM = scipy.sparse.linalg.inv((DH2ll[g]-DH3ll[g]).tocsc())
 
                 compH = LinearOperator(Hraw[g].shape,
                         lambda v: Hraw[g]*v + DH2lL[g]*invM*DH2Ll[g]*v)
+
 
                 (self.eigenvalues[g][ren][k], eigenvectorstranspose) = \
                     scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,

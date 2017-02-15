@@ -1,6 +1,3 @@
-##cython: profile=True
-##cython: linetrace=True
-##distutils: define_macros=CYTHON_TRACE_NOGIL=1
 import gc
 from sys import getsizeof as sizeof
 import scipy, numpy
@@ -70,7 +67,7 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         cdef char[:,:] osc
         cdef float[:] oscFactorsSub
         cdef char Zc, Zd, nmax
-        cdef int z, ii, jjj
+        cdef int z, ii, jj
         cdef double[:,:,:] normFactors
 
         # List of columns indices of generated basis elements

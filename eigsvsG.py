@@ -7,17 +7,17 @@ import scipy
 import math
 import database
 
-glist = scipy.linspace(0.5, 3, 6)
+glist = scipy.linspace(1, 1, 1)
 print("glist", glist)
 
 memdbg = False
 if memdbg:
     warnings.warn("Running with memory debugging")
 # Whether the MonteCarlo integrals should be actually evaluated
-test = False
+test = True
 if test:
     warnings.warn("Monte Carlo is OFF")
-loc3 = True
+loc3 = False
 if not loc3:
     warnings.warn("Not including local correction to DH3")
 
