@@ -7,7 +7,7 @@ import scipy
 import math
 import database
 
-glist = scipy.linspace(1, 1, 1)
+glist = scipy.linspace(0.1, 3, 30)
 print("glist", glist)
 
 memdbg = False
