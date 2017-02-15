@@ -543,15 +543,14 @@ class Phi4():
             for g in glist:
                 invM = scipy.sparse.linalg.inv((DH2ll[g]-DH3ll[g]).tocsc())
 
-                compH = LinearOperator(Hraw[g].shape,
-                        lambda v: Hraw[g]*v + DH2lL[g]*invM*DH2Ll[g]*v)
+                compH = (Hraw[g] + DH2lL[g]*invM*DH2Ll[g]).todense()
 
 
-                (self.eigenvalues[g][ren][k], eigenvectorstranspose) = \
+                self.eigenvalues[g][ren][k] = \
                     scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
-                        which='SA', return_eigenvectors=True)
+                        which='SA', return_eigenvectors=False)
 
-                self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
+                # self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
 
             return
 

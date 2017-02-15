@@ -29,7 +29,7 @@ if not saveondb:
 
 m = 1
 # Number of eigenvalues to compute per sector
-neigs = 1
+neigs = 6
 
 # Ratio between EL and ET
 ratioELET = 3
