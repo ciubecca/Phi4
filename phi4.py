@@ -181,7 +181,7 @@ class Phi4():
 
         # print("self.VLH[k] size", msize(self.VLH[k]))
 
-
+    @profile
     def computeLEVs(self, k, basisl, loc3=True):
 
         ###################################
@@ -498,7 +498,7 @@ class Phi4():
         self.eigenvectors = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
 
 
-    @profile
+    # @profile
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
             eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True,
             nonloc3mix=True, memdbg=False):
