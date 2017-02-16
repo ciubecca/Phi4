@@ -13,7 +13,7 @@ if memdbg:
     warnings.warn("Running with memory debugging")
 
 m = 1
-
+neigs = 6
 glist = [1]
 
 
