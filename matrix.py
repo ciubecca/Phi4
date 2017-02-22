@@ -40,7 +40,6 @@ class SubmatrixOperator():
         return self(basis.irange(Erange))
 
     def subrows(self, m):
-        # print(self.idxList)
         return m.tocsr()[self.idxList,]
 
     def subcolumns(self, m):
@@ -51,7 +50,6 @@ class SubmatrixOperator():
 
 
 class MatrixConstructor():
-    # @profile
     def __init__(self, basis, lookupbasis, Erange=None):
         """
         basis: basis for the row elements
@@ -73,7 +71,6 @@ class MatrixConstructor():
 
         self.statePos = buildStatePos(lookupbasis, self.helper, Erange)
 
-    # @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False):
         """
         Vlist: list of oscillators
@@ -113,9 +110,9 @@ class MatrixConstructor():
         if sumTranspose:
             # Add the matrix to its transpose and subtract the diagonal
             diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
-            return (V+V.transpose()-diag_V)
+            return (V+V.transpose()-diag_V).tocsc()
         else:
-            return V
+            return V.tocsc()
 
     def __del__(self):
         del self.statePos

@@ -159,7 +159,7 @@ class Basis():
     def propagator(self, eps, Emin, Emax):
         """ Return the propagator for states between Emin and Emax """
         v = [1/(eps-e) if Emin<e<=Emax else 0 for e in self.energyList]
-        return scipy.sparse.spdiags(v, 0, self.size, self.size)
+        return scipy.sparse.spdiags(v, 0, self.size, self.size).tocsc()
 
     @classmethod
     def fromScratch(self, m, L, Emax, occmax=None):

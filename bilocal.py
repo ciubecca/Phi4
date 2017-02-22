@@ -68,7 +68,6 @@ def gendlistPairs(state, ndPair, ntotPair, nmax):
     return ret
 
 class BilocOperator():
-    @profile
     def __init__(self, JointOscList, ndPair, ncPair, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of

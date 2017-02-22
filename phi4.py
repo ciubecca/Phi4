@@ -181,7 +181,6 @@ class Phi4():
 
         # print("self.VLH[k] size", msize(self.VLH[k]))
 
-    @profile
     def computeLEVs(self, k, basisl, loc3=True):
 
         ###################################
@@ -345,7 +344,7 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-    # @profile
+    @profile
     def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix, memdbg):
 
         glist = self.glist
@@ -362,7 +361,7 @@ class Phi4():
         VlH = {}
         for n in (2,4):
             VHl[n] = self.VHl[k][n]
-            VlH[n] = VHl[n].transpose()
+            VlH[n] = VHl[n].transpose().tocsc()
 
         basis = self.basisH[k]
         # List of basis elements on which we will cycle
@@ -396,7 +395,7 @@ class Phi4():
                     idxList=idxList)*self.L
 
             VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
-                    basis.size)
+                    basis.size).tocsc()
 
             for g in glist:
                 DH3llPart = VHl[4]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
@@ -405,6 +404,8 @@ class Phi4():
                 DH3llPart -= VHl[4]*propagatorh[g]*VhhDiagPart*propagatorh[g]\
                     *VlH[4]*g**3
                 DH3ll[g] += DH3llPart
+
+            # print(type(VHl[4]),type(propagatorh[g]),type(VhhHalfPart),type(VlH[4]))
 
             del VhhHalfPart
 
@@ -438,6 +439,8 @@ class Phi4():
                         *g**3
                     DH3llPart += DH3llPart.transpose()
                     DH3ll[g] += DH3llPart
+
+                # print(type(VHl[4]),type(propagatorh[g]),type(VHhPart),type(propagatorH[g]),type(VlH[4]))
 
                 del VHhPart
 
