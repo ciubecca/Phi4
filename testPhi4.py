@@ -11,7 +11,7 @@ from numpy import testing as npt
 class testPhi4(unittest.TestCase):
     def __init__(self, L, g, ET, eigs):
         self.m = 1
-        self.neigs = 1
+        self.neigs = 6
         self.k = 1
         m = self.m
         k = self.k
@@ -102,6 +102,6 @@ eigslist = [
 [-0.919579558503, -1.55598186578, -0.922438806401]
 ]
 
-for L, ET, g, eigs in list(zip(Llist, ETlist, glist, eigslist)):
+for L, ET, g, eigs in list(zip(Llist, ETlist, glist, eigslist))[1:]:
     t = testPhi4(L, g, ET, eigs)
     t.testAll()

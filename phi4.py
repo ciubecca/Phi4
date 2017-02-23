@@ -89,7 +89,6 @@ class Phi4():
         self.V[k][0] = scipy.sparse.eye(basis.size)*self.L
 
 
-    # @profile
     def genHEBasis(self, k, EL, ELp, ELpp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -124,7 +123,6 @@ class Phi4():
 
 
 # XXX We could compute either Vhl or VHl to save time
-    # @profile
     def computeHEVs(self, k):
         """
         Compute the matrices involving the high-energy states below EL
@@ -235,7 +233,6 @@ class Phi4():
 
             del c
 
-    # @profile
     def computeDeltaH(self, k, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
             nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None,
             memdbg=False):
@@ -344,7 +341,6 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-    @profile
     def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix, memdbg):
 
         glist = self.glist
@@ -550,8 +546,8 @@ class Phi4():
 
 
                 self.eigenvalues[g][ren][k] = \
-                    scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
-                        which='SA', return_eigenvectors=False)
+                    scipy.sort(scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
+                        which='SA', return_eigenvectors=False))
 
                 # self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
 

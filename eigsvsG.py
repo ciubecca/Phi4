@@ -7,8 +7,7 @@ import scipy
 import math
 import database
 
-glist = scipy.linspace(0.1, 3, 30)
-glist = [1]
+glist = scipy.linspace(1, 3, 3)
 print("glist", glist)
 
 memdbg = False
@@ -18,7 +17,7 @@ if memdbg:
 test = False
 if test:
     warnings.warn("Monte Carlo is OFF")
-loc3 = False
+loc3 = True
 if not loc3:
     warnings.warn("Not including local correction to DH3")
 
