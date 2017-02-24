@@ -16,17 +16,14 @@ rc('text', usetex=True)
 
 klist = (1,-1)
 
-neigs = 3
-
+neigs = 6
 
 # Ratio between EL and ET
 ratioELET = 3
 # Ratio between ELp and ET
-ratioELpET = 1.5
+ratioELpET = 2
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
-
-maxntails = 300
 
 
 def fignum(k):
@@ -34,6 +31,9 @@ def fignum(k):
         return 1
     elif k==-1:
         return 2
+
+marker = 'o'
+markersize = 2.5
 
 
 def plotvsET(ETlist):
@@ -51,35 +51,30 @@ def plotvsET(ETlist):
         for ET in ETlist:
 
             for ren in renlist:
-                # print("ET=",ET)
 
                 EL = ratioELET*ET
                 ELp = ratioELpET*ET
                 ELpp = ratioELppELp*ELp
 
                 approxQuery = {"g":g, "L":L, "ET":ET}
-                exactQuery = {"k": k, "ren":ren}
+                exactQuery = {"k": k, "ren":ren, "neigs":neigs}
                 boundQuery = {}
 
                 if ren=="rentails":
-                    exactQuery["maxntails"] = maxntails
-                    exactQuery["tailsComputedAtET"] = ETmax
+                    exactQuery["maxntails"] = None
+                    exactQuery["tailsComputedAtET"] = ET
                     approxQuery["EL"] = EL
                     approxQuery["ELp"] = ELp
                     approxQuery["ELpp"] = ELpp
 
-
                 try:
-                    spectrum[k][ren].append(db.getObjList('spec', exactQuery, approxQuery,
-                        boundQuery)[0])
-
-                    if ren=="rentails":
-                        ntails[k].append(db.getObjList('ntails', exactQuery, approxQuery,
-                            boundQuery)[0])
+                    spectrum[k][ren].append(db.getObjList('spec', exactQuery,
+                        approxQuery, boundQuery, orderBy="date")[0])
 
                 except IndexError:
                     print("Not found:", exactQuery, approxQuery)
                     exit(-1)
+
 
 
     # Convert to array
@@ -89,54 +84,45 @@ def plotvsET(ETlist):
 
 
     # Mass
-    if -1 in klist and 1 in klist:
-        for k in klist:
-            for ren in renlist:
-                for i in range(neigs):
-                    masses[k][ren].append(spectrum[k][ren][:,i]-spectrum[1][ren][:,0])
+    for k in (-1,1):
+        for ren in renlist:
+            for i in range(int((1+k)/2), neigs):
+                masses[k][ren].append(spectrum[k][ren][:,i]-spectrum[1][ren][:,0])
 
     # Convert to array
     for k in klist:
         for ren in renlist:
             masses[k][ren] = array(masses[k][ren])
 
-
     # SPECTRUM
     for k in klist:
         plt.figure(fignum(k))
-        for i in range(neigs):
+        # for i in range(neigs):
+        for i in range(1):
             for ren in renlist:
                 data = spectrum[k][ren][:,i]
                 if i==0:
                     label="ren="+ren
                 else:
                     label = None
-                plt.plot(xlist, data, label=label)
+                plt.plot(xlist, data, label=label, marker=marker, markersize=markersize)
             plt.gca().set_prop_cycle(None)
 
     # MASS
-    if -1 in klist and 1 in klist:
-        plt.figure(3)
-        for k in (-1,1):
-            for i in range(neigs):
-                if k==1 and i==0:
-                    continue
-                for ren in renlist:
-                    data = masses[k][ren][i]
-                    if i==0:
-                        label="ren="+ren
-                    else:
-                        label = None
-                    plt.plot(xlist, data, label=label)
-                plt.gca().set_prop_cycle(None)
-
-
-    # Number of tails
-    plt.figure(4)
-    for k in klist:
-        y = array(ntails[k])
-        plt.plot(xlist,y,label="k="+str(k))
-
+    plt.figure(3)
+    # for k in (-1,1):
+    for k in (-1,):
+        # for i in range(neigs-int((1+k)/2)):
+        for i in range(1):
+            for ren in renlist:
+                data = masses[k][ren][i]
+                if i==0:
+                    label="ren="+ren
+                else:
+                    label = None
+                plt.plot(xlist, data, label=label,
+                        markersize=markersize, marker=marker)
+            plt.gca().set_prop_cycle(None)
 
 argv = sys.argv
 
@@ -165,12 +151,12 @@ plotvsET(ETlist)
 
 
 
-title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2},"\
-            "$E_L/E_T$={3:.1f}, $E_L'/E_T$={4:.1f}, $E_L''/E_L'={5:.1f}$"\
-            .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp)
-fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}_"\
-            "ELET={3}_ELpET={4}_ELppELp={5}.{6}"\
-            .format(g,L,maxntails,ratioELET,ratioELpET,ratioELppELp,output)
+title = r"$g$={0:.1f}, $L$={1:.1f},"\
+            "$E_L/E_T$={2:.1f}, $E_L'/E_T$={3:.1f}, $E_L''/E_L'={4:.1f}$"\
+            .format(g,L,ratioELET,ratioELpET,ratioELppELp)
+fname = "g={0:.1f}_L={1:.1f}_"\
+            "ELET={2}_ELpET={3}_ELppELp={4}.{5}"\
+            .format(g,L,ratioELET,ratioELpET,ratioELppELp,output)
 loc = "upper right"
 
 
@@ -202,15 +188,3 @@ if 1 in klist and -1 in klist:
     plt.ylabel(r"$m_{\rm ph}$")
     plt.legend(loc=loc)
     plt.savefig("massvsET_"+fname)
-
-
-# Plot of the number of tails
-title = r"$g$={0:.1f}, $L$={1:.1f}, maxntails={2}".format(g,L,maxntails)
-fname = "g={0:.1f}_L={1:.1f}_maxntails={2}.{3}".format(g,L,maxntails,output)
-
-plt.figure(4, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{T}$")
-plt.ylabel(r"numtails")
-plt.legend(loc=loc)
-plt.savefig("tailsvsET_"+fname)

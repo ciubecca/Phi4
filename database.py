@@ -19,7 +19,8 @@ class Database():
         self.table.insert(datadict)
 
     # Get a list of all objects satisfying the query
-    def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={}, orderBy=None):
+    def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={},
+            orderBy=None):
 
         listRes = []
         orderKey = []
@@ -27,14 +28,17 @@ class Database():
         t1 = [e for e in self.table.find(**exactQuery)]
 
         for e in t1:
-            if all([abs(e[key]-value)<10.**(-12.) for key,value in approxQuery.items()]) \
-                and all([value[0]<=e[key]<=value[1] for key,value in boundQuery.items()]):
+            if all([abs(e[key]-value)<10.**(-12.)
+                    for key,value in approxQuery.items()]) \
+                and all([value[0]<=e[key]<=value[1]
+                    for key,value in boundQuery.items()]):
+
 
                 if obj=='eigv':
                     listRes.append(scipy.fromstring(e[obj]).reshape(
                         e['neigs'], e['basisSize']))
                 elif obj=='spec':
-                    listRes.append(scipy.fromstring(e[obj]))
+                    listRes.append(sorted(scipy.fromstring(e[obj])))
                 else:
                     listRes.append(e[obj])
 
@@ -44,4 +48,5 @@ class Database():
         if orderBy==None:
             return listRes
         else:
-            return [y for (x,y) in sorted(zip(orderKey, listRes),key=lambda pair:pair[0])]
+            return [y for (x,y) in sorted(zip(orderKey, listRes),
+                key=lambda pair:pair[0])]
