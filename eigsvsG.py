@@ -23,7 +23,7 @@ if not loc3:
 
 
 # Whether we should save the results in the database data/spectra.db
-saveondb = False
+saveondb = True
 if not saveondb:
     warnings.warn("Saving on database is OFF")
 
