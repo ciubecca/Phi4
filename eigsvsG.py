@@ -14,16 +14,16 @@ memdbg = False
 if memdbg:
     warnings.warn("Running with memory debugging")
 # Whether the MonteCarlo integrals should be actually evaluated
-test = False
+test = True
 if test:
     warnings.warn("Monte Carlo is OFF")
-loc3 = True
+loc3 = False
 if not loc3:
     warnings.warn("Not including local correction to DH3")
 
 
 # Whether we should save the results in the database data/spectra.db
-saveondb = True
+saveondb = False
 if not saveondb:
     warnings.warn("Saving on database is OFF")
 
@@ -32,11 +32,11 @@ m = 1
 neigs = 6
 
 # Ratio between EL and ET
-ratioELET = 3
+ratioELET = 1.05
 # Ratio between ELp and ET
-ratioELpET = 2
+ratioELpET = 1.05
 # Ratio between ELpp and ELp
-ratioELppELp = 1.5
+ratioELppELp = 1.05
 
 
 argv = sys.argv

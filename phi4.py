@@ -540,15 +540,18 @@ class Phi4():
             print("Diagonalizing matrices...")
 
             for g in glist:
-                invM = scipy.sparse.linalg.inv((DH2ll[g]-DH3ll[g]).tocsc())
-
-                compH = (Hraw[g] + DH2lL[g]*invM*DH2Ll[g]).todense()
-
+                ML = DH2lL[g].todense()
+                # For all tails
+                MR = ML
+                M = (DH2ll[g]-DH3ll[g]).todense()
+                compH = Hraw[g].todense() + ML*scipy.linalg.solve(M, MR)
 
                 self.eigenvalues[g][ren][k] = \
                     scipy.sort(scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
                         which='SA', return_eigenvectors=False))
 
+                del ML, M, compH
+                gc.collect()
                 # self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
 
             return
