@@ -1,6 +1,5 @@
 import scipy
 from profile_support import *
-# import pyximport; pyximport.install()
 import scipy.sparse.linalg
 import scipy.sparse
 import math
@@ -8,24 +7,12 @@ from math import factorial
 from statefuncs import Basis, Helper
 from oscillators import *
 from bilocal import *
-from collections import Counter
 from operator import attrgetter
 import renorm
 import gc
 from matrix import *
 from scipy import exp, pi, array
-from scipy.sparse.linalg import LinearOperator
 from sys import getsizeof as sizeof
-
-
-def msize(m):
-    form =  m.getformat()
-    if form=="coo":
-        return (m.col.nbytes+m.row.nbytes+m.data.nbytes)/1000000
-    elif form == "csr" or form=="csc":
-        return (m.data.nbytes+m.indptr.nbytes+m.indices.nbytes)/1000000
-    else:
-        raise ValueError(form+" not implemented")
 
 
 
@@ -50,7 +37,6 @@ class Phi4():
         self.V0V4 = {}
         self.V2V4 = {}
         self.V4V4 = {}
-        # self.VhhDiagList = {}
         self.basisH = {}
         self.basisl = {}
         self.DH3ll = {k:None for k in (-1,1)}
@@ -177,7 +163,6 @@ class Phi4():
 
         del c
 
-        # print("self.VLH[k] size", msize(self.VLH[k]))
 
     def computeLEVs(self, k, basisl, loc3=True):
 
@@ -268,28 +253,13 @@ class Phi4():
                         memdbg=memdbg)
             DH3ll = {g: subOPl.sub(DH3ll[g]) for g in glist}
 
-            # XXX This should not be needed anymore
-            del self.basisH[k]
             gc.collect()
-
-            # XXX Note: this could take a lot of memory if there are many tails,
-            # because the inverse matrix is not sparse
-            if memdbg:
-                print("memory before inversion", memory_usage())
-            # Convert to dense, because the inverse will be dense
-            #TODO Make this work
-            # invM = scipy.linalg.inv((DH2ll-DH3ll).todense())
-            # print(invM.shape)
-            if memdbg:
-                print("memory after inversion", memory_usage())
 
             return DH2lL, DH2ll, DH3ll, DH2Ll
 
 
         elif ren=="renloc":
-
             ret = {}
-
             VLL = {}
             for n in (0,2,4):
                 VLL[n] = subOPL.sub(self.V[k][n])
@@ -341,7 +311,8 @@ class Phi4():
 
         return DH2ll, DH2Ll
 
-    def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix, memdbg):
+    def computeDH3(self, k, ET, ELp, ELpp, eps, loc3, loc3mix, nonloc3mix,
+            memdbg=False):
 
         glist = self.glist
 
@@ -373,10 +344,9 @@ class Phi4():
 # energy ET < E < ELp
 #########################################################################
 
-# Propagator and projector over the states between ET and ELp
+        # Propagator and projector over the states between ET and ELp
         propagatorh = {g: basis.propagator(eps[g], ET, ELp) for g in glist}
 
-        # XXX Move this inside the cycle and restrict idxList?
         Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
 
         c = MatrixConstructor(basis, basis, (ET, ELp))
@@ -401,8 +371,6 @@ class Phi4():
                     *VlH[4]*g**3
                 DH3ll[g] += DH3llPart
 
-            # print(type(VHl[4]),type(propagatorh[g]),type(VhhHalfPart),type(VlH[4]))
-
             del VhhHalfPart
 
         del Vlist
@@ -418,10 +386,9 @@ class Phi4():
         if nonloc3mix:
             c = MatrixConstructor(basis, basis, (ELp, ELpp))
 
-# Propagator and projector over the states between ELp and ELpp
+            # Propagator and projector over the states between ELp and ELpp
             propagatorH = {g: basis.propagator(eps[g], ELp, ELpp) for g in glist}
 
-            # XXX Move this inside the cycle and restrict idxList?
             VHhlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
 
             for i, idxList in enumerate(idxLists):
@@ -435,8 +402,6 @@ class Phi4():
                         *g**3
                     DH3llPart += DH3llPart.transpose()
                     DH3ll[g] += DH3llPart
-
-                # print(type(VHl[4]),type(propagatorh[g]),type(VHhPart),type(propagatorH[g]),type(VlH[4]))
 
                 del VHhPart
 
@@ -497,7 +462,6 @@ class Phi4():
         self.eigenvectors = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
 
 
-    # @profile
     def computeEigval(self, k, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
             eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True,
             nonloc3mix=True, memdbg=False):
@@ -537,6 +501,10 @@ class Phi4():
                     subbasisl=subbasisl, ELp=ELp, ELpp=ELpp, loc2=loc2,
                     loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
 
+            # Saving memory
+            del self.basisH[k]
+            gc.collect()
+
             print("Diagonalizing matrices...")
 
             for g in glist:
@@ -549,21 +517,18 @@ class Phi4():
                 self.eigenvalues[g][ren][k] = \
                     scipy.sort(scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
                         which='SA', return_eigenvectors=False))
+                # self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
 
                 del ML, M, compH
                 gc.collect()
-                # self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
-
             return
 
         else:
             raise ValueError()
 
         for g in glist:
-
             (self.eigenvalues[g][ren][k], eigenvectorstranspose) = \
                 scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
                         which='SA', return_eigenvectors=True)
 
             self.eigenvectors[g][ren][k] = eigenvectorstranspose.T
-

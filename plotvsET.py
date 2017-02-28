@@ -105,6 +105,8 @@ def plotvsET(ETlist):
                     label="ren="+ren
                 else:
                     label = None
+                if ren == "raw":
+                    print("k=",k, " ", ",".join(str(x) for x in data))
                 plt.plot(xlist, data, label=label, marker=marker, markersize=markersize)
             plt.gca().set_prop_cycle(None)
 
@@ -137,8 +139,9 @@ ETmin = float(argv[3])
 ETmax = float(argv[4])
 
 ETlist = scipy.linspace(ETmin, ETmax, (ETmax-ETmin)*2+1)
-print("ETlist:", ETlist)
+# print("ETlist:", ETlist)
 
+print("g=", g)
 
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)

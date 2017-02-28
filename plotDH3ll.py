@@ -11,8 +11,13 @@ from cycler import cycler
 
 k = +1
 m = 1
-g = 1
-eps = -1
+g = 2.
+eps = {g: -1}
+
+test = False
+
+# (DH3<> nonloc, DH3<> loc, DH3>> loc)
+tlist = ((True,True,False),(True,True,True))
 
 vectorlist = [[],
         [(0,2)],
@@ -26,14 +31,21 @@ indexList = [(0,0), # V0
         (0,2), # V4 + V0V4
         (0,3), # V6 + V2V4
         (0,4), # V4V4
-        (0,5), # V6
-        (2,2),
-        (1,5),
-        (2,5),
-        (3,5)
+        (0,5) # V6
         ]
 
-frac = 3
+
+# Ratio between ELpp and ELp
+ratioELppELp = 1.5
+frac = ratioELppELp
+
+params = {'legend.fontsize': 8}
+plt.rcParams.update(params)
+plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
+    cycler('linestyle', ['-', '--', ':', '-.'])))
+rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+rc('text', usetex=True)
+output = "png"
 
 argv = sys.argv
 
@@ -48,73 +60,53 @@ ELpmin = float(argv[3])
 ELpmax = float(argv[4])
 
 
-ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
+ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)+1)
 print("ELplist:", ELplist)
 
 
 a = phi4.Phi4(m,L)
-
 a.buildBasis(Emax=ET)
-
-
 a.computePotential(k)
-
-a.setCouplings(0,0,g)
-a.computeEigval(k, ET, "raw")
-
-basisl = Basis(k, vectorlist, a.basis[k].helper)
-print(basisl)
+a.setglist(glist=[g])
 
 
-a.genHEBases(k, basisl, EL=None, ELpp=ELpmax*frac)
-print("HE basis size", a.basish[k].size)
+basisl = a.basis[k]
+a.computeLEVs(k, basisl, loc3=True)
 
-a.computeLEVs(k)
+a.genHEBasis(k, EL=ELpmax, ELp=ELpmax, ELpp=ratioELppELp*ELpmax)
+print("HE basis size", a.basisH[k].size)
+
 
 print("Computing HE matrices")
 a.computeHEVs(k)
 
+ret = {t:{index:[] for index in indexList} for t in tlist}
 
-tlist = ((False,False,False),(True,False,False),(True,True,False),(True,True,True))
-# tlist = ((False,False,False),(True,False,False),(True,True,False))
+for ELp in ELplist:
+    ELpp = ratioELppELp *ELp
+    print("ELp={}, ELpp={}".format(ELp,ELpp))
 
-if True in (t[2] for t in tlist):
-    a.calcVV3(ELplist, eps)
+    a.calcVV3(ELp, eps, test=test)
 
+    for t in tlist:
+        nonloc3mix, loc3mix, loc3 = t
 
-ret = {}
-
-for t in tlist:
-    nonloc3mix, loc3mix, loc3 = t
-    ret[t] = {index:[] for index in indexList}
-
-    for ELp in ELplist:
-        ELpp = frac*ELp
-        print("ELp={}, ELpp={}".format(ELp,ELpp))
-
-        DH3ll = a.computeDH3(basisl, k, ET, ELp, ELpp=ELpp, eps=eps,
-                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix).M.todense()
+        DH3ll = a.computeDH3(k, ET=ET, ELp=ELp, ELpp=ELpp, eps=eps,
+                loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix)[g].todense()
 
         for index in indexList:
             ret[t][index].append(DH3ll[index])
 
 
 for index in indexList:
-    params = {'legend.fontsize': 8}
-    plt.rcParams.update(params)
-
-    plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
-        cycler('linestyle', ['-', '--', ':', '-.'])))
-
-    rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-    rc('text', usetex=True)
 
     for t in tlist:
         plt.plot(ELplist, ret[t][index], label=str(t))
 
-    output = "png"
-    title = r"$L$={:.1f}, $E_T$={:.1f}, $E_L''={} E_L'$, index={}".format(L,ET,frac,index)
-    fname = "DH plots/DH3_L={:.1f}_ET={:.1f}_frac={}_index={}.{}".format(L,ET,frac,str(index),output)
+    title = r"$g$={}, $L$={:.1f}, $E_T$={:.1f}, $E_L''={} E_L'$, index={}".\
+            format(g,L,ET,frac,index)
+    fname = "DHplots/DH3_g={}_L={:.1f}_ET={:.1f}_frac={}_index={}.{}".\
+            format(g,L,ET,frac,str(index),output)
     loc = "lower right"
 
     plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')

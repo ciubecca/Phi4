@@ -57,7 +57,6 @@ ELpp = ratioELppELp*ELp
 
 print("EL, ELp, ELpp", EL, ELp, ELpp)
 
-# @profile
 def main():
 
     if saveondb:
@@ -73,7 +72,6 @@ def main():
     print("Full basis size: ", a.basis[k].size)
 
     a.setglist(glist=glist)
-
 
 # Compute the raw eigenvalues for cutoff ET
     a.computeEigval(k, ET, "raw", neigs=neigs)
