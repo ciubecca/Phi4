@@ -105,7 +105,7 @@ def plotvsET(ETlist):
                     label="ren="+ren
                 else:
                     label = None
-                if ren == "raw":
+                if ren == "renloc":
                     print("k=",k, " ", ",".join(str(x) for x in data))
                 plt.plot(xlist, data, label=label, marker=marker, markersize=markersize)
             plt.gca().set_prop_cycle(None)

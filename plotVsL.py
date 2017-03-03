@@ -2,174 +2,189 @@ import sys
 import matplotlib.pyplot as plt
 import scipy
 import math
-import json
 from scipy import pi, log, log10, array, sqrt, stats
 from matplotlib import rc
+from cycler import cycler
 import database
-import finiteVolH
+from sys import exit
 
-output = "svg"
-version = "v3_5-LV"
-eigTypes = ("raw", "loc")
+output = "png"
+renlist = ("raw", "rentails", "renloc")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-def mkink(g):
-    return 1/(12.*g) - (3./(2.*pi)-1./(4.*sqrt(3.)))
+klist = (1,-1)
 
-def main(argv):
-    args = " <g> <n0eigs> <ordMass> <dim0>"
-    if len(argv) < 5:
-        print argv[0], args
-        return -1
+neigs = 6
 
-    g = float(argv[1])
-    n0eigs = int(argv[2])
-    ordMass = float(argv[3])
-    dim0 = int(argv[4])
+# Ratio between EL and ET
+ratioELET = 3
+# Ratio between ELp and ET
+ratioELpET = 2
+# Ratio between ELpp and ELp
+ratioELppELp = 1.5
 
-    # Hardcoded parameters
-    neigs = 4
-    xList =scipy.linspace(5,25,21)
-    print xList
 
-    plt.figure(1) # E_0
-    plt.clf()
+def fignum(k):
+    if k==1:
+        return 1
+    elif k==-1:
+        return 2
 
-    plt.figure(2) # E_i-E_0
-    plt.clf()
+marker = 'o'
+markersize = 2.5
 
-    params = {'legend.fontsize': 8}
-    plt.rcParams.update(params)
+
+def plotvsL(xlist):
 
     db = database.Database()
 
-    oddColor = 'green'
-    evenColor = 'purple'
+    spectrum = {k:{ren:[] for ren in renlist} for k in klist}
+    masses = {k:{ren:[] for ren in renlist} for k in klist}
+    ntails = {k:[] for k in klist}
 
-    exactQuery = {"ren":"raw", "k":1, "n0eigs":n0eigs, "dim0":dim0, "finiteVolCouplings":True, "version":version, "ordMass":ordMass}
-    approxQuery = {"g":g}
-    boundQuery = {"neigs":[neigs,1000], "basisSize":[5000,10**5]}
+    for k in klist:
 
-    eigenvalues = {}
-    for ren in eigTypes:
-        eigenvalues[ren] = {}
-        for k in (1,-1):
-            eigenvalues[ren][k] = []
-            for L in xList:
-                exactQuery = {"ren":ren, "k":k, "n0eigs":n0eigs, "dim0":dim0, "finiteVolCouplings":True, "version":version, "ordMass":ordMass}
-                approxQuery["L"] = L
-                eigenvalues[ren][k].append(db.getObj('spec', exactQuery, approxQuery, boundQuery, maxAttr="basisSize"))
+        for L in xlist:
 
+            for ren in renlist:
 
-    vacuum = { }
-    evenSpectrum = { }
-    oddSpectrum = { }
-    for ren in eigTypes:
-        vacuum[ren] = scipy.array([e[0] for e in eigenvalues[ren][1]])
-        evenSpectrum[ren] = [ scipy.array([e[i] for e in eigenvalues[ren][1]]) - vacuum[ren] for i in range(1,neigs) ]
-        oddSpectrum[ren] = [ scipy.array([e[i] for e in eigenvalues[ren][-1]]) - vacuum[ren] for i in range(neigs) ]
+                EL = ratioELET*ET
+                ELp = ratioELpET*ET
+                ELpp = ratioELppELp*ELp
 
+                approxQuery = {"g":g, "L":L, "ET":ET}
+                exactQuery = {"k": k, "ren":ren, "neigs":neigs}
+                boundQuery = {}
 
-    def label(ren, k=None):
-        p = ""
-        if k==1:
-            p = r"$, Z_2=+$"
-        elif k==-1:
-            p = r"$, Z_2=-$"
-        return ren+p
+                if ren=="rentails":
+                    exactQuery["maxntails"] = None
+                    exactQuery["tailsComputedAtET"] = ET
+                    approxQuery["EL"] = EL
+                    approxQuery["ELp"] = ELp
+                    approxQuery["ELpp"] = ELpp
+
+                try:
+                    spectrum[k][ren].append(db.getObjList('spec', exactQuery,
+                        approxQuery, boundQuery, orderBy="date")[0])
+
+                except IndexError:
+                    print("Not found:", exactQuery, approxQuery)
+                    exit(-1)
 
 
-    # VACUUM ENERGY DENSITY
-    plt.figure(1)
 
-    # RAW
-    data = vacuum["raw"]/xList
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [3,2], marker='.', markersize=3, color=evenColor, label=label("raw"))
+    # Convert to array
+    for k in klist:
+        for ren in renlist:
+            spectrum[k][ren] = array(spectrum[k][ren])
 
-    # LOC
-    data = vacuum["loc"]/xList
-    plt.plot(xList, data, linewidth=1.,
-            dashes = [4,1], marker='+', markersize=3, color=evenColor, label=label("loc"))
 
+    # Mass
+    for k in (-1,1):
+        for ren in renlist:
+            for i in range(int((1+k)/2), neigs):
+                masses[k][ren].append(spectrum[k][ren][:,i]-spectrum[1][ren][:,0])
+
+    # Convert to array
+    for k in klist:
+        for ren in renlist:
+            masses[k][ren] = array(masses[k][ren])
+
+    # SPECTRUM
+    for k in klist:
+        plt.figure(fignum(k))
+        # for i in range(neigs):
+        for i in range(1):
+            for ren in renlist:
+                data = spectrum[k][ren][:,i]
+                if i==0:
+                    label="ren="+ren
+                else:
+                    label = None
+                if ren == "renloc":
+                    print("k=",k, " ", ",".join(str(x) for x in data))
+                plt.plot(xlist, data, label=label, marker=marker, markersize=markersize)
+            plt.gca().set_prop_cycle(None)
 
     # MASS
-
-    # RAW
-    plt.figure(2)
-    data = oddSpectrum["raw"][1]
-    l=label("raw", -1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [3,2], marker='.', markersize=3, color=oddColor, label=l)
-    data = evenSpectrum["raw"][0]
-    l=label("raw", 1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [3,2], marker='.', markersize=3, color=evenColor, label=l)
-
-    # LOC
-    data = oddSpectrum["loc"][1]
-    l=label("loc", -1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [4,1], marker='+', markersize=3, color=oddColor, label=l)
-
-    data = evenSpectrum["loc"][0]
-    l=label("loc", 1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [4,1], marker='+', markersize=3, color=evenColor, label=l)
-
-
-    # E_2 - 2 MASS
-
-    # RAW
     plt.figure(3)
-    data = oddSpectrum["raw"][2]-2*oddSpectrum["raw"][1]
-    l=label("raw", -1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [3,2], marker='.', markersize=3, color=oddColor, label=l)
+    # for k in (-1,1):
+    for k in (-1,):
+        # for i in range(neigs-int((1+k)/2)):
+        for i in range(1):
+            for ren in renlist:
+                data = masses[k][ren][i]
+                if i==0:
+                    label="ren="+ren
+                else:
+                    label = None
+                plt.plot(xlist, data, label=label,
+                        markersize=markersize, marker=marker)
+            plt.gca().set_prop_cycle(None)
 
-    data = evenSpectrum["raw"][1]-2*evenSpectrum["raw"][0]
-    l=label("raw", 1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [3,2], marker='.', markersize=3, color=evenColor, label=l)
+argv = sys.argv
 
-    # LOC
-    data = oddSpectrum["loc"][2]-2*oddSpectrum["loc"][1]
-    l=label("loc", -1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [4,1], marker='+', markersize=3, color=oddColor, label=l)
 
-    data = evenSpectrum["loc"][1]-2*evenSpectrum["loc"][0]
-    l=label("loc", 1)
-    plt.plot(xList, data, linewidth=0.7,
-            dashes = [4,1], marker='+', markersize=3, color=evenColor, label=l)
+if len(argv) < 5:
+    print(argv[0], "<ET> <g> <Lmin> <Lmax>")
+    sys.exit(-1)
 
-#############################################################################
+g = float(argv[1])
+ET = float(argv[2])
+Lmin = float(argv[3])
+Lmax = float(argv[4])
 
+Llist = scipy.linspace(Lmin, Lmax, (Lmax-Lmin)*2+1)
+# print("ETlist:", ETlist)
+
+print("g=", g)
+
+params = {'legend.fontsize': 8}
+plt.rcParams.update(params)
+
+plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
+    cycler('linestyle', ['-', '--', ':', '-.'])))
+
+
+plotvsL(Llist)
+
+
+title = r"$g$={0:.1f}, $E_T$={1:.1f},"\
+            "$E_L/E_T$={2:.1f}, $E_L'/E_T$={3:.1f}, $E_L''/E_L'={4:.1f}$"\
+            .format(g,ET,ratioELET,ratioELpET,ratioELppELp)
+fname = "g={0:.1f}_ET={1:.1f}_"\
+            "ELET={2}_ELpET={3}_ELppELp={4}.{5}"\
+            .format(g,ET,ratioELET,ratioELpET,ratioELppELp,output)
+loc = "upper right"
+
+
+# Even eigenvalues
+if 1 in klist:
     plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    #plt.xlim(min(xList)-0.01, max(xList)+0.01)
-    plt.title("m=1, dim0="+str(dim0)+", g="+str(g)+", n0eigs="+str(n0eigs)+", ordM="+str(ordMass))
+    plt.title(title)
     plt.xlabel(r"$L$")
-    plt.ylabel(r"$\Lambda$")
-    plt.legend(loc='lower right', prop={'size':10})
-    plt.savefig("fig_vacVsL_g="+str(g)+"_n0eigs="+str(n0eigs)+"_dim0="+str(dim0)+"_ordM="+str(ordMass)+".svg")
+    plt.ylabel(r"$E_i$ even")
+    plt.legend(loc=loc)
+    plt.savefig("evenvsL_"+fname)
 
+
+# Odd eigenvalues
+if -1 in klist:
     plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title("m=1, dim0="+str(dim0)+", g="+str(g)+", n0eigs="+str(n0eigs)+", ordM="+str(ordMass))
+    plt.title(title)
     plt.xlabel(r"$L$")
-    plt.ylabel(r"$m$")
-    plt.legend(loc='lower right', prop={'size':6})
-    plt.savefig("fig_massVsL_g="+str(g)+"_n0eigs="+str(n0eigs)+"_dim0="+str(dim0)+"_ordM="+str(ordMass)+".svg")
+    plt.ylabel(r"$E_i$ odd")
+    plt.legend(loc=loc)
+    plt.savefig("oddvsL_"+fname)
 
+
+# Mass
+if 1 in klist and -1 in klist:
     plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title("m=1, dim0="+str(dim0)+", g="+str(g)+", n0eigs="+str(n0eigs)+", ordM="+str(ordMass))
-    plt.ylim(-0.03,-0.00)
+    plt.title(title)
     plt.xlabel(r"$L$")
-    plt.ylabel(r"$E_2-2 E_1$")
-    plt.legend(loc='lower right', prop={'size':6})
-    plt.savefig("fig_boundStateVsL_g="+str(g)+"_n0eigs="+str(n0eigs)+"_dim0="+str(dim0)+"_ordM="+str(ordMass)+".svg")
-
-
-if __name__ == "__main__":
-    main(sys.argv)
+    plt.ylabel(r"$m_{\rm ph}$")
+    plt.legend(loc=loc)
+    plt.savefig("massvsL_"+fname)
