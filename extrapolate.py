@@ -21,17 +21,19 @@ errcoeff = 3.
 
 
 def stdFeatureVec(ET):
-    return [1/ET**2, 1/ET**(3)]
+    return [1/ET**2, 1/ET**3]
 
 
-class Extrapolator(k, ren, L, g, L):
+class Extrapolator():
 
-    def __init__(self):
+    def __init__(self, db, k, ren, L, g):
         self.ETlist = scipy.linspace(ETs[L]-Erange, ETs[L], (Erange)*2+1)
-        self.spectrum = np.array([getEigs(k, ren, g, L, ET)[0] for ET in ETlist)
+        self.spectrum = np.array([db.getEigs(k, ren, g, L, ET)[0]
+            for ET in self.ETlist])
 
     def train(self, alpha, weights=None, featureVec=None):
         xlist = self.ETlist
+# Divide by L
         data = self.spectrum
 
         if weights==None:
@@ -41,10 +43,10 @@ class Extrapolator(k, ren, L, g, L):
         else:
             self.featureVec = featureVec
 
-        X = scipy.array(featureVec(ETlist)).transpose()
+        X = np.array(self.featureVec(self.ETlist)).transpose()
         self.model = Ridge(alpha=alpha, normalize=True)
         self.model.fit(X, data, sample_weight=1/weights(xlist))
 
-    def predict(x):
+    def predict(self, x):
         x = np.array(x)
-        return self.model.predict(np.array(self.featureVec(x).transpose()))
+        return self.model.predict(np.array(self.featureVec(x)).transpose())

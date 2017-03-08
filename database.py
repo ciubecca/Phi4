@@ -79,7 +79,7 @@ class Database():
             approxQuery["ELpp"] = ELpp
 
         try:
-            ret = db.getObjList('spec', exactQuery, approxQuery, boundQuery,
+            ret = self.getObjList('spec', exactQuery, approxQuery, boundQuery,
                     orderBy="date")[0]
 
         except IndexError:
