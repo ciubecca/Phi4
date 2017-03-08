@@ -9,6 +9,8 @@ from cycler import cycler
 import database
 from sys import exit
 import numpy as np
+from sklearn.linear_model import Ridge
+
 
 # x represent 1/ET^2
 def fitfun1(x, a, b, c):
@@ -16,10 +18,19 @@ def fitfun1(x, a, b, c):
 
 def fitfun2(x, a, b, c):
     return a + b*x + c*x**(3/2)
+def fitfun3(x, a, b):
+    return a + b*x
 
 xmargin = 10**(-4)
 ymargin = 10**(-6)
 
+alpha = {1:0.1, 2:0.01}
+
+Llist = [6, 7, 8, 9, 10]
+ETs = {5:30.5, 5.5:28.5, 6:28, 6.5:24.5, 7:25, 7.5:22, 8:23,
+        8.5:20, 9:21, 9.5:20, 10:20}
+
+Erange = 10
 
 absolute_sigma=False
 errcoeff = 3.
@@ -33,19 +44,17 @@ elif ftype==2:
     fitfun = fitfun2
     def fstr():
         return "f(x) = {} + {}*x +{}*x**(3/2)".format("a","b","c")
+elif ftype==3:
+    fitfun = fitfun3
+    def fstr():
+        return "f(x) = {} + {}*x".format("a","b")
 
 # Weight function for linear regression
-# def sigma(x):
-    # return 1/x**2
-# sigmastr = "x-2"
-
-def sigma(x):
+def weights(ET):
+    # return abs(1/ET**2)
     return 1
 sigmastr = "1"
 
-# def sigma(x):
-    # return 1/x
-# sigmastr = "x-1"
 
 output = "png"
 renlist = ("raw", "rentails", "renloc")
@@ -65,10 +74,8 @@ ratioELpET = 2
 ratioELppELp = 1.5
 
 
-Llist = [6, 7, 8, 9, 10]
-ETs = {6:[10,26.5], 7:[10,24.5], 8:[10,22.5], 9:[10,20.5], 10:[10,19.5]}
 
-ETlists = {L: scipy.linspace(ETs[L][0], ETs[L][1], (ETs[L][1]-ETs[L][0])*2+1)
+ETlists = {L: scipy.linspace(ETs[L]-Erange, ETs[L], (Erange)*2+1)
         for L in Llist}
 
 color = {6:"r", 7:"y", 8:"g", 9:"k", 10:"b"}
@@ -77,7 +84,7 @@ marker = 'o'
 markersize = 2.5
 ymin = [0, 10]
 ymax = [-10, 0]
-xmax = max(1/ETs[L][0]**2 for L in Llist)
+xmax = max(max(1/ETlists[L]**2) for L in Llist)
 
 db = database.Database()
 
@@ -138,16 +145,23 @@ def plotvsET(L):
     plt.scatter(1/xlist**2, data, label=label, marker=marker,
             color=color[L])
 
-    popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=sigma(xlist),
+    popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=weights(xlist),
             absolute_sigma=absolute_sigma)
-    # err = max(abs(fitfun(x,*popt)-y) for x,y in list(zip(1/xlist**2.,data))[-10:])
     print("L={}, Lambda, popt={}".format(L,popt))
     err = errcoeff*np.sqrt(pcov[0,0])
+
+    X = scipy.array([1/xlist**2, 1/xlist**(3)]).transpose()
+    model = Ridge(alpha=alpha, normalize=True)
+    model.fit(X, data, sample_weight=1/weights(xlist))
+
     xdata = scipy.linspace(0, xmax, 100)
-    plt.plot(xdata, fitfun(xdata, *popt), color=color[L])
-    plt.errorbar([0], [popt[0]], yerr=err, color=color[L])
+    ydata = model.predict(scipy.array([xdata, xdata**(3/2)]).transpose())
+    # ydata = fitfun(xdata, *popt)
+    plt.plot(xdata, ydata, color=color[L])
+    # plt.errorbar([0], [popt[0]], yerr=err, color=color[L])
     ymax[0] = max(ymax[0], max(data))
-    ymin[0] = min(ymin[0], min(data), popt[0]-err)
+    # ymin[0] = min(ymin[0], min(data), popt[0]-err)
+    ymin[0] = min(ymin[0], min(data), popt[0])
 
     # MASS
     plt.figure(2)
@@ -155,16 +169,15 @@ def plotvsET(L):
     label = "L = {}".format(L)
     plt.scatter(1/xlist**2, data, label=label, marker=marker, color=color[L])
 
-    popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=sigma(xlist), p0=[0,0,1],
-            absolute_sigma=absolute_sigma)
-    print("L={}, Mass, popt={}".format(L,popt))
-    # err = max(abs(fitfun(x,*popt)-y) for x,y in list(zip(1/xlist**2.,data))[-10:])
-    err = errcoeff*np.sqrt(pcov[0,0])
-    xdata = scipy.linspace(0, xmax, 100)
-    plt.plot(xdata, fitfun(xdata, *popt), color=color[L])
-    plt.errorbar([0], [popt[0]], yerr=err, color=color[L])
-    ymax[1] = max(ymax[1], max(data))
-    ymin[1] = min(ymin[1], min(data), popt[0]-err)
+    # popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=sigma(xlist), p0=[0,0,1],
+            # absolute_sigma=absolute_sigma)
+    # print("L={}, Mass, popt={}".format(L,popt))
+    # err = errcoeff*np.sqrt(pcov[0,0])
+    # xdata = scipy.linspace(0, xmax, 100)
+    # plt.plot(xdata, fitfun(xdata, *popt), color=color[L])
+    # plt.errorbar([0], [popt[0]], yerr=err, color=color[L])
+    # ymax[1] = max(ymax[1], max(data))
+    # ymin[1] = min(ymin[1], min(data), popt[0]-err)
 
 
 argv = sys.argv

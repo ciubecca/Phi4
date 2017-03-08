@@ -10,6 +10,7 @@ from sys import exit
 
 output = "png"
 renlist = ("raw", "rentails", "renloc")
+renlist = ("rentails", "renloc")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
@@ -25,6 +26,8 @@ ratioELpET = 2
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
+ETs = {5:30.5, 5.5:28.5, 6:28, 6.5:24.5, 7:25, 7.5:22, 8:23,
+        8.5:20, 9:21, 9.5:20, 10:20}
 
 def fignum(k):
     if k==1:
@@ -35,18 +38,18 @@ def fignum(k):
 marker = 'o'
 markersize = 2.5
 
+db = database.Database()
+
+
 
 def plotvsL(xlist):
 
-    db = database.Database()
-
     spectrum = {k:{ren:[] for ren in renlist} for k in klist}
     masses = {k:{ren:[] for ren in renlist} for k in klist}
-    ntails = {k:[] for k in klist}
 
     for k in klist:
-
         for L in xlist:
+            ET = ETs[L]
 
             for ren in renlist:
 
@@ -98,7 +101,7 @@ def plotvsL(xlist):
         # for i in range(neigs):
         for i in range(1):
             for ren in renlist:
-                data = spectrum[k][ren][:,i]
+                data = spectrum[k][ren][:,i]/Llist
                 if i==0:
                     label="ren="+ren
                 else:
@@ -127,14 +130,13 @@ def plotvsL(xlist):
 argv = sys.argv
 
 
-if len(argv) < 5:
-    print(argv[0], "<ET> <g> <Lmin> <Lmax>")
+if len(argv) < 4:
+    print(argv[0], "<g> <Lmin> <Lmax>")
     sys.exit(-1)
 
 g = float(argv[1])
-ET = float(argv[2])
-Lmin = float(argv[3])
-Lmax = float(argv[4])
+Lmin = float(argv[2])
+Lmax = float(argv[3])
 
 Llist = scipy.linspace(Lmin, Lmax, (Lmax-Lmin)*2+1)
 # print("ETlist:", ETlist)
@@ -150,13 +152,8 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
 
 plotvsL(Llist)
 
-
-title = r"$g$={0:.1f}, $E_T$={1:.1f},"\
-            "$E_L/E_T$={2:.1f}, $E_L'/E_T$={3:.1f}, $E_L''/E_L'={4:.1f}$"\
-            .format(g,ET,ratioELET,ratioELpET,ratioELppELp)
-fname = "g={0:.1f}_ET={1:.1f}_"\
-            "ELET={2}_ELpET={3}_ELppELp={4}.{5}"\
-            .format(g,ET,ratioELET,ratioELpET,ratioELppELp,output)
+title = r"$g$={0:.1f}".format(g)
+fname = "g={0:.1f}.{1}".format(g,output)
 loc = "upper right"
 
 
@@ -165,19 +162,19 @@ if 1 in klist:
     plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
     plt.title(title)
     plt.xlabel(r"$L$")
-    plt.ylabel(r"$E_i$ even")
+    plt.ylabel(r"$E_i/L$ even")
     plt.legend(loc=loc)
     plt.savefig("evenvsL_"+fname)
 
 
 # Odd eigenvalues
-if -1 in klist:
-    plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title(title)
-    plt.xlabel(r"$L$")
-    plt.ylabel(r"$E_i$ odd")
-    plt.legend(loc=loc)
-    plt.savefig("oddvsL_"+fname)
+# if -1 in klist:
+    # plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    # plt.title(title)
+    # plt.xlabel(r"$L$")
+    # plt.ylabel(r"$E_i$ odd")
+    # plt.legend(loc=loc)
+    # plt.savefig("oddvsL_"+fname)
 
 
 # Mass

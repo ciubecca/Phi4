@@ -9,6 +9,9 @@ from cycler import cycler
 import database
 from sys import exit
 import numpy as np
+from numpy import concatenate as concat
+from sklearn.linear_model import Ridge
+
 
 # x represent 1/ET^2
 def fitfun1(x, a, b, c):
@@ -16,6 +19,14 @@ def fitfun1(x, a, b, c):
 
 def fitfun2(x, a, b, c):
     return a + b*x + c*x**(3/2)
+
+def fitfun3(x, a, b):
+    return a + b*x
+
+def fitfun4(x, a, b, c):
+    return a + x*(b+c*log(x))
+
+alpha = {1:0.1, 2:0.01}
 
 marker = 'o'
 markersize = 2.5
@@ -32,20 +43,22 @@ elif ftype==2:
     fitfun = fitfun2
     def fstr():
         return "f(x) = {} + {}*x +{}*x**(3/2)".format("a","b","c")
+elif ftype==3:
+    fitfun = fitfun3
+    def fstr():
+        return "f(x) = {} + {}*x".format("a","b")
+
+elif ftype==4:
+    fitfun = fitfun4
+    def fstr():
+        return "f(x) = {} + {}*x + {}*x*Log[x]".format("a","b","c")
+
 
 # Weight function for linear regression
-def sigma(x):
-    return 1/x**2
-sigmastr = "x-2"
-
-# def sigma(x):
-    # return 1
-# sigmastr = "1"
-
-# def sigma(x):
-    # return 1/x
-# sigmastr = "x-1"
-
+def weights(ET):
+    # return abs(1/ET**2)
+    return 1
+sigmastr = "1"
 
 def Massfun(L, a, b, c):
     return a + (b/L)*exp(-c*L)
@@ -71,13 +84,14 @@ ratioELpET = 2
 ratioELppELp = 1.5
 
 
-Llist = [6, 7, 8, 9, 10]
-ETs = {6:[10,27], 7:[10,25], 8:[10,22.5], 9:[10,20.5], 10:[10,19.5]}
+Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,10]
+ETs = {5:30.5, 5.5:28.5, 6:28, 6.5:24.5, 7:25, 7.5:22, 8:23,
+        8.5:20, 9:21, 9.5:20, 10:20}
 
-ETlists = {L: scipy.linspace(ETs[L][0], ETs[L][1], (ETs[L][1]-ETs[L][0])*2+1)
+ETlists = {L: scipy.linspace(ETs[L]-5, ETs[L], (5)*2+1)
         for L in Llist}
 
-color = {6:"r", 7:"y", 8:"g", 9:"k", 10:"b"}
+renlist = {"renloc", "rentails"}
 
 marker = 'o'
 markersize = 2.5
@@ -95,88 +109,113 @@ def extrapolate(L):
     spectrum = {k:{ren:[] for ren in renlist} for k in klist}
     masses = {k:{ren:[] for ren in renlist} for k in klist}
 
-    ren = "rentails"
+    LambdaRaw = {}
 
-    for k in klist:
-        for ET in xlist:
-            EL = ratioELET*ET
-            ELp = ratioELpET*ET
-            ELpp = ratioELppELp*ELp
+    for ren in renlist:
 
-            approxQuery = {"g":g, "L":L, "ET":ET}
-            exactQuery = {"k": k, "ren":ren, "neigs":neigs}
-            boundQuery = {}
+        for k in klist:
+            for ET in xlist:
+                EL = ratioELET*ET
+                ELp = ratioELpET*ET
+                ELpp = ratioELppELp*ELp
 
-            if ren=="rentails":
-                exactQuery["maxntails"] = None
-                exactQuery["tailsComputedAtET"] = ET
-                approxQuery["EL"] = EL
-                approxQuery["ELp"] = ELp
-                approxQuery["ELpp"] = ELpp
+                approxQuery = {"g":g, "L":L, "ET":ET}
+                exactQuery = {"k": k, "ren":ren, "neigs":neigs}
+                boundQuery = {}
 
-            try:
-                spectrum[k][ren].append(db.getObjList('spec', exactQuery,
-                    approxQuery, boundQuery, orderBy="date")[0])
+                if ren=="rentails":
+                    exactQuery["maxntails"] = None
+                    exactQuery["tailsComputedAtET"] = ET
+                    approxQuery["EL"] = EL
+                    approxQuery["ELp"] = ELp
+                    approxQuery["ELpp"] = ELpp
 
-            except IndexError:
-                print("Not found:", exactQuery, approxQuery)
-                exit(-1)
+                try:
+                    spectrum[k][ren].append(db.getObjList('spec', exactQuery,
+                        approxQuery, boundQuery, orderBy="date")[0])
 
-    # Convert to array
-    for k in klist:
-        spectrum[k][ren] = array(spectrum[k][ren])
+                except IndexError:
+                    print("Not found:", exactQuery, approxQuery)
+                    exit(-1)
 
-    # Mass
-    for k in (-1,1):
-        for i in range(int((1+k)/2), neigs):
-            masses[k][ren].append(spectrum[k][ren][:,i]-spectrum[1][ren][:,0])
+        # Convert to array
+        for k in klist:
+            spectrum[k][ren] = array(spectrum[k][ren])
 
-    # Convert to array
-    for k in klist:
-        masses[k][ren] = array(masses[k][ren])
+        # Mass
+        for k in (-1,1):
+            for i in range(int((1+k)/2), neigs):
+                masses[k][ren].append(spectrum[k][ren][:,i]-spectrum[1][ren][:,0])
+
+        # Convert to array
+        for k in klist:
+            masses[k][ren] = array(masses[k][ren])
 
 
-    # VACUUM ENERGY
+    # VACUUM ENERGY LOC
+    ren = "renloc"
     data = spectrum[1][ren][:,0]/L
-    popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=sigma(xlist),
-            absolute_sigma=absolute_sigma)
-    err = errcoeff*np.sqrt(pcov[0,0])
-    LambdaBar = (popt[0], err)
+    # Value of Lambda for highest ET
+    LambdaRaw[ren] = data[np.argmax(xlist)]
 
+    # VACUUM ENERGY WITH TAILS
+    ren = "rentails"
+    data = spectrum[1][ren][:,0]/L
+    popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=weights(xlist),
+            absolute_sigma=absolute_sigma)
+    X = scipy.array([1/xlist**2, 1/xlist**(3)]).transpose()
+    model = Ridge(alpha=alpha[g], normalize=True)
+    model.fit(X, data, sample_weight=1/weights(xlist))
+
+    err = errcoeff*np.sqrt(pcov[0,0])
+    # LambdaBar = (popt[0], err)
+    LambdaBar = (model.predict([[0,0]]), err)
+    # Value of Lambda for highest ET
+    LambdaRaw[ren] = data[np.argmax(xlist)]
 
     # MASS
     data = masses[-1][ren][0]
-    popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=sigma(xlist), p0=[0,0,1],
+    popt, pcov = curve_fit(fitfun, 1/xlist**2, data, sigma=weights(xlist),
             absolute_sigma=absolute_sigma)
     err = errcoeff*np.sqrt(pcov[0,0])
     MassBar = (popt[0], err)
 
-    return LambdaBar, MassBar
+    return LambdaRaw, LambdaRaw, LambdaBar, MassBar
 
 
 def plotvsL(Llist):
     xlist = Llist
 
+    LambdaRawVec = {ren: scipy.zeros(len(Llist)) for ren in renlist}
     LambdaVec = scipy.zeros(len(Llist))
     LambdaErrVec = scipy.zeros(len(Llist))
     MassVec = scipy.zeros(len(Llist))
     MassErrVec = scipy.zeros(len(Llist))
 
     for i, L in enumerate(Llist):
-        (Lambda, LambdaErr), (Mass, MassErr) = extrapolate(L)
+        LambdaRaw, LambdaLoc,  (Lambda, LambdaErr), (Mass, MassErr) = extrapolate(L)
         LambdaVec[i] = Lambda
         MassVec[i] = Mass
         LambdaErrVec[i] = LambdaErr
         MassErrVec[i] = MassErr
+        for ren in renlist:
+            LambdaRawVec[ren][i] = LambdaRaw[ren]
 
-    ymax[0] = max(LambdaVec+LambdaErrVec)
-    ymin[0] = min(LambdaVec-LambdaErrVec)
+    ymax[0] = max(concat((LambdaVec+LambdaErrVec,
+        LambdaRawVec["rentails"], LambdaRawVec["renloc"])))
+    ymin[0] = min(concat((LambdaVec-LambdaErrVec,
+        LambdaRawVec["rentails"], LambdaRawVec["renloc"])))
     ymax[1] = max(MassVec+MassErrVec)
     ymin[1] = min(MassVec-MassErrVec)
 
 
     plt.figure(1)
-    plt.errorbar(xlist, LambdaVec, yerr=LambdaErrVec, linestyle=' ', marker=marker)
+    # Plot non-extrapolated data
+    plt.plot(xlist, LambdaRawVec["rentails"], marker=marker, label="tails")
+    plt.plot(xlist, LambdaRawVec["renloc"], marker=marker, label="loc")
+
+    # plt.errorbar(xlist, LambdaVec, yerr=LambdaErrVec, linestyle=' ', marker=marker)
+    plt.scatter(xlist, LambdaVec, marker=marker)
     # Fit with exponential
     popt, pcov = curve_fit(Lambdafun, xlist, LambdaVec, sigma=LambdaErrVec,
             absolute_sigma=absolute_sigma, p0=[-1, MassVec[-1]])
@@ -226,9 +265,10 @@ plt.ylabel(r"$E_0/L$")
 ymargin = 10**(-5)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[0]-ymargin, ymax[0]+ymargin)
-# plt.legend(loc=loc)
+plt.legend(loc=loc)
 plt.savefig("extrLambdavsL_"+fname)
 
+sys.exit(0)
 
 # MASS
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
