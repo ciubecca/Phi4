@@ -6,6 +6,15 @@ from scipy import array
 
 rentypes = ["raw","renloc","rentails"]
 
+# Ratio between EL and ET
+ratioELET = 3
+# Ratio between ELp and ET
+ratioELpET = 2
+# Ratio between ELpp and ELp
+ratioELppELp = 1.5
+
+
+
 #FIXME Feature needed: forbid merging json and non-json data
 class Database():
     def __init__(self, dbname="data/spectra.db", tablename="spectra"):
@@ -50,3 +59,31 @@ class Database():
         else:
             return [y for (x,y) in sorted(zip(orderKey, listRes),
                 key=lambda pair:pair[0])]
+
+
+    def getEigs(self, k, ren, g, L, ET, neigs=6):
+
+        EL = ratioELET*ET
+        ELp = ratioELpET*ET
+        ELpp = ratioELppELp*ELp
+
+        approxQuery = {"g":g, "L":L, "ET":ET}
+        exactQuery = {"k": k, "ren":ren, "neigs":neigs}
+        boundQuery = {}
+
+        if ren=="rentails":
+            exactQuery["maxntails"] = None
+            exactQuery["tailsComputedAtET"] = ET
+            approxQuery["EL"] = EL
+            approxQuery["ELp"] = ELp
+            approxQuery["ELpp"] = ELpp
+
+        try:
+            ret = db.getObjList('spec', exactQuery, approxQuery, boundQuery,
+                    orderBy="date")[0]
+
+        except IndexError:
+            print("Not found:", exactQuery, approxQuery)
+            exit(-1)
+
+        return ret

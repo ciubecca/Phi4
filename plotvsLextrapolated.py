@@ -26,6 +26,7 @@ def fitfun3(x, a, b):
 def fitfun4(x, a, b, c):
     return a + x*(b+c*log(x))
 
+alpha = {1:1, 2:0.1}
 alpha = {1:0.1, 2:0.01}
 
 marker = 'o'
@@ -185,6 +186,7 @@ def extrapolate(L):
 
 def plotvsL(Llist):
     xlist = Llist
+    global mph
 
     LambdaRawVec = {ren: scipy.zeros(len(Llist)) for ren in renlist}
     LambdaVec = scipy.zeros(len(Llist))
@@ -220,6 +222,7 @@ def plotvsL(Llist):
     popt, pcov = curve_fit(Lambdafun, xlist, LambdaVec, sigma=LambdaErrVec,
             absolute_sigma=absolute_sigma, p0=[-1, MassVec[-1]])
     print(popt)
+    mph = (popt[1], np.sqrt(pcov[1,1]))
     print("Best fit for m_ph from Lambda fit: {} +- {}", popt[1], np.sqrt(pcov[1,1]))
     xdata = scipy.linspace(xmin, xmax, 100)
     plt.plot(xdata, Lambdafun(xdata, *popt))
@@ -252,8 +255,9 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 
 plotvsL(Llist)
 
-title = r"$g$={0:.1f}, {1}, $\sigma$={2}".format(g, fstr(), sigmastr)
-fname = "g={0:.1f}_ftype={1}_sigma={2}.{3}".format(g,ftype,sigmastr,output)
+title = r"$g$={:.1f}, $\alpha$={}, $m_{{ph}} = {} \pm {}$".format(g, alpha[g],
+        mph[0], mph[1])
+fname = "g={0:.1f}_alpha={1}.{2}".format(g, alpha[g], output)
 loc = "upper left"
 
 
