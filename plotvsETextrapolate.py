@@ -9,7 +9,6 @@ from cycler import cycler
 import database
 from sys import exit
 import numpy as np
-from sklearn.linear_model import Ridge
 from extrapolate import Extrapolator
 
 xmargin = 10**(-4)
@@ -57,7 +56,7 @@ def plotvsET(L):
         xdata = scipy.linspace(0, min(ETlist)**-2, 100)
         ydata[k] = e.predict(xdata**(-1/2))
 
-        yinf[k] = e.predict([np.inf])[0]
+        yinf[k] = e.asymptoticValue()
 
 
     label = "L = {}".format(L)
