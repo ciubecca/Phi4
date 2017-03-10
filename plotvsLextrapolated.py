@@ -10,11 +10,9 @@ import database
 from sys import exit
 import numpy as np
 from numpy import concatenate as concat
-from extrapolate import Extrapolator
+from extrapolate import Extrapolator, ETmax
 
 Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
-
-alpha = {1:0.01, 2:0.001}
 
 
 mph = {k:None for k in (-1,1)}
@@ -26,8 +24,8 @@ markersize = 2.5
 plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 
 def Massfun(L, a, b, c):
-    return a + (b/L)*exp(-c*L)
-boundsMass = ([0,0,0],[1,np.inf,np.inf])
+    return a + (b/L)*exp(-c*a*sqrt(3/2)*L)
+boundsMass = ([0,0,1],[1,np.inf,np.inf])
 
 def Lambdafun(L, a, b):
     return a - sqrt(sqrt(b**2)/(2*pi*L**3))*exp(-b*L)
@@ -61,17 +59,18 @@ def plotvsL(Llist):
 
     for i,L in enumerate(Llist):
         for ren in renlist:
-            e = {}
-            e[1] = Extrapolator(db, 1, ren, L, g)
-            Lambda[ren][i] = e[1].highestETvalue()/L
-            e[-1] = Extrapolator(db, -1, ren, L, g)
-            Mass[ren][i] = e[-1].highestETvalue()-e[1].highestETvalue()
+            E0 = db.getEigs(1, ren, g, L, ETmax[L])[0]
+            E1 = db.getEigs(-1, ren, g, L, ETmax[L])[0]
+            Lambda[ren][i] = E0/L
+            Mass[ren][i] = (E1-E0)
 
-            if ren=="rentails":
-                e[1].train(alpha[g])
-                e[-1].train(alpha[g])
-                LambdaInf[i] = e[1].asymptoticValue()/L
-                MassInf[i] = e[-1].asymptoticValue()-e[1].asymptoticValue()
+        e = {}
+        e[1] = Extrapolator(db, 1, L, g)
+        e[-1] = Extrapolator(db, -1, L, g)
+        e[1].train(alpha)
+        e[-1].train(alpha)
+        LambdaInf[i] = e[1].asymptoticValue()/L
+        MassInf[i] = e[-1].asymptoticValue()-e[1].asymptoticValue()
 
     ymax[1] = max(max(max(Lambda[ren]) for ren in renlist), max(LambdaInf))
     ymin[1] = min(min(min(Lambda[ren]) for ren in renlist), min(LambdaInf))
@@ -120,11 +119,12 @@ def plotvsL(Llist):
 
 argv = sys.argv
 
-if len(argv) < 2:
-    print(argv[0], "<g>")
+if len(argv) < 3:
+    print(argv[0], "<g> <alpha>")
     sys.exit(-1)
 
 g = float(argv[1])
+alpha = float(argv[2])
 
 print("g=", g)
 
@@ -133,12 +133,12 @@ plt.rcParams.update(params)
 
 plotvsL(Llist)
 
-fname = "g={0:.1f}_alpha={1}.{2}".format(g, alpha[g], output)
+fname = "g={0:.1f}_alpha={1}.{2}".format(g, alpha, output)
 loc = "upper left"
 
 
 # VACUUM ENERGY DENSITY
-title = r"$g$={:.1f}, $\alpha$={}, $m_{{ph}}={}\pm{}$".format(g, alpha[g],
+title = r"$g$={:.1f}, $\alpha$={}, $m_{{ph}}={}\pm{}$".format(g, alpha,
         mph[1], mpherr[1])
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
@@ -151,7 +151,7 @@ plt.legend(loc=loc)
 plt.savefig("extrLambdavsL_"+fname)
 
 # MASS
-title = r"$g$={:.1f}, $\alpha$={}, $m_{{ph}}={}\pm{}$".format(g, alpha[g],
+title = r"$g$={:.1f}, $\alpha$={}, $m_{{ph}}={}\pm{}$".format(g, alpha,
         mph[-1], mpherr[-1])
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)

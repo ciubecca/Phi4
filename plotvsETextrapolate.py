@@ -13,7 +13,6 @@ from extrapolate import Extrapolator
 
 xmargin = 10**(-4)
 
-alpha = {1:0.1, 2:0.01}
 
 Llist = [6, 7, 8, 9, 10]
 
@@ -46,13 +45,13 @@ def plotvsET(L):
     global ymin, ymax, xmax
 
     for k in (-1,1):
-        e = Extrapolator(db, k, "rentails", L, g)
+        e = Extrapolator(db, k, L, g)
         ETlist = e.ETlist
         xlist = 1/ETlist**2
         xmax = max(max(xlist), xmax)
         spectrum[k] = e.spectrum
 
-        e.train(alpha=alpha[g])
+        e.train(alpha=alpha)
         xdata = scipy.linspace(0, min(ETlist)**-2, 100)
         ydata[k] = e.predict(xdata**(-1/2))
 
@@ -78,11 +77,12 @@ def plotvsET(L):
 
 argv = sys.argv
 
-if len(argv) < 2:
-    print(argv[0], "<g>")
+if len(argv) < 3:
+    print(argv[0], "<g> <alpha>")
     sys.exit(-1)
 
 g = float(argv[1])
+alpha = float(argv[2])
 
 print("g=", g)
 
@@ -94,8 +94,8 @@ for L in Llist:
     plotvsET(L)
 
 
-title = r"$g$={0:.1f}, $\alpha$={1}".format(g, alpha[g])
-fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha[g],output)
+title = r"$g$={0:.1f}, $\alpha$={1}".format(g, alpha)
+fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
 loc = "upper left"
 
 

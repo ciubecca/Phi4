@@ -9,10 +9,14 @@ def main(argv):
     args = " <keyword:value> ..."
 
     query = {}
+    queryStr = {}
 
     for arg in argv[1:]:
         key, value = arg.split(':')
-        query[key] = float(value)
+        try:
+            query[key] = float(value)
+        except ValueError:
+            queryStr[key] = value
 
     # Hardcoded parameters
     values = ("k", "L", "ET", "g","neigs")
@@ -20,7 +24,7 @@ def main(argv):
     # db = database.Database(dbname="spectraJson.db",useJson=True)
     db = database.Database()
 
-    exactQuery = {}
+    exactQuery = queryStr
     data = [db.getObjList(x, exactQuery=exactQuery, approxQuery=query) for x in values]
     res = set(zip(*data))
 

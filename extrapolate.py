@@ -9,8 +9,10 @@ import numpy as np
 from sklearn.linear_model import Ridge
 
 
-ETs = {5:32, 5.5:30, 6:28, 6.5:26, 7:25, 7.5:23, 8:23,
+ETmax = {5:32, 5.5:30, 6:28, 6.5:26, 7:25, 7.5:23, 8:23,
         8.5:21, 9:21, 9.5:20, 10:20}
+ETmin = {5:15, 5.5:15, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
+        8.5:10, 9:10, 9.5:10, 10:10}
 Erange = 10
 
 def stdWeights(ET):
@@ -21,13 +23,13 @@ errcoeff = 3.
 
 
 def stdFeatureVec(ET):
-    return [1/ET**2, 1/ET**3]
+    return [10/ET**2, 1/ET**3, log(ET**(1/ET**2))]
 
 
 class Extrapolator():
 
-    def __init__(self, db, k, ren, L, g):
-        self.ETlist = scipy.linspace(ETs[L]-Erange, ETs[L], (Erange)*2+1)
+    def __init__(self, db, k, L, g, ren="rentails"):
+        self.ETlist = scipy.linspace(ETmin[L], ETmax[L], (ETmax[L]-ETmin[L])*2+1)
         self.spectrum = np.array([db.getEigs(k, ren, g, L, ET)[0]
             for ET in self.ETlist])
 
@@ -52,7 +54,4 @@ class Extrapolator():
         return self.model.predict(np.array(self.featureVec(x)).transpose())
 
     def asymptoticValue(self):
-        return self.predict([np.inf])[0]
-
-    def highestETvalue(self):
-        return self.spectrum[np.argmax(self.ETlist)]
+        return self.model.intercept_
