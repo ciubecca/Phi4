@@ -13,8 +13,9 @@ from extrapolate import Extrapolator
 
 xmargin = 10**(-4)
 
+power = 3
 
-Llist = [6, 7, 8, 9, 10]
+Llist = [6, 8, 10]
 
 output = "png"
 renlist = ("raw", "rentails", "renloc")
@@ -47,13 +48,13 @@ def plotvsET(L):
     for k in (-1,1):
         e = Extrapolator(db, k, L, g)
         ETlist = e.ETlist
-        xlist = 1/ETlist**2
+        xlist = 1/ETlist**power
         xmax = max(max(xlist), xmax)
         spectrum[k] = e.spectrum
 
         e.train(alpha=alpha)
-        xdata = scipy.linspace(0, min(ETlist)**-2, 100)
-        ydata[k] = e.predict(xdata**(-1/2))
+        xdata = scipy.linspace(0, min(ETlist)**-power, 100)
+        ydata[k] = e.predict(xdata**(-1/power))
 
         yinf[k] = e.asymptoticValue()
 
@@ -63,16 +64,17 @@ def plotvsET(L):
     plt.figure(fignum[1])
     plt.scatter(xlist, spectrum[1]/L, label=label, marker=marker, color=color[L])
     plt.plot(xdata, ydata[1]/L, color=color[L])
-    ymax[1] = max(ymax[1], max(ydata[1])/L)
-    ymin[1] = min(ymin[1], min(ydata[1])/L)
+    ymax[1] = max(ymax[1], max(ydata[1])/L, max(spectrum[1]/L))
+    ymin[1] = min(ymin[1], min(ydata[1])/L, min(spectrum[1]/L))
 
     " MASS "
     plt.figure(fignum[-1])
-    plt.scatter(xlist, spectrum[-1]-spectrum[1], label=label,
+    mass = spectrum[-1]-spectrum[1]
+    plt.scatter(xlist, mass, label=label,
             marker=marker, color=color[L])
     plt.plot(xdata, ydata[-1]-ydata[1], color=color[L])
-    ymax[-1] = max(ymax[-1], max(ydata[-1]-ydata[1]))
-    ymin[-1] = min(ymin[-1], min(ydata[-1]-ydata[1]))
+    ymax[-1] = max(ymax[-1], max(ydata[-1]-ydata[1]), max(mass))
+    ymin[-1] = min(ymin[-1], min(ydata[-1]-ydata[1]), min(mass))
 
 
 argv = sys.argv
@@ -95,16 +97,16 @@ for L in Llist:
 
 
 title = r"$g$={0:.1f}, $\alpha$={1}".format(g, alpha)
-fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
+fname = "g={0:.1f}_alpha={1}.{2}".format(g,"none",output)
 loc = "upper left"
 
 
 # VACUUM ENERGY DENSITY
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
-plt.xlabel(r"$1/E_{T}^2$")
+plt.xlabel(r"$1/E_{{T}}^{}$".format(power))
 plt.ylabel(r"$E_0/L$")
-plt.xlim(0-xmargin, xmax+xmargin)
+plt.xlim(0, xmax+xmargin)
 ymargin = (ymax[1]-ymin[1])/100
 plt.ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 plt.legend(loc=loc)
@@ -113,9 +115,9 @@ plt.savefig("extrLambda_"+fname)
 # M
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
-plt.xlabel(r"$1/E_{T}^2$")
+plt.xlabel(r"$1/E_{{T}}^{}$".format(power))
 plt.ylabel(r"$M$")
-plt.xlim(0-xmargin, xmax+xmargin)
+plt.xlim(0, xmax+xmargin)
 ymargin = (ymax[-1]-ymin[-1])/100
 plt.ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
 plt.legend(loc=loc)

@@ -25,11 +25,13 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 
 def Massfun(L, a, b, c):
     return a + (b/L)*exp(-c*a*sqrt(3/2)*L)
-boundsMass = ([0,0,1],[1,np.inf,np.inf])
+boundsMass = ([0,-np.inf,0],[1,np.inf,np.inf])
+fmassStr = r"$m_{ph} + B e^{-C \, m_{ph} \,\sqrt{\frac{3}{2}}\, L}$"
 
-def Lambdafun(L, a, b):
-    return a - sqrt(sqrt(b**2)/(2*pi*L**3))*exp(-b*L)
-boundsLambda = ([-np.inf,0],[0,1])
+def Lambdafun(L, a, b, c):
+    return a - c*sqrt(b/(2*pi*L**3))*exp(-b*L)
+boundsLambda = ([-np.inf,0,0],[0,np.inf,np.inf])
+fvacStr = r"$\Lambda - C \sqrt{\frac{m_{ph}}{2 \pi L^3}}e^{-m_{ph} L}$"
 
 output = "png"
 renlist = ("rentails", "renloc")
@@ -82,31 +84,40 @@ def plotvsL(Llist):
     # print(",".join(map(str,list(MassInf))))
 
     # Lambda
-    plt.figure(1)
+    fig = plt.figure(1)
+    ax = fig.add_subplot(111)
     # Plot non-extrapolated data
     for ren in renlist:
         plt.plot(xlist, Lambda[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
-    plt.scatter(xlist, LambdaInf, marker=marker, label=r"$E_T=\infty$")
+    ax.scatter(xlist, LambdaInf, marker=marker, label=r"$E_T=\infty$")
 
-    err = np.array([0.01]*len(Llist))
     popt, pcov = curve_fit(Lambdafun, xlist.ravel(), LambdaInf.ravel(),
             bounds=boundsLambda, method='dogbox')
-    print("Best fit values for Lambda fit:", popt)
     mph[1] = popt[1]
     mpherr[1] = np.sqrt(pcov[1,1])
     xdata = scipy.linspace(xmin, xmax, 100)
-    plt.plot(xdata, Lambdafun(xdata, *popt))
+    ax.plot(xdata, Lambdafun(xdata, *popt))
+    msg = [
+            r"$\Lambda = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0])),
+            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1])),
+            r"$C = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
+            ]
+    for i, m in enumerate(msg):
+        ax.text(0.8, 0.2-i*0.05, msg[i], horizontalalignment='center',
+            verticalalignment='center', fontsize=13, transform=ax.transAxes)
+
 
     # Mass
-    plt.figure(2)
+    fig = plt.figure(2)
+    ax = fig.add_subplot(111)
     # Plot non-extrapolated data
     for ren in renlist:
         plt.plot(xlist, Mass[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
-    plt.scatter(xlist, MassInf, marker=marker, label=r"$E_T=\infty$")
+    ax.scatter(xlist, MassInf, marker=marker, label=r"$E_T=\infty$")
 
     popt, pcov = curve_fit(Massfun, xlist.ravel(), MassInf.ravel(),
             bounds=boundsMass, method='dogbox')
@@ -114,7 +125,16 @@ def plotvsL(Llist):
     mph[-1] = popt[0]
     mpherr[-1] = np.sqrt(pcov[0,0])
     xdata = scipy.linspace(xmin, xmax, 100)
-    plt.plot(xdata, Massfun(xdata, *popt))
+    ax.plot(xdata, Massfun(xdata, *popt))
+    msg = [
+            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0])),
+            r"$B = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1])),
+            r"$C = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
+            ]
+    for i, m in enumerate(msg):
+        ax.text(0.8, 0.2-i*0.05, msg[i], horizontalalignment='center',
+            verticalalignment='center', fontsize=13, transform=ax.transAxes)
+
 
 
 argv = sys.argv
@@ -133,13 +153,12 @@ plt.rcParams.update(params)
 
 plotvsL(Llist)
 
-fname = "g={0:.1f}_alpha={1}.{2}".format(g, alpha, output)
+fname = "g={0:.1f}_alpha={1}.{2}".format(g, None, output)
 loc = "upper left"
 
 
 # VACUUM ENERGY DENSITY
-title = r"$g$={:.1f}, $\alpha$={}, $m_{{ph}}={}\pm{}$".format(g, alpha,
-        mph[1], mpherr[1])
+title = r"$g$={:.1f}, $\alpha$={}, f(x)={}".format(g, alpha,fvacStr)
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
@@ -151,8 +170,7 @@ plt.legend(loc=loc)
 plt.savefig("extrLambdavsL_"+fname)
 
 # MASS
-title = r"$g$={:.1f}, $\alpha$={}, $m_{{ph}}={}\pm{}$".format(g, alpha,
-        mph[-1], mpherr[-1])
+title = r"$g$={:.1f}, $\alpha$={}, f(x)={}".format(g, alpha,fmassStr)
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")

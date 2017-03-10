@@ -9,11 +9,11 @@ import numpy as np
 from sklearn.linear_model import Ridge
 
 
-ETmax = {5:32, 5.5:30, 6:28, 6.5:26, 7:25, 7.5:23, 8:23,
-        8.5:21, 9:21, 9.5:20, 10:20}
+ETmax = {5:32, 5.5:30, 6:28, 6.5:26.5, 7:25, 7.5:23.5, 8:23,
+        8.5:21.5, 9:21, 9.5:20, 10:20}
+ETmax[10] = 19.5
 ETmin = {5:15, 5.5:15, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
         8.5:10, 9:10, 9.5:10, 10:10}
-Erange = 10
 
 def stdWeights(ET):
     return 1
@@ -25,6 +25,8 @@ errcoeff = 3.
 def stdFeatureVec(ET):
     return [10/ET**2, 1/ET**3, log(ET**(1/ET**2))]
 
+def stdFeatureVec(ET):
+    return [1/ET**3, 1/ET**4]
 
 class Extrapolator():
 
