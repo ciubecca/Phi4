@@ -11,27 +11,26 @@ from sys import exit
 import numpy as np
 from numpy import concatenate as concat
 from extrapolate import Extrapolator, ETmax
+from scipy.special import kn
 
 Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
-
-
-mph = {k:None for k in (-1,1)}
-mpherr = {k: None for k in (-1,1)}
 
 marker = 'o'
 markersize = 2.5
 
+plt.style.use('ggplot')
 plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 
-def Massfun(L, a, b, c):
-    return a + (b/L)*exp(-c*a*sqrt(3/2)*L)
-boundsMass = ([0,-np.inf,0],[1,np.inf,np.inf])
-fmassStr = r"$m_{ph} + B e^{-C \, m_{ph} \,\sqrt{\frac{3}{2}}\, L}$"
+def Massfun(L, a, b):
+    return a - (3*b/(16*pi**2*L))*exp(-a*L)
+boundsMass = ([0,-np.inf],[1,np.inf])
+fmassStr = r"$m_{ph} - B \frac{3}{16 \pi^2 L} e^{- m_{ph} L}$"
 
-def Lambdafun(L, a, b, c):
-    return a - c*sqrt(b/(2*pi*L**3))*exp(-b*L)
-boundsLambda = ([-np.inf,0,0],[0,np.inf,np.inf])
-fvacStr = r"$\Lambda - C \sqrt{\frac{m_{ph}}{2 \pi L^3}}e^{-m_{ph} L}$"
+def Lambdafun(L, a, b):
+    return a - b/(pi*L)*kn(1, b*L)
+boundsLambda = ([-np.inf,0],[0,np.inf])
+p0Lambda = [-.0765, 0.6]
+fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 
 output = "png"
 renlist = ("rentails", "renloc")
@@ -51,8 +50,6 @@ db = database.Database()
 
 def plotvsL(Llist):
     xlist = np.array(Llist)
-    global mph
-    global mpherr
 
     Lambda = {ren: np.zeros(len(Llist)) for ren in renlist}
     LambdaInf = np.zeros(len(Llist))
@@ -79,9 +76,6 @@ def plotvsL(Llist):
     ymax[-1] = max(max(max(Mass[ren]) for ren in renlist), max(MassInf))
     ymin[-1] = min(min(min(Mass[ren]) for ren in renlist), min(MassInf))
 
-    # print(",".join(map(str,list(Llist))))
-    # print(",".join(map(str,list(LambdaInf))))
-    # print(",".join(map(str,list(MassInf))))
 
     # Lambda
     fig = plt.figure(1)
@@ -94,15 +88,12 @@ def plotvsL(Llist):
     ax.scatter(xlist, LambdaInf, marker=marker, label=r"$E_T=\infty$")
 
     popt, pcov = curve_fit(Lambdafun, xlist.ravel(), LambdaInf.ravel(),
-            bounds=boundsLambda, method='dogbox')
-    mph[1] = popt[1]
-    mpherr[1] = np.sqrt(pcov[1,1])
+            bounds=boundsLambda, method='dogbox', p0=p0Lambda)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Lambdafun(xdata, *popt))
     msg = [
             r"$\Lambda = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0])),
-            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1])),
-            r"$C = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
+            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1]))
             ]
     for i, m in enumerate(msg):
         ax.text(0.8, 0.2-i*0.05, msg[i], horizontalalignment='center',
@@ -121,15 +112,11 @@ def plotvsL(Llist):
 
     popt, pcov = curve_fit(Massfun, xlist.ravel(), MassInf.ravel(),
             bounds=boundsMass, method='dogbox')
-    print("Best fit values for Mass fit:", popt)
-    mph[-1] = popt[0]
-    mpherr[-1] = np.sqrt(pcov[0,0])
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Massfun(xdata, *popt))
     msg = [
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0])),
-            r"$B = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1])),
-            r"$C = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
+            r"$B = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1]))
             ]
     for i, m in enumerate(msg):
         ax.text(0.8, 0.2-i*0.05, msg[i], horizontalalignment='center',
@@ -153,12 +140,12 @@ plt.rcParams.update(params)
 
 plotvsL(Llist)
 
-fname = "g={0:.1f}_alpha={1}.{2}".format(g, None, output)
+fname = "g={0:.1f}.{1}".format(g, output)
 loc = "upper left"
 
 
 # VACUUM ENERGY DENSITY
-title = r"$g$={:.1f}, $\alpha$={}, f(x)={}".format(g, alpha,fvacStr)
+title = r"$g$={:.1f}, \quad $\alpha$={}, \quad f(x)={}".format(g, alpha,fvacStr)
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
@@ -170,7 +157,7 @@ plt.legend(loc=loc)
 plt.savefig("extrLambdavsL_"+fname)
 
 # MASS
-title = r"$g$={:.1f}, $\alpha$={}, f(x)={}".format(g, alpha,fmassStr)
+title = r"$g$={:.1f}, \quad $\alpha$={}, \quad f(x)={}".format(g, alpha,fmassStr)
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
