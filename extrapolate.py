@@ -55,5 +55,8 @@ class Extrapolator():
         x = np.array(x)
         return self.model.predict(np.array(self.featureVec(x)).transpose())
 
-    def asymptoticValue(self):
+    def asymValue(self):
         return self.model.intercept_
+
+    def asymErr(self):
+        return max(abs(self.predict(self.ETlist)-self.spectrum)[-10:])

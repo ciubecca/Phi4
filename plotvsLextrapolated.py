@@ -53,8 +53,10 @@ def plotvsL(Llist):
 
     Lambda = {ren: np.zeros(len(Llist)) for ren in renlist}
     LambdaInf = np.zeros(len(Llist))
+    LambdaErr = np.zeros(len(Llist))
     Mass = {ren: np.zeros(len(Llist)) for ren in renlist}
     MassInf = np.zeros(len(Llist))
+    MassErr = np.zeros(len(Llist))
 
     for i,L in enumerate(Llist):
         for ren in renlist:
@@ -68,8 +70,10 @@ def plotvsL(Llist):
         e[-1] = Extrapolator(db, -1, L, g)
         e[1].train(alpha)
         e[-1].train(alpha)
-        LambdaInf[i] = e[1].asymptoticValue()/L
-        MassInf[i] = e[-1].asymptoticValue()-e[1].asymptoticValue()
+        LambdaInf[i] = e[1].asymValue()/L
+        LambdaErr[i] = e[1].asymErr()/L
+        MassInf[i] = e[-1].asymValue()-e[1].asymValue()
+        MassErr[i] = max(e[-1].asymErr(),e[1].asymErr())
 
     ymax[1] = max(max(max(Lambda[ren]) for ren in renlist), max(LambdaInf))
     ymin[1] = min(min(min(Lambda[ren]) for ren in renlist), min(LambdaInf))
@@ -85,7 +89,8 @@ def plotvsL(Llist):
         plt.plot(xlist, Lambda[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
-    ax.scatter(xlist, LambdaInf, marker=marker, label=r"$E_T=\infty$")
+    # ax.scatter(xlist, LambdaInf, marker=marker, label=r"$E_T=\infty$")
+    ax.errorbar(xlist, LambdaInf, LambdaErr, marker=marker, label=r"$E_T=\infty$")
 
     popt, pcov = curve_fit(Lambdafun, xlist.ravel(), LambdaInf.ravel(),
             bounds=boundsLambda, method='dogbox', p0=p0Lambda)
@@ -108,7 +113,8 @@ def plotvsL(Llist):
         plt.plot(xlist, Mass[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
-    ax.scatter(xlist, MassInf, marker=marker, label=r"$E_T=\infty$")
+    # ax.scatter(xlist, MassInf, marker=marker, label=r"$E_T=\infty$")
+    ax.errorbar(xlist, MassInf, MassErr, marker=marker, label=r"$E_T=\infty$")
 
     popt, pcov = curve_fit(Massfun, xlist.ravel(), MassInf.ravel(),
             bounds=boundsMass, method='dogbox')
