@@ -87,3 +87,10 @@ class Database():
             exit(-1)
 
         return ret
+
+    # Convert to json format
+    def convert(self, newdbname):
+        newdb = Database(newdbname)
+        for e in self.table:
+            e["spec"] = json.dumps(sorted(scipy.fromstring(e["spec"])))
+            newdb.table.insert(e)
