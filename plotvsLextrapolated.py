@@ -28,9 +28,16 @@ fmassStr = r"$m_{ph} - B \frac{3}{16 \pi^2 L} e^{- m_{ph} L}$"
 
 def Lambdafun(L, a, b):
     return a - b/(pi*L)*kn(1, b*L)
-boundsLambda = ([-np.inf,0],[0,np.inf])
-p0Lambda = [-.0765, 0.6]
+boundsLambda = ([-np.inf,0],[0,1])
+p0Lambda = [-.007, 0.97]
 fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
+
+# def Lambdafun(L, a, b, c):
+    # return a - c*b/(pi*L)*kn(1, b*L)
+# boundsLambda = ([-np.inf,0,0],[0,np.inf,np.inf])
+# p0Lambda = [-.0765, 0.6, 1.]
+# fvacStr = r"$\Lambda - C \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
+
 
 output = "png"
 renlist = ("rentails", "renloc")
