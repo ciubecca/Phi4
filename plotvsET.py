@@ -94,6 +94,9 @@ def plotvsET(ETlist):
         for ren in renlist:
             masses[k][ren] = array(masses[k][ren])
 
+
+    # VACUUM
+
     # SPECTRUM
     for k in klist:
         plt.figure(fignum(k))
@@ -107,7 +110,8 @@ def plotvsET(ETlist):
                     label = None
                 if ren == "rentails":
                     print("k=",k, " ", ",".join(str(x) for x in data))
-                plt.plot(xlist, data, label=label, marker=marker, markersize=markersize)
+                plt.plot(xlist, data, label=label, marker=marker,
+                        markersize=markersize)
             plt.gca().set_prop_cycle(None)
 
     # MASS
