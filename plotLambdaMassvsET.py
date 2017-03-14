@@ -9,7 +9,7 @@ import database
 from sys import exit
 import numpy as np
 
-output = "png"
+output = "pdf"
 renlist = ("raw", "rentails", "renloc")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -58,12 +58,21 @@ def plotvsET(ETlist):
             for ren in renlist:
                 data = spectrum[k][ren][i]-spectrum[1][ren][0]
                 if i==n0:
-                    label="ren="+ren
+                    label="k={}, ren={}".format(k,ren)
                 else:
                     label = None
                 plt.plot(xlist, data, label=label, color=color[k])
 
             plt.gca().set_prop_cycle(None)
+
+    # MASS
+    plt.figure(3)
+    for ren in renlist:
+        data = spectrum[-1][ren][0]-spectrum[1][ren][0]
+        label="ren={}".format(ren)
+        plt.plot(xlist, data, label=label, color="k")
+
+    plt.gca().set_prop_cycle(None)
 
 
 argv = sys.argv
@@ -88,7 +97,6 @@ plotvsET(ETlist)
 
 title = r"$g$={0:.1f}, $L$={1:.1f}".format(g,L)
 fname = "g={0:.1f}_L={1:.1f}.{2}".format(g,L,output)
-loc = "upper right"
 
 
 # VACUUM
@@ -96,7 +104,7 @@ plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{T}$")
 plt.ylabel(r"$\mathcal{E}_0$")
-plt.legend(loc=loc)
+plt.legend(loc=1)
 plt.savefig("E0vsET_"+fname)
 
 
@@ -105,5 +113,13 @@ plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{T}$")
 plt.ylabel(r"$\mathcal{E}_I - \mathcal{E}_0$")
-plt.legend(loc=loc)
+plt.legend(loc=2)
 plt.savefig("specvsET_"+fname)
+
+# MASS
+plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_{T}$")
+plt.ylabel(r"$\mathcal{E}_1 - \mathcal{E}_0$")
+plt.legend(loc=2)
+plt.savefig("massvsET_"+fname)
