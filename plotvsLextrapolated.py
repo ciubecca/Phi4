@@ -18,10 +18,6 @@ Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 output = "pdf"
 renlist = ("rentails", "renloc")
 
-def f(x,L):
-    return x**2/np.sqrt(L**2+x**2)*1/(np.e**np.sqrt(L**2+x**2)-1)
-def Lambda0(L):
-    return -1/(pi*L**2)*scipy.integrate.quad(lambda x: f(x,L), 0, np.inf)[0]
 
 marker = 'o'
 markersize = 2.5
@@ -38,7 +34,7 @@ def Lambdafun(L, a, b):
     return a - b/(pi*L)*kn(1, b*L)
 boundsLambda = ([-np.inf,0],[0,1])
 p0Lambda = [-.182, 0.5]
-p0Lambda = [-.007, 0.9]
+p0Lambda = [-.007, 0.93]
 fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 
 
@@ -69,7 +65,7 @@ def plotvsL(Llist):
         for ren in renlist:
             E0 = db.getEigs(1, ren, g, L, ETmax[L])[0]
             E1 = db.getEigs(-1, ren, g, L, ETmax[L])[0]
-            Lambda[ren][i] = E0/L + Lambda0(L)
+            Lambda[ren][i] = E0/L
             Mass[ren][i] = (E1-E0)
 
         e = {}
@@ -77,7 +73,7 @@ def plotvsL(Llist):
         e[-1] = Extrapolator(db, -1, L, g)
         e[1].train(alpha)
         e[-1].train(alpha)
-        LambdaInf[i] = e[1].asymValue()/L + Lambda0(L)
+        LambdaInf[i] = e[1].asymValue()/L
         LambdaErr[i] = e[1].asymErr()/L
         MassInf[i] = e[-1].asymValue()-e[1].asymValue()
         MassErr[i] = max(e[-1].asymErr(),e[1].asymErr())

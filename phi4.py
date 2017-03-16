@@ -478,7 +478,7 @@ class Phi4():
 
 
     def computeEigval(self, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
-            eps=None, neigs=10, subbasisl=None, loc3=True, loc3mix=True,
+            eps=None, neigs=6, subbasisl=None, loc3=True, loc3mix=True,
             nonloc3mix=True, memdbg=False):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         ET: ET
