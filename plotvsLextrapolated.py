@@ -15,6 +15,9 @@ from scipy.special import kn
 
 Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 
+output = "pdf"
+renlist = ("rentails", "renloc")
+
 def f(x,L):
     return x**2/np.sqrt(L**2+x**2)*1/(np.e**np.sqrt(L**2+x**2)-1)
 def Lambda0(L):
@@ -38,15 +41,6 @@ p0Lambda = [-.182, 0.5]
 p0Lambda = [-.007, 0.9]
 fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 
-# def Lambdafun(L, a, b, c):
-    # return a - c*b/(pi*L)*kn(1, b*L)
-# boundsLambda = ([-np.inf,0,0],[0,np.inf,np.inf])
-# p0Lambda = [-.0765, 0.6, 1.]
-# fvacStr = r"$\Lambda - C \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
-
-
-output = "pdf"
-renlist = ("rentails", "renloc")
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)

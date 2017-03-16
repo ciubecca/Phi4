@@ -73,6 +73,7 @@ class Database():
 
         if ren=="rentails":
             exactQuery["maxntails"] = None
+            exactQuery["finiteL"] = True
             exactQuery["tailsComputedAtET"] = ET
             approxQuery["EL"] = EL
             approxQuery["ELp"] = ELp

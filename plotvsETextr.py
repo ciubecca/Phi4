@@ -17,7 +17,7 @@ power = 3
 
 Llist = [6, 6.5, 7, 8, 9, 10]
 
-output = "png"
+output = "pdf"
 renlist = ("raw", "rentails", "renloc")
 
 plt.style.use('ggplot')

@@ -9,7 +9,7 @@ def main(argv):
     args = " <keyword:value> ..."
 
     query = {}
-    queryStr = {}
+    queryStr = {"finiteL":True}
 
     for arg in argv[1:]:
         key, value = arg.split(':')
