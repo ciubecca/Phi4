@@ -62,32 +62,30 @@ def main():
     if saveondb:
         db = database.Database()
 
-    a = phi4.Phi4(m, L)
+    a = phi4.Phi4(m, L, k)
     a.buildBasis(Emax=ET)
 
     # Compute the potential matrices in the low-energy space below ET
-    a.computePotential(k)
+    a.computePotential()
 
-    print("k=", k)
-    print("Full basis size: ", a.basis[k].size)
+    print("Full basis size: ", a.basis.size)
 
     a.setglist(glist=glist)
 
 # Compute the raw eigenvalues for cutoff ET
-    a.computeEigval(k, ET, "raw", neigs=neigs)
-    epsraw = {g: a.eigenvalues[g]["raw"][k][0] for g in glist}
+    a.computeEigval(ET, "raw", neigs=neigs)
+    epsraw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
     print("Raw vacuum:", epsraw)
 
-    # return
 
     # Always consider maximal set of tails
-    basisl = a.basis[k]
+    basisl = a.basis
     print("Total number of tails:", basisl.size)
 
     if memdbg:
         print("memory taken before computeLEVs", memory_usage())
 
-    a.computeLEVs(k, basisl, loc3=loc3)
+    a.computeLEVs(basisl, loc3=loc3)
 
     if memdbg:
         print("memory taken before genHEBasis", memory_usage())
@@ -95,8 +93,8 @@ def main():
     print("Generating high energy basis...")
     # Generate the high-energy "selected" basis by passing a set of tails
     # and a maximum cutoff EL
-    a.genHEBasis(k, EL=EL, ELp=ELp, ELpp=ELpp)
-    print("Size of HE basis:", a.basisH[k].size)
+    a.genHEBasis(EL=EL, ELp=ELp, ELpp=ELpp)
+    print("Size of HE basis:", a.basisH.size)
 
 
     if memdbg:
@@ -106,18 +104,18 @@ def main():
 # Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
 # Later we will be varying EL, therefore taking submatrices of these.
 # Computing VHH is expensive
-    a.computeHEVs(k)
+    a.computeHEVs()
 
-    a.computeEigval(k, ET, "renloc", eps=epsraw, neigs=neigs)
-    eps = {g: a.eigenvalues[g]["renloc"][k][0] for g in glist}
+    a.computeEigval(ET, "renloc", eps=epsraw, neigs=neigs)
+    eps = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
     print("Local ren vacuum:", eps)
 
     if loc3:
         a.calcVV3(ELp, eps, test=test)
 
-    a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
+    a.computeEigval(ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
             neigs=neigs, memdbg=memdbg, loc3=loc3)
-    print("Non-Local ren vacuum:", {g: a.eigenvalues[g]["rentails"][k][0]
+    print("Non-Local ren vacuum:", {g: a.eigenvalues[g]["rentails"][0]
         for g in glist})
 
     print("Number of tails:", a.ntails)
@@ -125,18 +123,18 @@ def main():
     if saveondb:
         for g in glist:
             datadict = dict(k=k, ET=ET, L=L, ren="raw", g=g, neigs=neigs,
-                    basisSize=a.compSize)
-            db.insert(datadict=datadict, spec=a.eigenvalues[g]["raw"][k])
+                    basisSize=a.compSize, finiteL=True)
+            db.insert(datadict=datadict, spec=a.eigenvalues[g]["raw"])
 
             datadict = dict(k=k, ET=ET, L=L, ren="renloc", g=g, eps=epsraw[g],
-                    neigs=neigs, basisSize=a.compSize)
-            db.insert(datadict=datadict, spec=a.eigenvalues[g]["renloc"][k])
+                    neigs=neigs, basisSize=a.compSize, finiteL=True)
+            db.insert(datadict=datadict, spec=a.eigenvalues[g]["renloc"])
 
             datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp,
                     ELpp=ELpp, ntails=a.ntails, eps=eps[g], neigs=neigs,
-                    basisSize=a.compSize, tailsComputedAtET=ET, maxntails=None)
-            db.insert(datadict=datadict, spec=a.eigenvalues[g]["rentails"][k])
-
+                    basisSize=a.compSize, tailsComputedAtET=ET, maxntails=None,
+                    finiteL=True)
+            db.insert(datadict=datadict, spec=a.eigenvalues[g]["rentails"])
 
 
 main()

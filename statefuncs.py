@@ -109,7 +109,6 @@ def isSorted(x, key):
 
 class Basis():
     """ Class used to store and compute a basis of states"""
-    # @profile
     def __init__(self, k, stateset, helper, repr1=True, repr1Emax=None):
         """ Standard constructor
         k: parity quantum number
@@ -162,7 +161,7 @@ class Basis():
         return scipy.sparse.spdiags(v, 0, self.size, self.size).tocsc()
 
     @classmethod
-    def fromScratch(self, m, L, Emax, occmax=None):
+    def fromScratch(self, m, L, k, Emax):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch
         m: mass
         L: size of the cylinder
@@ -174,19 +173,13 @@ class Basis():
         self.Emax = Emax
         m = helper.m
 
-        # This can be "None"
-        self.occmax = occmax
-        if occmax==None:
-            # This is used in the basis construction
-            self._occmax = int(floor(Emax/m))
-        else:
-            self._occmax = occmax
+        self._occmax = int(floor(Emax/m))
 
         # self.nmax is the actual maximum occupied wavenumber of the states
         self.nmax = helper.nmax
 
         bases = self.buildBasis(self)
-        return {k:self(k,bases[k],helper) for k in (-1,1)}
+        return self(k,bases[k],helper)
 
     def MBsize(self):
         ret = 0
@@ -267,6 +260,7 @@ class Basis():
                             state = reverse(LMstate)+RMstate
                         else:
                             state = reverse(LMstate)+[(0,N0)]+RMstate
+
                         statelist[(-1)**(N0+OLM+ORM)].append(state)
 
         return statelist

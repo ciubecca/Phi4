@@ -29,7 +29,7 @@ def sym(q,p,k):
 
 class renVV2():
 
-    def __init__(self, g4, EL, eps, m=1, g2=0):
+    def __init__(self, g4, g2, EL, eps, m=1):
 
         self.VV2 = {}
         self.EL = EL

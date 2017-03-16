@@ -10,6 +10,7 @@ from numpy import testing as npt
 
 class testPhi4(unittest.TestCase):
     def __init__(self, L, g, ET, eigs):
+        self.decimal = 4
         self.m = 1
         self.neigs = 6
         self.k = 1
@@ -34,10 +35,10 @@ class testPhi4(unittest.TestCase):
         ELp = self.ELp
         ELpp = self.ELpp
 
-        self.a = phi4.Phi4(self.m, self.L)
+        self.a = phi4.Phi4(self.m, self.L, k)
         self.a.buildBasis(Emax=self.ET)
 
-        self.a.computePotential(k)
+        self.a.computePotential()
 
         self.a.setglist(glist=[self.g])
 
@@ -46,20 +47,20 @@ class testPhi4(unittest.TestCase):
         a = self.a
         eigs = self.eigs
 
-        a.computeEigval(self.k, self.ET, "raw", neigs=self.neigs)
-        self.eps = {self.g: a.eigenvalues[self.g]["raw"][self.k][0]}
+        a.computeEigval(self.ET, "raw", neigs=self.neigs)
+        self.eps = {self.g: a.eigenvalues[self.g]["raw"][0]}
 
-        npt.assert_almost_equal(self.eps[self.g],eigs[0])
+        npt.assert_almost_equal(self.eps[self.g],eigs[0], decimal=self.decimal)
 
 
     def testLoc(self):
         eigs = self.eigs
         a = self.a
         k = self.k
-        self.a.computeEigval(self.k, self.ET, "renloc", eps=self.eps, neigs=self.neigs)
-        self.eps = {self.g: a.eigenvalues[self.g]["renloc"][k][0]}
+        self.a.computeEigval(self.ET, "renloc", eps=self.eps, neigs=self.neigs)
+        self.eps = {self.g: a.eigenvalues[self.g]["renloc"][0]}
 
-        npt.assert_almost_equal(self.eps[self.g], eigs[1])
+        npt.assert_almost_equal(self.eps[self.g], eigs[1], decimal=self.decimal)
 
 
     def testTails(self):
@@ -72,19 +73,19 @@ class testPhi4(unittest.TestCase):
         ELpp = self.ELpp
         eps = self.eps
 
-        basisl = a.basis[k]
+        basisl = a.basis
 
-        a.computeLEVs(k, basisl)
-        a.genHEBasis(k, EL=EL, ELp=ELp, ELpp=ELpp)
-        a.computeHEVs(k)
+        a.computeLEVs(basisl)
+        a.genHEBasis(EL=EL, ELp=ELp, ELpp=ELpp)
+        a.computeHEVs()
 
         a.calcVV3(ELp, eps, test=True)
 
-        a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
+        a.computeEigval(ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
                 neigs=self.neigs)
-        e = a.eigenvalues[self.g]["rentails"][k][0]
+        e = a.eigenvalues[self.g]["rentails"][0]
 
-        npt.assert_almost_equal(e,eigs[2], decimal=8)
+        npt.assert_almost_equal(e,eigs[2], decimal=self.decimal)
 
     def testAll(self):
         self.testRaw()
@@ -95,6 +96,7 @@ Llist = [5, 8, 10.5, 10, 10]
 ETlist = [5, 8, 10.5, 14, 14]
 glist = [0.5, 1, 1.5, 2, 2]
 
+# XXX Change these to values with finite volume corrections
 eigslist = [
 [-0.00268222083952, -0.0609692033023,-0.0117915038649],
 [-0.11259005032, -0.348246045516, -0.127496055308],
