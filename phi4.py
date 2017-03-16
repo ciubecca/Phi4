@@ -471,8 +471,10 @@ class Phi4():
         self.g2list = {g: g2(g, L) for g in glist}
         self.g0list = {g: g0(g, L) for g in glist}
 
-        self.eigenvalues = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
-        self.eigenvectors = {g: {"raw":{}, "renloc":{}, "rentails":{}} for g in glist}
+        self.eigenvalues = {g: {"raw":None, "renloc":None, "rentails":None}
+                for g in glist}
+        self.eigenvectors = {g: {"raw":None, "renloc":None, "rentails":None}
+                for g in glist}
 
 
     def computeEigval(self, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
