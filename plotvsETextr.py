@@ -58,7 +58,7 @@ def plotvsET(Llist, axes):
             xdata = scipy.linspace(0, min(ETlist)**-power, 100)
             ydata[k] = e.predict(xdata**(-1/power))
 
-            yinf[k] = e.asymptoticValue()
+            yinf[k] = e.asymValue()
 
 
         label = "L = {}".format(L)
