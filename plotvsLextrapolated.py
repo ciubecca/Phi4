@@ -18,6 +18,7 @@ Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 output = "pdf"
 renlist = ("rentails", "renloc")
 
+method='dogbox'
 
 marker = 'o'
 markersize = 2.5
@@ -78,10 +79,10 @@ def plotvsL(Llist):
         MassInf[i] = e[-1].asymValue()-e[1].asymValue()
         MassErr[i] = max(e[-1].asymErr(),e[1].asymErr())
 
-    ymax[1] = max(max(max(Lambda[ren]) for ren in renlist), max(LambdaInf))
-    ymin[1] = min(min(min(Lambda[ren]) for ren in renlist), min(LambdaInf))
-    ymax[-1] = max(max(max(Mass[ren]) for ren in renlist), max(MassInf))
-    ymin[-1] = min(min(min(Mass[ren]) for ren in renlist), min(MassInf))
+    ymax[1] = max(max(max(Lambda[ren]) for ren in renlist), max(LambdaInf+LambdaErr))
+    ymin[1] = min(min(min(Lambda[ren]) for ren in renlist), min(LambdaInf-LambdaErr))
+    ymax[-1] = max(max(max(Mass[ren]) for ren in renlist), max(MassInf+MassErr))
+    ymin[-1] = min(min(min(Mass[ren]) for ren in renlist), min(MassInf-MassErr))
 
 
     # Lambda
@@ -95,8 +96,9 @@ def plotvsL(Llist):
     # ax.scatter(xlist, LambdaInf, marker=marker, label=r"$E_T=\infty$")
     ax.errorbar(xlist, LambdaInf, LambdaErr, marker=marker, label=r"$E_T=\infty$")
 
+    sigma = LambdaErr
     popt, pcov = curve_fit(Lambdafun, xlist.ravel(), LambdaInf.ravel(),
-            bounds=boundsLambda, method='dogbox', p0=p0Lambda)
+            bounds=boundsLambda, method=method, p0=p0Lambda, sigma=sigma)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Lambdafun(xdata, *popt))
     msg = [
@@ -119,8 +121,9 @@ def plotvsL(Llist):
     # ax.scatter(xlist, MassInf, marker=marker, label=r"$E_T=\infty$")
     ax.errorbar(xlist, MassInf, MassErr, marker=marker, label=r"$E_T=\infty$")
 
+    sigma = MassErr
     popt, pcov = curve_fit(Massfun, xlist.ravel(), MassInf.ravel(),
-            bounds=boundsMass, method='dogbox')
+            bounds=boundsMass, method=method, sigma=MassErr)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Massfun(xdata, *popt))
     msg = [
