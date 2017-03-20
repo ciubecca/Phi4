@@ -264,7 +264,7 @@ class Phi4():
 
             for g in glist:
                 # Dictionary of local renormalization coefficients for the g^2 term
-                VV2 = renorm.renVV2(g4=g, g2=self.g2list[g], EL=ET, eps=eps[g]).VV2
+                VV2 = renorm.renVV2(g4=g, g2=self.g[2][g], EL=ET, eps=eps[g]).VV2
 
                 ret[g] = VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 
@@ -286,7 +286,7 @@ class Phi4():
         DH2ll = {}
 
         for g in glist:
-            g2 = self.g2list[g]
+            g2 = self.g[2][g]
             g4 = g
 
             VV2 = renorm.renVV2(g4=g, g2=g2, EL=EL, eps=eps[g]).VV2
@@ -327,8 +327,8 @@ class Phi4():
         MlH = {}
         for g in glist:
 # XXX Check they are in csc format
-            MHl[g] = (self.g2list[g]*VHl[2] + g*VHl[4])
-            MlH[g] = MHl[g].transpose()
+            MHl[g] = (self.g[2][g]*VHl[2] + g*VHl[4])
+            MlH[g] = MHl[g].transpose().tocsc()
 
 
         basis = self.basisH
@@ -359,7 +359,6 @@ class Phi4():
             elif n==2:
                 Vlist = V2OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
 
-
             ##############################
             # Generate the Vhh matrix
             ##############################
@@ -373,16 +372,11 @@ class Phi4():
                         basis.size,basis.size).tocsc()
 
                 for g in glist:
-                    if n==2:
-                        gc = self.g2list[g]
-                    else:
-                        gc = g
-
                     DH3llPart = MHl[g]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
-                            *MlH[g]*gc
+                            *MlH[g]*self.g[n][g]
                     DH3llPart += DH3llPart.transpose()
                     DH3llPart -= MHl[g]*propagatorh[g]*VhhDiagPart*propagatorh[g]\
-                            *MlH[g]*gc
+                            *MlH[g]*self.g[n][g]
                     DH3ll[g] += DH3llPart
 
                 del VhhHalfPart
@@ -414,7 +408,6 @@ class Phi4():
                 elif n==2:
                     VHhlist = V2OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
 
-
                 for i, idxList in enumerate(idxLists):
                     print("doing chunk", i, "for VhH")
 
@@ -422,13 +415,8 @@ class Phi4():
                             sumTranspose=False,idxList=idxList)*self.L
 
                     for g in glist:
-                        if n==2:
-                            gc = self.g2list[g]
-                        else:
-                            gc = g
-
                         DH3llPart = MHl[g]*propagatorh[g]*VHhPart*propagatorH[g]\
-                                *MlH[g]*gc
+                                *MlH[g]*self.g[n][g]
                         DH3llPart += DH3llPart.transpose()
                         DH3ll[g] += DH3llPart
 
@@ -445,7 +433,7 @@ class Phi4():
         if loc3mix:
             for g in glist:
 #XXX Set g2 not equal to 0
-                VV2 = renorm.renVV2(g4=g, g2=self.g2list[g], EL=ELpp, eps=eps[g]).VV2
+                VV2 = renorm.renVV2(g4=g, g2=self.g[2][g], EL=ELpp, eps=eps[g]).VV2
 
                 DH3llPart = VHl[2]*VV2[2]*propagatorh[g]*MlH[g]
                 DH3llPart += VHl[4]*VV2[4]*propagatorh[g]*MlH[g]
@@ -504,10 +492,10 @@ class Phi4():
         def g0(g, L):
             return E0(L)/L + 3*z(L)**2*g
 
-        self.g2list = {g: g2(g, L) for g in glist}
-        self.g0list = {g: g0(g, L) for g in glist}
-
-        print(self.g0list, self.g2list)
+        self.g = {}
+        self.g[0] = {g : g0(g,L) for g in glist}
+        self.g[2] = {g : g2(g,L) for g in glist}
+        self.g[4] = {g : g for g in glist}
 
         self.eigenvalues = {g: {"raw":None, "renloc":None, "rentails":None}
                 for g in glist}
@@ -530,8 +518,8 @@ class Phi4():
 
         # Subset of low energy states
         subOpL = SubmatrixOperator.fromErange(self.basis,(0,ET))
-        M = {g: self.h0 + g*self.V[4] + self.g2list[g]*self.V[2]
-                + self.g0list[g]*self.V[0] for g in glist}
+        M = {g: self.h0 + g*self.V[4] + self.g[2][g]*self.V[2]
+                + self.g[0][g]*self.V[0] for g in glist}
         Hraw = {g: subOpL.sub(M[g]) for g in glist}
         self.compSize = Hraw[glist[0]].shape[0]
 
