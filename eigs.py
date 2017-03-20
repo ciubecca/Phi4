@@ -29,11 +29,11 @@ m = 1
 neigs = 6
 
 # Ratio between EL and ET
-ratioELET = 1.6
+ratioELET = 3
 # Ratio between ELp and ET
-ratioELpET = 1.6
+ratioELpET = 2
 # Ratio between ELpp and ELp
-ratioELppELp = 18/16
+ratioELppELp = 1.5
 
 
 argv = sys.argv
