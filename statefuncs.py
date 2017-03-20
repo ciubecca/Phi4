@@ -158,6 +158,9 @@ class Basis():
     def propagator(self, eps, Emin, Emax):
         """ Return the propagator for states between Emin and Emax """
         v = [1/(eps-e) if Emin<e<=Emax else 0 for e in self.energyList]
+        # print([e for e in self.energyList  if Emin<e<=Emax ][0])
+        # print(eps)
+        # print([1/(eps-e) for e in self.energyList  if Emin<e<=Emax ][0])
         return scipy.sparse.spdiags(v, 0, self.size, self.size).tocsc()
 
     @classmethod

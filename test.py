@@ -14,7 +14,7 @@ if memdbg:
 test = False
 if test:
     warnings.warn("Monte Carlo is OFF")
-loc3 = True
+loc3 = False
 if not loc3:
     warnings.warn("Not including local correction to DH3")
 
@@ -75,6 +75,10 @@ def main():
     epsraw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
     print("Raw vacuum:", epsraw)
 
+    a.computeEigval(ET, "renloc", eps=epsraw, neigs=neigs)
+    eps = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
+    print("Local ren vacuum:", eps)
+
 
     # Always consider maximal set of tails
     basisl = a.basis
@@ -94,7 +98,6 @@ def main():
     a.genHEBasis(EL=EL, ELp=ELp, ELpp=ELpp)
     print("Size of HE basis:", a.basisH.size)
 
-
     if memdbg:
         print("memory taken before computeHEVs", memory_usage())
 
@@ -104,15 +107,15 @@ def main():
 # Computing VHH is expensive
     a.computeHEVs()
 
-    a.computeEigval(ET, "renloc", eps=epsraw, neigs=neigs)
-    eps = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
-    print("Local ren vacuum:", eps)
-
     if loc3:
         a.calcVV3(ELp, eps, test=test)
 
+    nonloc3mix = True
+    loc3mix = True
+    loc2 = True
     a.computeEigval(ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-            neigs=neigs, memdbg=memdbg, loc3=loc3)
+            neigs=neigs, memdbg=memdbg, loc3=loc3, nonloc3mix=nonloc3mix,
+            loc3mix=loc3mix, loc2=loc2)
     print("Non-Local ren vacuum:", {g: a.eigenvalues[g]["rentails"][0]
         for g in glist})
 

@@ -253,6 +253,42 @@ def V2OpsHalf(basis):
     return V20, V11
 
 
+def V2OpsSelectedHalf(basis, Emax, idxList=None):
+    """ Selected set of oscillators of half of the V4 operator between selected states
+    basis: basis which is acted upon
+    Emin: minimum energy of the states to be generated
+    Emax: maximal energy of states to be generated
+    idxList: subset of indices of the basis which is acted upon
+    """
+
+    helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
+    nmax = helper.nmax
+    oscEnergy = helper.oscEnergy
+
+    if idxList == None:
+        idxList = range(basis.size)
+
+    opsList = []
+
+    for nd in (0,1):
+        nc = 2-nd
+
+        dlists = gendlistsfromBasis(basis, idxList, nmax, nd, 2)
+        oscList = []
+
+        for dlist in dlists:
+            clists = [clist for clist in createClistsV2(nmax, dlist, nc) if
+                    oscEnergy(clist) <= Emax+tol]
+            if nd==1:
+                clists = [clist for clist in clists if
+                    abs(dlist[0])<=abs(clist[0]) ]
+
+            oscList.append((dlist, clists))
+
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
 
 
 def V4OpsSelectedHalf(basis, Emax, idxList=None):
@@ -293,7 +329,7 @@ def V4OpsSelectedHalf(basis, Emax, idxList=None):
     return opsList
 
 
-def V2OpsSelectedFull(basis, Emax):
+def V2OpsSelectedFull(basis, Emax, idxList=None):
     """ Selected set of oscillators between some selected low-energy states
     and states with energy <= Emax
     """
@@ -302,12 +338,15 @@ def V2OpsSelectedFull(basis, Emax):
     nmax = helper.nmax
     oscEnergy = helper.oscEnergy
 
+    if idxList == None:
+        idxList = range(basis.size)
+
     opsList = []
 
     for nd in (0,1,2):
         nc = 2-nd
 
-        dlists = gendlistsfromBasis(basis, range(basis.size), nmax, nd, 2)
+        dlists = gendlistsfromBasis(basis, idxList, nmax, nd, 2)
         oscList = []
 
         for dlist in dlists:

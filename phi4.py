@@ -266,6 +266,8 @@ class Phi4():
                 # Dictionary of local renormalization coefficients for the g^2 term
                 VV2 = renorm.renVV2(g4=g, g2=self.g2list[g], EL=ET, eps=eps[g]).VV2
 
+                # print(VV2[0], VV2[2], VV2[4])
+
                 ret[g] = VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 
             return ret
@@ -290,6 +292,8 @@ class Phi4():
             g4 = g
 
             VV2 = renorm.renVV2(g4=g, g2=g2, EL=EL, eps=eps[g]).VV2
+
+            # print(propagatorH[glist[0]])
 
             MHl = self.VHl[2]*g2 + self.VHl[4]*g4
             MlH = MHl.transpose()
@@ -323,6 +327,14 @@ class Phi4():
             VHl[n] = self.VHl[n]
             VlH[n] = VHl[n].transpose().tocsc()
 
+        MHl = {}
+        MlH = {}
+        for g in glist:
+# XXX Check they are in csc format
+            MHl[g] = (self.g2list[g]*VHl[2] + g*VHl[4])
+            MlH[g] = MHl[g].transpose()
+
+
         basis = self.basisH
         # List of basis elements on which we will cycle
         fullIdxList = basis.irange((ET,ELp))
@@ -335,38 +347,49 @@ class Phi4():
 #########################################################################
 # Add the "symmetric" contributions to DH3 by integrating out states with
 # energy ET < E < ELp
+# In this part we also add the exponentially suppressed term V2
 #########################################################################
 
         # Propagator and projector over the states between ET and ELp
         propagatorh = {g: basis.propagator(eps[g], ET, ELp) for g in glist}
 
-        Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
-
         c = MatrixConstructor(basis, basis, (ET, ELp))
 
-        ##############################
-        # Generate the Vhh matrix
-        ##############################
-        for i,idxList in enumerate(idxLists):
-            print("Doing chunk", i, "for Vhh")
+        # Add both V2 and V4 corrections
+        for n in (2,4):
 
-            VhhHalfPart =  c.buildMatrix(Vlist, ignKeyErr=True, sumTranspose=False,
-                    idxList=idxList)*self.L
+            if n==4:
+                Vlist = V4OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
+            elif n==2:
+                Vlist = V2OpsSelectedHalf(basis, Emax=ELp, idxList=fullIdxList)
 
-            VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,basis.size,
-                    basis.size).tocsc()
 
-            for g in glist:
-                DH3llPart = VHl[4]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
-                    *VlH[4]*g**3
-                DH3llPart += DH3llPart.transpose()
-                DH3llPart -= VHl[4]*propagatorh[g]*VhhDiagPart*propagatorh[g]\
-                    *VlH[4]*g**3
-                DH3ll[g] += DH3llPart
+            ##############################
+            # Generate the Vhh matrix
+            ##############################
+            for i,idxList in enumerate(idxLists):
+                print("Doing chunk", i, "for Vhh")
 
-            del VhhHalfPart
+                VhhHalfPart =  c.buildMatrix(Vlist, ignKeyErr=True,
+                        sumTranspose=False, idxList=idxList)*self.L
 
-        del Vlist
+                VhhDiagPart = scipy.sparse.spdiags(VhhHalfPart.diagonal(),0,
+                        basis.size,basis.size).tocsc()
+
+                for g in glist:
+                    if n==2:
+                        gc = self.g2list[g]
+                    else:
+                        gc = g
+
+                    DH3llPart = MHl[g]*propagatorh[g]*VhhHalfPart*propagatorh[g]*MlH[g]*gc
+                    DH3llPart += DH3llPart.transpose()
+                    DH3llPart -= MHl[g]*propagatorh[g]*VhhDiagPart*propagatorh[g]*MlH[g]*gc
+                    DH3ll[g] += DH3llPart
+
+                del VhhHalfPart
+
+            del Vlist
         del c
 
 #########################################################################
@@ -377,29 +400,49 @@ class Phi4():
             print("memory before computing VhH", memory_usage())
 
         if nonloc3mix:
+
+            DH3mix = scipy.sparse.csc_matrix((sizel, sizel))
+
             c = MatrixConstructor(basis, basis, (ELp, ELpp))
 
             # Propagator and projector over the states between ELp and ELpp
             propagatorH = {g: basis.propagator(eps[g], ELp, ELpp) for g in glist}
 
-            VHhlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
+            # Add both V2 and V4 corrections
+            for n in (2,4):
 
-            for i, idxList in enumerate(idxLists):
-                print("doing chunk", i, "for VhH")
+                if n==4:
+                    VHhlist = V4OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
+                elif n==2:
+                    VHhlist = V2OpsSelectedFull(basis, ELpp, idxList=fullIdxList)
 
-                VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
-                        idxList=idxList)*self.L
 
-                for g in glist:
-                    DH3llPart = VHl[4]*propagatorh[g]*VHhPart*propagatorH[g]*VlH[4]\
-                        *g**3
-                    DH3llPart += DH3llPart.transpose()
-                    DH3ll[g] += DH3llPart
+                for i, idxList in enumerate(idxLists):
+                    print("doing chunk", i, "for VhH")
 
-                del VHhPart
+                    VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
+                            idxList=idxList)*self.L
 
+                    for g in glist:
+                        if n==2:
+                            gc = self.g2list[g]
+                        else:
+                            gc = g
+
+
+                        DH3llPart = MHl[g]*propagatorh[g]*VHhPart*propagatorH[g]*MlH[g]\
+                            *gc
+                        DH3llPart += DH3llPart.transpose()
+                        DH3ll[g] += DH3llPart
+
+                        DH3mix += DH3llPart
+
+                    del VHhPart
+
+                del VHhlist
             del c
-            del VHhlist
+
+        print(DH3mix.todense()[:3,:3])
 
 #######################################################################
 # Add the "mixed" local-nonlocal contributions to DH3 where some states
@@ -409,10 +452,10 @@ class Phi4():
         if loc3mix:
             for g in glist:
 #XXX Set g2 not equal to 0
-                VV2 = renorm.renVV2(g4=g, g2=0, EL=ELpp, eps=eps[g]).VV2
+                VV2 = renorm.renVV2(g4=g, g2=self.g2list[g], EL=ELpp, eps=eps[g]).VV2
 
-                DH3llPart = VHl[2]*VV2[2]*propagatorh[g]*VlH[4]*g
-                DH3llPart += VHl[4]*VV2[4]*propagatorh[g]*VlH[4]*g
+                DH3llPart = VHl[2]*VV2[2]*propagatorh[g]*MlH[g]
+                DH3llPart += VHl[4]*VV2[4]*propagatorh[g]*MlH[g]
                 DH3llPart += DH3llPart.transpose()
                 DH3ll[g] += DH3llPart
 
@@ -471,6 +514,11 @@ class Phi4():
         self.g2list = {g: g2(g, L) for g in glist}
         self.g0list = {g: g0(g, L) for g in glist}
 
+        # self.g0list = {glist[0]: -5.936182590702131e-07}
+        # self.g0list = {glist[0]: 0}
+        # self.g2list = {glist[0]: 0}
+        print(self.g0list, self.g2list)
+
         self.eigenvalues = {g: {"raw":None, "renloc":None, "rentails":None}
                 for g in glist}
         self.eigenvectors = {g: {"raw":None, "renloc":None, "rentails":None}
@@ -494,6 +542,9 @@ class Phi4():
         subOpL = SubmatrixOperator.fromErange(self.basis,(0,ET))
         M = {g: self.h0 + g*self.V[4] + self.g2list[g]*self.V[2]
                 + self.g0list[g]*self.V[0] for g in glist}
+        # print(M[glist[0]])
+        # M = {g: self.h0 + g*self.V[4] + self.g2list[g]*self.V[2] for g in glist}
+        # print(self.g0list[self.glist[0]]*self.V[0])
         Hraw = {g: subOpL.sub(M[g]) for g in glist}
         self.compSize = Hraw[glist[0]].shape[0]
 
@@ -515,6 +566,8 @@ class Phi4():
                 self.computeDeltaH(ET=ET, EL=EL, ren=ren, eps=eps,
                     subbasisl=subbasisl, ELp=ELp, ELpp=ELpp, loc2=loc2,
                     loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
+
+            print(DH2ll[self.glist[0]].todense()[:4,:4])
 
             # Saving memory
             del self.basisH
@@ -545,5 +598,7 @@ class Phi4():
             (self.eigenvalues[g][ren], eigenvectorstranspose) = \
                 scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
                         which='SA', return_eigenvectors=True)
+
+            # self.eigenvalues[g][ren] += self.g0list[g]*self.L
 
             self.eigenvectors[g][ren] = eigenvectorstranspose.T
