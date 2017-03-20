@@ -11,10 +11,10 @@ memdbg = False
 if memdbg:
     warnings.warn("Running with memory debugging")
 # Whether the MonteCarlo integrals should be actually evaluated
-test = False
+test = True
 if test:
     warnings.warn("Monte Carlo is OFF")
-loc3 = False
+loc3 = True
 if not loc3:
     warnings.warn("Not including local correction to DH3")
 
@@ -29,11 +29,11 @@ m = 1
 neigs = 6
 
 # Ratio between EL and ET
-ratioELET = 1.6
+ratioELET = 3
 # Ratio between ELp and ET
-ratioELpET = 1.6
+ratioELpET = 2
 # Ratio between ELpp and ELp
-ratioELppELp = 18/16
+ratioELppELp = 1.5
 
 
 argv = sys.argv

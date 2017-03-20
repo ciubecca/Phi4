@@ -266,8 +266,6 @@ class Phi4():
                 # Dictionary of local renormalization coefficients for the g^2 term
                 VV2 = renorm.renVV2(g4=g, g2=self.g2list[g], EL=ET, eps=eps[g]).VV2
 
-                # print(VV2[0], VV2[2], VV2[4])
-
                 ret[g] = VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 
             return ret
@@ -292,8 +290,6 @@ class Phi4():
             g4 = g
 
             VV2 = renorm.renVV2(g4=g, g2=g2, EL=EL, eps=eps[g]).VV2
-
-            # print(propagatorH[glist[0]])
 
             MHl = self.VHl[2]*g2 + self.VHl[4]*g4
             MlH = MHl.transpose()
@@ -382,9 +378,11 @@ class Phi4():
                     else:
                         gc = g
 
-                    DH3llPart = MHl[g]*propagatorh[g]*VhhHalfPart*propagatorh[g]*MlH[g]*gc
+                    DH3llPart = MHl[g]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
+                            *MlH[g]*gc
                     DH3llPart += DH3llPart.transpose()
-                    DH3llPart -= MHl[g]*propagatorh[g]*VhhDiagPart*propagatorh[g]*MlH[g]*gc
+                    DH3llPart -= MHl[g]*propagatorh[g]*VhhDiagPart*propagatorh[g]\
+                            *MlH[g]*gc
                     DH3ll[g] += DH3llPart
 
                 del VhhHalfPart
@@ -420,8 +418,8 @@ class Phi4():
                 for i, idxList in enumerate(idxLists):
                     print("doing chunk", i, "for VhH")
 
-                    VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True, sumTranspose=False,
-                            idxList=idxList)*self.L
+                    VHhPart = c.buildMatrix(VHhlist, ignKeyErr=True,
+                            sumTranspose=False,idxList=idxList)*self.L
 
                     for g in glist:
                         if n==2:
@@ -429,20 +427,15 @@ class Phi4():
                         else:
                             gc = g
 
-
-                        DH3llPart = MHl[g]*propagatorh[g]*VHhPart*propagatorH[g]*MlH[g]\
-                            *gc
+                        DH3llPart = MHl[g]*propagatorh[g]*VHhPart*propagatorH[g]\
+                                *MlH[g]*gc
                         DH3llPart += DH3llPart.transpose()
                         DH3ll[g] += DH3llPart
-
-                        DH3mix += DH3llPart
 
                     del VHhPart
 
                 del VHhlist
             del c
-
-        print(DH3mix.todense()[:3,:3])
 
 #######################################################################
 # Add the "mixed" local-nonlocal contributions to DH3 where some states
@@ -514,9 +507,6 @@ class Phi4():
         self.g2list = {g: g2(g, L) for g in glist}
         self.g0list = {g: g0(g, L) for g in glist}
 
-        # self.g0list = {glist[0]: -5.936182590702131e-07}
-        # self.g0list = {glist[0]: 0}
-        # self.g2list = {glist[0]: 0}
         print(self.g0list, self.g2list)
 
         self.eigenvalues = {g: {"raw":None, "renloc":None, "rentails":None}
@@ -542,9 +532,6 @@ class Phi4():
         subOpL = SubmatrixOperator.fromErange(self.basis,(0,ET))
         M = {g: self.h0 + g*self.V[4] + self.g2list[g]*self.V[2]
                 + self.g0list[g]*self.V[0] for g in glist}
-        # print(M[glist[0]])
-        # M = {g: self.h0 + g*self.V[4] + self.g2list[g]*self.V[2] for g in glist}
-        # print(self.g0list[self.glist[0]]*self.V[0])
         Hraw = {g: subOpL.sub(M[g]) for g in glist}
         self.compSize = Hraw[glist[0]].shape[0]
 
@@ -566,8 +553,6 @@ class Phi4():
                 self.computeDeltaH(ET=ET, EL=EL, ren=ren, eps=eps,
                     subbasisl=subbasisl, ELp=ELp, ELpp=ELpp, loc2=loc2,
                     loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
-
-            print(DH2ll[self.glist[0]].todense()[:4,:4])
 
             # Saving memory
             del self.basisH

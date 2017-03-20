@@ -10,7 +10,7 @@ from numpy import testing as npt
 
 class testPhi4(unittest.TestCase):
     def __init__(self, L, g, ET, eigs):
-        self.decimal = 4
+        self.decimal = 8
         self.m = 1
         self.neigs = 6
         self.k = 1
@@ -92,18 +92,16 @@ class testPhi4(unittest.TestCase):
         self.testLoc()
         self.testTails()
 
-Llist = [5, 8, 10.5, 10, 10]
-ETlist = [5, 8, 10.5, 14, 14]
-glist = [0.5, 1, 1.5, 2, 2]
+Llist = [7, 10]
+ETlist = [10, 10]
+glist = [1.5, 2.5]
 
 # XXX Change these to values with finite volume corrections
 eigslist = [
-[-0.00268222083952, -0.0609692033023,-0.0117915038649],
-[-0.11259005032, -0.348246045516, -0.127496055308],
-[-0.437287334374, -0.958064275124, -0.493868803234],
-[-0.919579558503, -1.55598186578, -0.922438806401]
+    [-0.28132186085916155,-0.65692871641605322,-0.29930595576064467],
+    [-0.96072791675498348, -2.6579143236349014,-1.0564035979501218]
 ]
 
-for L, ET, g, eigs in list(zip(Llist, ETlist, glist, eigslist))[1:]:
+for L, ET, g, eigs in list(zip(Llist, ETlist, glist, eigslist)):
     t = testPhi4(L, g, ET, eigs)
     t.testAll()
