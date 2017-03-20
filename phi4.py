@@ -372,6 +372,10 @@ class Phi4():
                         basis.size,basis.size).tocsc()
 
                 for g in glist:
+
+                    # print([type(M) for M in
+                            # (MHl[g],propagatorh[g],MlH[g],VhhHalfPart,VhhDiagPart)])
+
                     DH3llPart = MHl[g]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
                             *MlH[g]*self.g[n][g]
                     DH3llPart += DH3llPart.transpose()
@@ -393,8 +397,6 @@ class Phi4():
 
         if nonloc3mix:
 
-            DH3mix = scipy.sparse.csc_matrix((sizel, sizel))
-
             c = MatrixConstructor(basis, basis, (ELp, ELpp))
 
             # Propagator and projector over the states between ELp and ELpp
@@ -415,6 +417,10 @@ class Phi4():
                             sumTranspose=False,idxList=idxList)*self.L
 
                     for g in glist:
+
+                        # print([type(M) for M in
+                                # (MHl[g],propagatorh[g],MlH[g],propagatorH[g])])
+
                         DH3llPart = MHl[g]*propagatorh[g]*VHhPart*propagatorH[g]\
                                 *MlH[g]*self.g[n][g]
                         DH3llPart += DH3llPart.transpose()
@@ -571,7 +577,5 @@ class Phi4():
             (self.eigenvalues[g][ren], eigenvectorstranspose) = \
                 scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
                         which='SA', return_eigenvectors=True)
-
-            # self.eigenvalues[g][ren] += self.g0list[g]*self.L
 
             self.eigenvectors[g][ren] = eigenvectorstranspose.T

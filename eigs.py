@@ -116,8 +116,6 @@ def main():
     print("Non-Local ren vacuum:", {g: a.eigenvalues[g]["rentails"][0]
         for g in glist})
 
-    print("Number of tails:", a.ntails)
-
     if saveondb:
         for g in glist:
             datadict = dict(k=k, ET=ET, L=L, ren="raw", g=g, neigs=neigs,
@@ -130,8 +128,7 @@ def main():
 
             datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp,
                     ELpp=ELpp, ntails=a.ntails, eps=eps[g], neigs=neigs,
-                    basisSize=a.compSize, tailsComputedAtET=ET, maxntails=None,
-                    finiteL=True)
+                    basisSize=a.compSize, finiteL=True)
             db.insert(datadict=datadict, spec=a.eigenvalues[g]["rentails"])
 
 
