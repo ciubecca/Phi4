@@ -9,6 +9,8 @@ ETmax = {5:32, 5.5:30, 6:28, 6.5:26.5, 7:25, 7.5:23.5, 8:23,
 ETmin = {5:10, 5.5:10, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
                 8.5:10, 9:10, 9.5:10, 10:10}
 
+Llist = sorted(ETmax.keys())
+
 def main(argv):
 
     query = {}
@@ -22,7 +24,7 @@ def main(argv):
 
     g = float(argv[1])
 
-    for L in ETmax.keys():
+    for L in Llist:
         for ET in scipy.linspace(ETmin[L],ETmax[L],(ETmax[L]-ETmin[L])*2+1):
             for k in (-1,1):
                 exactQuery["k"] = k
