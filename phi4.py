@@ -260,7 +260,8 @@ class Phi4():
             ret = {}
             VLL = {}
             for n in (0,2,4):
-                VLL[n] = subOPL.sub(self.V[n])
+# Assume no submatrix is taken
+                VLL[n] = self.V[n]
 
             for g in glist:
                 # Dictionary of local renormalization coefficients for the g^2 term
@@ -522,6 +523,41 @@ class Phi4():
 
         glist = self.glist
 
+        if ren=="renloc":
+            DeltaH = self.computeDeltaH(ET=ET, ren=ren, eps=eps, loc2=loc2)
+            compH = {g: self.h0 + g*self.V[4] + self.g[2][g]*self.V[2]
+                + self.g[0][g]*self.V[0]  + DeltaH[g] for g in glist}
+            self.compSize = compH[glist[0]].shape[0]
+
+            # Seed vector
+            v0 = scipy.zeros(self.compSize)
+            for i in range(min(10,len(v0))):
+                v0[i] = 1.
+
+            for g in glist:
+                self.eigenvalues[g][ren] = \
+                    scipy.sort(scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
+                            which='SA', return_eigenvectors=False))
+            return
+
+
+        if ren=="raw":
+            compH = {g: self.h0 + g*self.V[4] + self.g[2][g]*self.V[2]
+                + self.g[0][g]*self.V[0] for g in glist}
+            self.compSize = compH[glist[0]].shape[0]
+
+            # Seed vector
+            v0 = scipy.zeros(self.compSize)
+            for i in range(min(10,len(v0))):
+                v0[i] = 1.
+
+            for g in glist:
+                self.eigenvalues[g][ren] = \
+                    scipy.sort(scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
+                            which='SA', return_eigenvectors=False))
+            return
+
+
         # Subset of low energy states
         subOpL = SubmatrixOperator.fromErange(self.basis,(0,ET))
         M = {g: self.h0 + g*self.V[4] + self.g[2][g]*self.V[2]
@@ -534,14 +570,9 @@ class Phi4():
         for i in range(min(10,len(v0))):
             v0[i] = 1.
 
-        if ren=="raw":
-            compH = Hraw
 
-        elif ren=="renloc":
-            DeltaH = self.computeDeltaH(ET=ET, ren=ren, eps=eps, loc2=loc2)
-            compH = {g: (Hraw[g] + DeltaH[g]) for g in glist}
 
-        elif ren=="rentails":
+        if ren=="rentails":
 # We invert the matrices one by one to save memory
             DH2lL, DH2ll, DH3ll, DH2Ll =\
                 self.computeDeltaH(ET=ET, EL=EL, ren=ren, eps=eps,
