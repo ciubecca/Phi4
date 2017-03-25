@@ -63,17 +63,18 @@ class Database():
 
     def getEigs(self, k, ren, g, L, ET, neigs=6):
 
-        EL = ratioELET*ET
-        ELp = ratioELpET*ET
-        ELpp = ratioELppELp*ELp
 
         approxQuery = {"g":g, "L":L, "ET":ET}
-        exactQuery = {"k": k, "ren":ren, "neigs":neigs}
+        exactQuery = {"k": k, "ren":ren, "neigs":neigs, "finiteL":True}
         boundQuery = {}
 
         if ren=="rentails":
+            EL = ratioELET*ET
+            ELp = ratioELpET*ET
+            ELpp = ratioELppELp*ELp
+
+
             exactQuery["maxntails"] = None
-            exactQuery["finiteL"] = True
             exactQuery["tailsComputedAtET"] = ET
             approxQuery["EL"] = EL
             approxQuery["ELp"] = ELp
