@@ -37,7 +37,9 @@ class Database():
         t1 = [e for e in self.table.find(**exactQuery)]
 
         for e in t1:
-            if all([abs(e[key]-value)<10.**(-12.)
+            # print(e)
+
+            if all([abs(float(e[key])-value)<10.**(-12.)
                     for key,value in approxQuery.items()]) \
                 and all([value[0]<=e[key]<=value[1]
                     for key,value in boundQuery.items()]):
@@ -75,7 +77,7 @@ class Database():
 
 
             exactQuery["maxntails"] = None
-            exactQuery["tailsComputedAtET"] = ET
+            # exactQuery["tailsComputedAtET"] = ET
             approxQuery["EL"] = EL
             approxQuery["ELp"] = ELp
             approxQuery["ELpp"] = ELpp
@@ -87,6 +89,9 @@ class Database():
         except IndexError:
             print("Not found:", exactQuery, approxQuery)
             exit(-1)
+        except TypeError as e:
+            print(exactQuery, approxQuery, boundQuery)
+            raise e
 
         return ret
 

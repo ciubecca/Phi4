@@ -4,12 +4,13 @@ import math
 from scipy import pi, log, array, sqrt
 import database
 
+dbname = "data/spectra3.db"
 
 def main(argv):
     args = " <keyword:value> ..."
 
     query = {}
-    queryStr = {"finiteL":True}
+    queryStr = {"finiteL":True, "ren":"rentails"}
 
     for arg in argv[1:]:
         key, value = arg.split(':')
@@ -19,10 +20,10 @@ def main(argv):
             queryStr[key] = value
 
     # Hardcoded parameters
-    values = ("k", "L", "ET", "g","neigs")
+    values = ("k", "L", "ET", "g")
 
     # db = database.Database(dbname="spectraJson.db",useJson=True)
-    db = database.Database()
+    db = database.Database(dbname)
 
     exactQuery = queryStr
     data = [db.getObjList(x, exactQuery=exactQuery, approxQuery=query) for x in values]

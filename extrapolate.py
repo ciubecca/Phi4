@@ -8,11 +8,27 @@ from sys import exit
 import numpy as np
 from sklearn.linear_model import Ridge
 
+ETmax = {}
+ETmin = {}
 
-ETmax = {5:30, 5.5:29, 6:27, 6.5:25.5, 7:24, 7.5:23, 8:21.5,
-        8.5:20.5, 9:19.5, 9.5:18.5, 10:18.5}
-ETmin = {5:21.5, 5.5:15, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
+ETmax["rentails"] = {5:32, 5.5:29, 6:27, 6.5:25.5, 7:24, 7.5:23, 8:23,
+        8.5:20.5, 9:19.5, 9.5:18.5, 10:19}
+
+ETmin["rentails"] = {5:10, 5.5:10, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
         8.5:10, 9:10, 9.5:10, 10:10}
+
+ETmax["raw"] = {6:50, 8:38, 10:35}
+ETmax["renloc"] = ETmax["raw"]
+
+ETmin["raw"] = ETmin["rentails"]
+ETmin["renloc"] = ETmin["rentails"]
+
+step = {}
+step["raw"] = 1
+step["renloc"] = step["raw"]
+step["rentails"] = 0.5
+
+missing = {6:[], 8:[32], 10:[35]}
 
 def stdWeights(ET):
     return 1
@@ -30,7 +46,17 @@ def stdFeatureVec(ET):
 class Extrapolator():
 
     def __init__(self, db, k, L, g, ren="rentails"):
-        self.ETlist = scipy.linspace(ETmin[L], ETmax[L], (ETmax[L]-ETmin[L])*2+1)
+        ETMin = ETmin[ren][L]
+        ETMax = ETmax[ren][L]
+
+        mult = 1/step[ren]
+
+        if ren != "rentails":
+            self.ETlist = np.array([ETMin + n for n in range(ETMax-ETMin+1) if
+                ETMin+n not in missing[L]])
+        else:
+            self.ETlist = scipy.linspace(ETMin, ETMax, (ETMax-ETMin)*2+1)
+
         self.spectrum = np.array([db.getEigs(k, ren, g, L, ET)[0]
             for ET in self.ETlist])
 

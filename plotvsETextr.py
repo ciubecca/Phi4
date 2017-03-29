@@ -15,7 +15,8 @@ xmargin = 10**(-4)
 
 power = 3
 
-Llist = [6, 6.5, 7, 8, 9, 10]
+# Llist = [6, 6.5, 7, 8, 9, 10]
+Llist = [8, 10]
 
 output = "pdf"
 renlist = ("raw", "rentails", "renloc")

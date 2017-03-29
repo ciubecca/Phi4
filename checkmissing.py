@@ -4,19 +4,21 @@ import math
 from scipy import pi, log, array, sqrt
 import database
 
-ETmax = {5:32, 5.5:30, 6:28, 6.5:26.5, 7:25, 7.5:23.5, 8:23,
+ETmax = {5:32, 5.5:30, 6:28, 6.5:26.5, 7:25, 7.5:24, 8:23,
                 8.5:21.5, 9:21, 9.5:20.5, 10:20}
 ETmin = {5:10, 5.5:10, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
                 8.5:10, 9:10, 9.5:10, 10:10}
 
 Llist = sorted(ETmax.keys())
 
+dbname = "data/spectra3.db"
+
 def main(argv):
 
     query = {}
     exactQuery = {"finiteL":True, "ren":"rentails"}
 
-    db = database.Database()
+    db = database.Database(dbname)
 
     if len(argv)<2:
         print(argv[0], " <g>")

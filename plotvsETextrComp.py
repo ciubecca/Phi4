@@ -13,7 +13,7 @@ from extrapolate import Extrapolator
 
 xmargin = 10**(-4)
 
-power = 3
+power = 2
 
 Llist = [6, 8, 10]
 
@@ -35,7 +35,7 @@ ymax = {1:-10, -1:0}
 ymin = {1:10, -1:10}
 xmax = 0
 
-db = database.Database()
+db = database.Database("data/spectra3.db")
 
 
 def plotvsET(Llist, axes):
