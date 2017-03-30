@@ -13,7 +13,9 @@ from numpy import concatenate as concat
 from extrapolate import Extrapolator, ETmax
 from scipy.special import kn
 
-Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
+Llist = {}
+Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
+Llist["renloc"] = [6,8,10]
 
 output = "pdf"
 renlist = ("rentails", "renloc")
@@ -46,29 +48,29 @@ klist = (1,-1)
 
 ymin = {}
 ymax = {}
-xmax = max(Llist)+0.1
-xmin = min(Llist)-0.1
+xmax = max(Llist["rentails"])+0.1
+xmin = min(Llist["rentails"])-0.1
 
-db = database.Database()
+db = database.Database("data/spectra3.db")
 
 
 def plotvsL(Llist):
-    xlist = np.array(Llist)
 
-    Lambda = {ren: np.zeros(len(Llist)) for ren in renlist}
-    LambdaInf = np.zeros(len(Llist))
-    LambdaErr = np.zeros(len(Llist))
-    Mass = {ren: np.zeros(len(Llist)) for ren in renlist}
-    MassInf = np.zeros(len(Llist))
-    MassErr = np.zeros(len(Llist))
+    Lambda = {ren: np.zeros(len(Llist[ren])) for ren in renlist}
+    LambdaInf = np.zeros(len(Llist["rentails"]))
+    LambdaErr = np.zeros(len(Llist["rentails"]))
+    Mass = {ren: np.zeros(len(Llist[ren])) for ren in renlist}
+    MassInf = np.zeros(len(Llist["rentails"]))
+    MassErr = np.zeros(len(Llist["rentails"]))
 
-    for i,L in enumerate(Llist):
-        for ren in renlist:
-            E0 = db.getEigs(1, ren, g, L, ETmax[L])[0]
-            E1 = db.getEigs(-1, ren, g, L, ETmax[L])[0]
+    for ren in renlist:
+        for i,L in enumerate(Llist[ren]):
+            E0 = db.getEigs(1, ren, g, L, ETmax[ren][L])[0]
+            E1 = db.getEigs(-1, ren, g, L, ETmax[ren][L])[0]
             Lambda[ren][i] = E0/L
             Mass[ren][i] = (E1-E0)
 
+    for i,L in enumerate(Llist["rentails"]):
         e = {}
         e[1] = Extrapolator(db, 1, L, g)
         e[-1] = Extrapolator(db, -1, L, g)
@@ -90,14 +92,15 @@ def plotvsL(Llist):
     ax = fig.add_subplot(111)
     # Plot non-extrapolated data
     for ren in renlist:
-        plt.plot(xlist, Lambda[ren], marker=marker, label=ren)
+        plt.plot(Llist[ren], Lambda[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
     # ax.scatter(xlist, LambdaInf, marker=marker, label=r"$E_T=\infty$")
-    ax.errorbar(xlist, LambdaInf, LambdaErr, marker=marker, label=r"$E_T=\infty$")
+    ax.errorbar(Llist["rentails"],
+            LambdaInf, LambdaErr, marker=marker, label=r"$E_T=\infty$")
 
     sigma = LambdaErr
-    popt, pcov = curve_fit(Lambdafun, xlist.ravel(), LambdaInf.ravel(),
+    popt, pcov = curve_fit(Lambdafun, Llist["rentails"], LambdaInf.ravel(),
             bounds=boundsLambda, method=method, p0=p0Lambda, sigma=sigma)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Lambdafun(xdata, *popt))
@@ -115,14 +118,15 @@ def plotvsL(Llist):
     ax = fig.add_subplot(111)
     # Plot non-extrapolated data
     for ren in renlist:
-        plt.plot(xlist, Mass[ren], marker=marker, label=ren)
+        plt.plot(Llist[ren], Mass[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
     # ax.scatter(xlist, MassInf, marker=marker, label=r"$E_T=\infty$")
-    ax.errorbar(xlist, MassInf, MassErr, marker=marker, label=r"$E_T=\infty$")
+    ax.errorbar(Llist["rentails"],
+            MassInf, MassErr, marker=marker, label=r"$E_T=\infty$")
 
     sigma = MassErr
-    popt, pcov = curve_fit(Massfun, xlist.ravel(), MassInf.ravel(),
+    popt, pcov = curve_fit(Massfun, Llist["rentails"], MassInf.ravel(),
             bounds=boundsMass, method=method, sigma=MassErr)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Massfun(xdata, *popt))

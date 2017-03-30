@@ -17,7 +17,7 @@ ETmax["rentails"] = {5:32, 5.5:29, 6:27, 6.5:25.5, 7:24, 7.5:23, 8:23,
 ETmin["rentails"] = {5:10, 5.5:10, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
         8.5:10, 9:10, 9.5:10, 10:10}
 
-ETmax["raw"] = {6:50, 8:38, 10:35}
+ETmax["raw"] = {6:50, 8:38, 10:34}
 ETmax["renloc"] = ETmax["raw"]
 
 ETmin["raw"] = ETmin["rentails"]
@@ -28,7 +28,7 @@ step["raw"] = 1
 step["renloc"] = step["raw"]
 step["rentails"] = 0.5
 
-missing = {6:[], 8:[32], 10:[35]}
+missing = {6:[], 8:[32], 10:[]}
 
 def stdWeights(ET):
     return 1
@@ -38,9 +38,6 @@ errcoeff = 3.
 
 
 def stdFeatureVec(ET):
-    return [10/ET**2, 1/ET**3, log(ET**(1/ET**2))]
-
-def stdFeatureVec(ET):
     return [1/ET**3, 1/ET**4]
 
 class Extrapolator():
@@ -48,6 +45,9 @@ class Extrapolator():
     def __init__(self, db, k, L, g, ren="rentails"):
         ETMin = ETmin[ren][L]
         ETMax = ETmax[ren][L]
+
+        self.L = L
+        self.k = k
 
         mult = 1/step[ren]
 
@@ -75,6 +75,7 @@ class Extrapolator():
         X = np.array(self.featureVec(self.ETlist)).transpose()
         self.model = Ridge(alpha=alpha, normalize=True)
         self.model.fit(X, data, sample_weight=1/weights(xlist))
+        print("L={}, k={} fit:".format(self.L,self.k)+str(self.model.coef_))
 
     def predict(self, x):
         x = np.array(x)

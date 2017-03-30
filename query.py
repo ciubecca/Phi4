@@ -20,7 +20,7 @@ def main(argv):
             queryStr[key] = value
 
     # Hardcoded parameters
-    values = ("k", "L", "ET", "g")
+    values = ("k", "L", "ET", "g", "basisSize")
 
     # db = database.Database(dbname="spectraJson.db",useJson=True)
     db = database.Database(dbname)
