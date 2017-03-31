@@ -34,28 +34,26 @@ class Database():
 
         listRes = []
 
+        # print(self.table.table.__dict__)
+
         # Convert bool to int
-        exactQueryNoBool = {}
+        queryStrings = []
         for key,value in exactQuery.items():
-            if(type(value) == bool):
-                exactQueryNoBool[key] = int(value)
+            if(value==None):
+                queryStrings.append("({} IS NULL)".format(key))
+            elif(type(value) == bool):
+                queryStrings.append("({}={})".format(key,int(value)))
             else:
-                exactQueryNoBool[key] = value
+                queryStrings.append("({}='{}')".format(key,value))
 
-        exactQueryStr = " AND ".join("({}='{}')".\
-                format(key,value) for key,value in exactQueryNoBool.items())
 
-        # print(self.table.table)
-        query = "SELECT {} FROM {} WHERE {} AND ".\
-                format(obj, self.table.table, exactQueryStr)+\
-                " AND ".join("({} BETWEEN {} AND {})".\
-                format(key,value-tol,value+tol) for key,value in approxQuery.items())+\
-                " ORDER BY {}".format(orderBy)
-        # print(query)
-        result = self.db.query(query)
+        query = "SELECT {} FROM {} WHERE ".format(obj, self.table.table) +\
+                " AND ".join(queryStrings)+" AND" +\
+                " AND ".join(["({} BETWEEN {} AND {})".\
+            format(key,value-tol,value+tol) for key,value in approxQuery.items()])+\
+                " ORDER BY {} DESC".format(orderBy)
 
-        # for e in self.table.find(**exactQuery):
-        for e in result:
+        for e in self.db.query(query):
 
             if obj=='eigv':
                 listRes.append(scipy.fromstring(e[obj]).reshape(
@@ -68,7 +66,6 @@ class Database():
         return listRes
 
     def getEigs(self, k, ren, g, L, ET, neigs=6):
-
 
         approxQuery = {"g":g, "L":L, "ET":ET}
         exactQuery = {"k": k, "ren":ren, "neigs":neigs, "finiteL":True}
