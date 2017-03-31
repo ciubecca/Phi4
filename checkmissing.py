@@ -32,7 +32,8 @@ def main(argv):
                 exactQuery["k"] = k
                 approxQuery = {"L":L, "ET":ET, "g":g}
                 try:
-                    db.getObjList("spec",exactQuery=exactQuery,approxQuery=approxQuery)[0]
+                    db.getObjList("spec",exactQuery=exactQuery,
+                            approxQuery=approxQuery)[0]
                 except IndexError:
                     print("k={}, L={}, ET:{}, g={} not found".format(k,L,ET,g))
 

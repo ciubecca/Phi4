@@ -99,7 +99,8 @@ def plotvsL(Llist):
     ax.errorbar(Llist["rentails"],
             LambdaInf, LambdaErr, marker=marker, label=r"$E_T=\infty$")
 
-    sigma = LambdaErr
+    # sigma = LambdaErr
+    sigma = None
     popt, pcov = curve_fit(Lambdafun, Llist["rentails"], LambdaInf.ravel(),
             bounds=boundsLambda, method=method, p0=p0Lambda, sigma=sigma)
     xdata = scipy.linspace(xmin, xmax, 100)
@@ -126,8 +127,9 @@ def plotvsL(Llist):
             MassInf, MassErr, marker=marker, label=r"$E_T=\infty$")
 
     sigma = MassErr
+    sigma = None
     popt, pcov = curve_fit(Massfun, Llist["rentails"], MassInf.ravel(),
-            bounds=boundsMass, method=method, sigma=MassErr)
+            bounds=boundsMass, method=method, sigma=sigma)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Massfun(xdata, *popt))
     msg = [

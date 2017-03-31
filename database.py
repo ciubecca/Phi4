@@ -3,6 +3,7 @@ import json
 import dataset
 import datetime
 from scipy import array
+import sys
 
 rentypes = ["raw","renloc","rentails"]
 
@@ -13,7 +14,8 @@ ratioELpET = 2
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-
+# The range where to look for numerical values in the database
+tol = 10**-6
 
 #FIXME Feature needed: forbid merging json and non-json data
 class Database():
@@ -28,47 +30,48 @@ class Database():
         self.table.insert(datadict)
 
     # Get a list of all objects satisfying the query
-    def getObjList(self, obj, exactQuery={}, approxQuery={}, boundQuery={},
-            orderBy=None):
+    def getObjList(self, obj, exactQuery={}, approxQuery={}, orderBy="date"):
 
         listRes = []
-        orderKey = []
 
-        t1 = [e for e in self.table.find(**exactQuery)]
+        # Convert bool to int
+        exactQueryNoBool = {}
+        for key,value in exactQuery.items():
+            if(type(value) == bool):
+                exactQueryNoBool[key] = int(value)
+            else:
+                exactQueryNoBool[key] = value
 
-        for e in t1:
-            # print(e)
+        exactQueryStr = " AND ".join("({}='{}')".\
+                format(key,value) for key,value in exactQueryNoBool.items())
 
-            if all([abs(float(e[key])-value)<10.**(-12.)
-                    for key,value in approxQuery.items()]) \
-                and all([value[0]<=e[key]<=value[1]
-                    for key,value in boundQuery.items()]):
+        # print(self.table.table)
+        query = "SELECT {} FROM {} WHERE {} AND ".\
+                format(obj, self.table.table, exactQueryStr)+\
+                " AND ".join("({} BETWEEN {} AND {})".\
+                format(key,value-tol,value+tol) for key,value in approxQuery.items())+\
+                " ORDER BY {}".format(orderBy)
+        # print(query)
+        result = self.db.query(query)
 
+        # for e in self.table.find(**exactQuery):
+        for e in result:
 
-                if obj=='eigv':
-                    listRes.append(scipy.fromstring(e[obj]).reshape(
-                        e['neigs'], e['basisSize']))
-                elif obj=='spec':
-                    listRes.append(sorted(scipy.fromstring(e[obj])))
-                else:
-                    listRes.append(e[obj])
+            if obj=='eigv':
+                listRes.append(scipy.fromstring(e[obj]).reshape(
+                    e['neigs'], e['basisSize']))
+            elif obj=='spec':
+                listRes.append(sorted(scipy.fromstring(e[obj])))
+            else:
+                listRes.append(e[obj])
 
-                if orderBy!=None:
-                    orderKey.append(e[orderBy])
-
-        if orderBy==None:
-            return listRes
-        else:
-            return [y for (x,y) in sorted(zip(orderKey, listRes),
-                key=lambda pair:pair[0])]
-
+        return listRes
 
     def getEigs(self, k, ren, g, L, ET, neigs=6):
 
 
         approxQuery = {"g":g, "L":L, "ET":ET}
         exactQuery = {"k": k, "ren":ren, "neigs":neigs, "finiteL":True}
-        boundQuery = {}
 
         if ren=="rentails":
             EL = ratioELET*ET
@@ -83,14 +86,13 @@ class Database():
             approxQuery["ELpp"] = ELpp
 
         try:
-            ret = self.getObjList('spec', exactQuery, approxQuery, boundQuery,
-                    orderBy="date")[0]
+            ret = self.getObjList('spec', exactQuery, approxQuery)[0]
 
         except IndexError:
             print("Not found:", exactQuery, approxQuery)
             exit(-1)
         except TypeError as e:
-            print(exactQuery, approxQuery, boundQuery)
+            print(exactQuery, approxQuery)
             raise e
 
         return ret
