@@ -45,8 +45,6 @@ def plotvsET(Llist, axes, g, alpha):
     for ren in renlist:
         for i,L in enumerate(Llist):
             spectrum = {}
-            ydata = {}
-            yinf = {}
             res = {}
 
             for k in (-1,1):
@@ -57,24 +55,21 @@ def plotvsET(Llist, axes, g, alpha):
                 spectrum[k] = e.spectrum
 
                 e.train(alpha=alpha)
-                xdata = scipy.linspace(0, min(ETlist)**-power[ren], 100)
-                ydata[k] = e.predict(xdata**(-1/power[ren]))
                 res[k] = spectrum[k] - e.predict(xlist**(-1/power[ren]))
-                yinf[k] = e.asymValue()
 
 
             label = "ren = {}, L = {}".format(ren,L)
 
             " VACUUM ENERGY RESIDUALS"
             ax = axes[0]
-            ax.plot(xdata, res[1]/L, color=color[L], label=label)
+            ax.scatter(xlist, res[1]/L, color=color[L], label=label)
 
             ymax[1] = max(ymax[1], max(res[1]/L))
             ymin[1] = min(ymin[1], min(res[1]/L))
 
             " MASS RESIDUALS"
             ax = axes[1]
-            ax.plot(xdata, res[1]-res[-1], color=color[L], label=label)
+            ax.scatter(xlist, res[1]-res[-1], color=color[L], label=label)
 
             ymax[-1] = max(ymax[-1], max(res[1]-res[-1]))
             ymin[-1] = min(ymin[-1], min(res[1]-res[-1]))
@@ -105,23 +100,21 @@ def main(argv):
     plotvsET(Llist, axes, g, alpha)
 
 
-    axes[0,1].set_xlim(0, xmax["renloc"]+10**(-4))
-    axes[0,1].legend(loc=2)
-    axes[0,0].set_xlim(0, xmax["rentails"]+10**(-5))
-    axes[0,0].legend(loc=1)
-    axes[0,0].set_ylabel(r"$E_0/L$")
+    axes[0].legend(loc=2)
+    axes[0].set_xlim(0, xmax["rentails"]+10**(-5))
+    axes[0].legend(loc=1)
+    axes[0].set_ylabel(r"$E_0/L$")
     ymargin = (ymax[1]-ymin[1])/100
-    axes[0,0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
-    axes[0,0].invert_xaxis()
+    axes[0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
+    axes[0].invert_xaxis()
 
-    axes[1,0].set_ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
-    axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]))
-    axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]))
-    axes[1,0].set_ylabel(r"$E_1-E_0$")
+    axes[1].set_ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
+    axes[1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]))
+    axes[1].set_ylabel(r"$E_1-E_0$")
 
 
 # JOINT PLOT
-    plt.savefig("fitvsETComp_"+fname)
+    plt.savefig("resvsET_"+fname)
 
 
 if __name__=="__main__":

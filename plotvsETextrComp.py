@@ -11,8 +11,6 @@ from sys import exit
 import numpy as np
 from extrapolate import Extrapolator
 
-xmargin = 10**(-4)
-
 power = {"renloc":2, "rentails":3}
 
 Llist = [6, 8, 10]
@@ -104,19 +102,19 @@ print("g=", g)
 
 
 title = r"$g$={0:.1f}, $\alpha$={1}".format(g, alpha)
-fname = "g={0:.1f}.{1}".format(g,output)
+fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
 
 
 f, axes = plt.subplots(2, 2, sharex='col', sharey='row')
-f.subplots_adjust(hspace=0, wspace=0, top=0.93, right=0.95, left=0.05)
+f.subplots_adjust(hspace=0, wspace=0, top=0.93, right=0.95, left=0.1)
 f.suptitle(r"$g={}, \quad \alpha={}$".format(g,alpha), fontsize=15)
 
 plotvsET(Llist, axes)
 
 
-axes[0,1].set_xlim(0, xmax["renloc"]+xmargin)
+axes[0,1].set_xlim(0, xmax["renloc"]+10**(-4))
 axes[0,1].legend(loc=2)
-axes[0,0].set_xlim(0, xmax["rentails"]+xmargin)
+axes[0,0].set_xlim(0, xmax["rentails"]+10**(-5))
 axes[0,0].legend(loc=1)
 axes[0,0].set_ylabel(r"$E_0/L$")
 ymargin = (ymax[1]-ymin[1])/100
