@@ -15,11 +15,9 @@ xmargin = 10**(-4)
 
 power = 3
 
-# Llist = [6, 6.5, 7, 8, 9, 10]
-Llist = [6, 8, 10]
+Llist = [6, 7, 8, 9, 10]
 
 output = "pdf"
-renlist = ("raw", "rentails", "renloc")
 
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -36,7 +34,7 @@ ymax = {1:-10, -1:0}
 ymin = {1:10, -1:10}
 xmax = 0
 
-db = database.Database()
+db = database.Database('data/spectra3.db')
 
 
 def plotvsET(Llist, axes):
@@ -98,7 +96,7 @@ print("g=", g)
 
 
 title = r"$g$={0:.1f}, $\alpha$={1}".format(g, alpha)
-fname = "g={0:.1f}.{1}".format(g,output)
+fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
 
 
 f, axes = plt.subplots(2, 2, sharex='col', sharey='row')
