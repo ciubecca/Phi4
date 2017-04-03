@@ -28,10 +28,16 @@ markersize = 2.5
 plt.style.use('ggplot')
 plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 
-def Massfun(L, a, b):
-    return a - (3*b/(16*pi**2*L))*exp(-a*L)
+# def Massfun(L, a, b):
+    # return a - (3*b/(16*pi**2*L))*exp(-a*L)
+# boundsMass = ([0,-np.inf],[1,np.inf])
+# fmassStr = r"$m_{ph} - B \frac{3}{16 \pi^2 L} e^{- m_{ph} L}$"
+
+
+def Massfun(L, m, b):
+    return m - b*m*1/(L*m)**(3/2)*exp(-m*L)
 boundsMass = ([0,-np.inf],[1,np.inf])
-fmassStr = r"$m_{ph} - B \frac{3}{16 \pi^2 L} e^{- m_{ph} L}$"
+fmassStr = r"$m_{ph} - B \frac{m_{ph}}{(L m_{ph})^{3/2}} e^{- m_{ph} L}$"
 
 def Lambdafun(L, a, b):
     return a - b/(pi*L)*kn(1, b*L)
@@ -127,7 +133,7 @@ def plotvsL(Llist):
             MassInf, MassErr, marker=marker, label=r"$E_T=\infty$")
 
     sigma = MassErr
-    sigma = None
+    # sigma = None
     popt, pcov = curve_fit(Massfun, Llist["rentails"], MassInf.ravel(),
             bounds=boundsMass, method=method, sigma=sigma)
     xdata = scipy.linspace(xmin, xmax, 100)
@@ -158,9 +164,7 @@ plt.rcParams.update(params)
 
 plotvsL(Llist)
 
-fname = "g={0:.1f}.{1}".format(g, output)
-loc = "upper left"
-
+fname = "g={0:.1f}_alpha={1}.{2}".format(g, alpha, output)
 
 # VACUUM ENERGY DENSITY
 title = r"$g$={:.1f}, \quad $\alpha$={}, \quad f(x)={}".format(g, alpha,fvacStr)
@@ -171,7 +175,7 @@ plt.ylabel(r"$E_0/L$")
 ymargin = 10**(-5)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[1]-ymargin, ymax[1]+ymargin)
-plt.legend(loc=loc)
+plt.legend(loc=2)
 plt.savefig("extrLambdavsL_"+fname)
 
 # MASS
@@ -182,5 +186,5 @@ plt.xlabel(r"$L$")
 plt.ylabel(r"$M$")
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
-plt.legend(loc=loc)
+plt.legend(loc=1)
 plt.savefig("extrMassvsL_"+fname)
