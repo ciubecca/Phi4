@@ -8,13 +8,10 @@ from cycler import cycler
 import database
 from sys import exit
 import numpy as np
+from extrapolate import ETmin, ETmax, step
 
 dbname = "data/spectra3.db"
 
-ETminRaw = 10
-ETmaxRaw = 32.5
-ETminRen = 10
-ETmaxRen = 18
 
 output = "pdf"
 renlist = ("raw", "rentails", "renloc")
@@ -24,7 +21,14 @@ rc('text', usetex=True)
 
 params = {'legend.fontsize': 8, 'lines.markersize':2.5, 'lines.marker':"o"}
 plt.rcParams.update(params)
-plt.rc('axes', prop_cycle=(cycler('linestyle', ['-', '--', ':', '-.'])))
+
+plt.style.use('ggplot')
+
+plt.rc('axes', prop_cycle=(
+    cycler('marker', ['x', 'o', 'v'])
+    +cycler('linestyle', ['-', '--', ':'])
+    +cycler('markersize', [5.,3.,3.])
+    ))
 
 color = {1:"b", -1:"r"}
 
@@ -37,10 +41,10 @@ ratioELpET = 2
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
+ymin ={1:10, -1:10}
+ymax ={1:-10, -1:-10}
 
-def plotvsET(ETlistRaw, ETlistRen):
-
-    ETlist = {"raw":ETlistRaw, "renloc":ETlistRaw, "rentails":ETlistRen}
+def plotvsET(ETlist):
 
     db = database.Database(dbname)
 
@@ -55,6 +59,10 @@ def plotvsET(ETlistRaw, ETlistRen):
         data = spectrum[1][ren][0]
         label = "ren="+ren
         plt.plot(ETlist[ren], data, label=label, color='k')
+        ymin[1] = min(ymin[1], min(data))
+        ymax[1] = max(ymax[1], max(data))
+    plt.gca().set_prop_cycle(None)
+
 
     # SPECTRUM
     plt.figure(2)
@@ -78,21 +86,14 @@ def plotvsET(ETlistRaw, ETlistRen):
         data = spectrum[-1][ren][0]-spectrum[1][ren][0]
         label="ren={}".format(ren)
         plt.plot(ETlist[ren], data, label=label, color="k")
+        ymin[-1] = min(ymin[-1], min(data))
+        ymax[-1] = max(ymax[-1], max(data))
 
     plt.gca().set_prop_cycle(None)
 
 
 argv = sys.argv
 
-
-# if len(argv) < 5:
-    # print(argv[0], "<L> <g> <ETmin> <ETmax>")
-    # sys.exit(-1)
-
-# L = float(argv[1])
-# g = float(argv[2])
-# ETmin = float(argv[3])
-# ETmax = float(argv[4])
 
 if len(argv) < 3:
     print(argv[0], "<L> <g>")
@@ -101,27 +102,31 @@ if len(argv) < 3:
 L = float(argv[1])
 g = float(argv[2])
 
-ETlistRaw = scipy.linspace(ETminRaw, ETmaxRaw, (ETmaxRaw-ETminRaw)*2+1)
-ETlistRen = scipy.linspace(ETminRen, ETmaxRen, (ETmaxRen-ETminRen)*2+1)
 
 print("g=", g)
 
+ETlist = {ren: scipy.linspace(ETmin[ren][L], ETmax[ren][L],
+    (ETmax[ren][L]-ETmin[ren][L])/step[ren]+1) for ren in renlist}
 
-plotvsET(ETlistRaw, ETlistRen)
+plotvsET(ETlist)
 
 
 title = r"$g$={0:.1f}, $L$={1:.1f}".format(g,L)
 fname = "g={0:.1f}_L={1:.1f}.{2}".format(g,L,output)
 
+xlims = (min(min(ETlist[ren]) for ren in renlist),
+        max(max(ETlist[ren]) for ren in renlist))
 
 # VACUUM
-plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.figure(1, figsize=(20., 10), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{T}$")
 plt.ylabel(r"$\mathcal{E}_0$")
-plt.xlim(min(min(ETlistRaw),min(ETlistRen)), max(max(ETlistRaw),max(ETlistRen)))
+dx = 5*10**-1
+plt.xlim(xlims[0]-dx,xlims[1]+dx)
+plt.ylim(ymin[1]-10**-2,ymax[1]+10**-2)
 plt.legend(loc=1)
-plt.savefig("E0vsET_"+fname)
+plt.savefig("E0vsET_"+fname, bbox_inches='tight')
 
 
 # MASSES
@@ -129,7 +134,7 @@ plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{T}$")
 plt.ylabel(r"$\mathcal{E}_I - \mathcal{E}_0$")
-plt.xlim(min(min(ETlistRaw),min(ETlistRen)), max(max(ETlistRaw),max(ETlistRen)))
+plt.xlim(xlims)
 plt.legend(loc=2)
 plt.savefig("specvsET_"+fname)
 
@@ -138,6 +143,7 @@ plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{T}$")
 plt.ylabel(r"$\mathcal{E}_1 - \mathcal{E}_0$")
-plt.xlim(min(min(ETlistRaw),min(ETlistRen)), max(max(ETlistRaw),max(ETlistRen)))
-plt.legend(loc=2)
-plt.savefig("massvsET_"+fname)
+plt.xlim(xlims[0]-dx, xlims[1]+dx)
+plt.ylim(ymin[-1]-10**-3,ymax[-1]+10**-3)
+plt.legend(loc=1)
+plt.savefig("massvsET_"+fname, bbox_inches='tight')
