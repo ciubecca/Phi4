@@ -19,6 +19,7 @@ Llist["renloc"] = [6,8,10]
 
 output = "pdf"
 renlist = ("rentails", "renloc")
+renlist = ("rentails", )
 
 method='dogbox'
 
@@ -34,10 +35,10 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 # fmassStr = r"$m_{ph} - B \frac{3}{16 \pi^2 L} e^{- m_{ph} L}$"
 
 
-def Massfun(L, m, b):
-    return m - b*m*1/(L*m)**(3/2)*exp(-m*L)
-boundsMass = ([0,-np.inf],[1,np.inf])
-fmassStr = r"$m_{ph} - B \frac{m_{ph}}{(L m_{ph})^{3/2}} e^{- m_{ph} L}$"
+def Massfun(L, m, b, c):
+    return m - m*1/(L*m)**(3/2)*exp(-m*L)*(b+c/(L*m))
+boundsMass = ([0,-np.inf,-np.inf],[1,np.inf,np.inf])
+fmassStr = r"$m_{ph} - \frac{m_{ph}}{(L m_{ph})^{3/2}} e^{- m_{ph} L}(b+c/Lm)$"
 
 def Lambdafun(L, a, b):
     return a - b/(pi*L)*kn(1, b*L)
@@ -140,7 +141,8 @@ def plotvsL(Llist):
     ax.plot(xdata, Massfun(xdata, *popt))
     msg = [
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0])),
-            r"$B = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1]))
+            r"$b = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1])),
+            r"$c = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
             ]
     for i, m in enumerate(msg):
         ax.text(0.8, 0.2-i*0.05, msg[i], horizontalalignment='center',

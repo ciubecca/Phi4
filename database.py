@@ -86,7 +86,9 @@ class Database():
             ret = self.getObjList('spec', exactQuery, approxQuery)[0]
 
         except IndexError:
-            print("Not found:", exactQuery, approxQuery)
+            msg = "L={}, ET={}, ren={}".format(approxQuery["L"],
+                    approxQuery["ET"], exactQuery["ren"])
+            print("Not found: ", msg)
             exit(-1)
         except TypeError as e:
             print(exactQuery, approxQuery)
