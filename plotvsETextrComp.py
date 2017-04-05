@@ -106,7 +106,7 @@ fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
 
 
 f, axes = plt.subplots(2, 2, sharex='col', sharey='row')
-f.subplots_adjust(hspace=0, wspace=0, top=0.93, right=0.95, left=0.1)
+# f.subplots_adjust(hspace=0, wspace=0, top=0.93, right=0.95, left=0.1)
 f.suptitle(r"$g={}, \quad \alpha={}$".format(g,alpha), fontsize=15)
 
 plotvsET(Llist, axes)
@@ -128,4 +128,4 @@ axes[1,0].set_ylabel(r"$E_1-E_0$")
 
 
 # JOINT PLOT
-plt.savefig("fitvsETComp_"+fname)
+plt.savefig("fitvsETComp_"+fname, bbox_inches='tight')

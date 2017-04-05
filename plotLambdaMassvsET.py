@@ -118,7 +118,7 @@ xlims = (min(min(ETlist[ren]) for ren in renlist),
         max(max(ETlist[ren]) for ren in renlist))
 
 # VACUUM
-plt.figure(1, figsize=(20., 10), dpi=300, facecolor='w', edgecolor='w')
+plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{T}$")
 plt.ylabel(r"$\mathcal{E}_0$")
