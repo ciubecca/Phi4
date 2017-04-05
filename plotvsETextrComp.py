@@ -10,6 +10,7 @@ import database
 from sys import exit
 import numpy as np
 from extrapolate import Extrapolator
+from matplotlib.ticker import MaxNLocator
 
 power = {"renloc":2, "rentails":3}
 
@@ -106,17 +107,17 @@ fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
 
 
 f, axes = plt.subplots(2, 2, sharex='col', sharey='row')
-# f.subplots_adjust(hspace=0, wspace=0, top=0.93, right=0.95, left=0.1)
+f.subplots_adjust(hspace=0, wspace=0, top=.94, right=1, left=0)
 f.suptitle(r"$g={}, \quad \alpha={}$".format(g,alpha), fontsize=15)
 
 plotvsET(Llist, axes)
 
 
 axes[0,1].set_xlim(0, xmax["renloc"]+10**(-4))
-axes[0,1].legend(loc=2)
+axes[0,1].legend(loc=1)
 axes[0,0].set_xlim(0, xmax["rentails"]+10**(-5))
-axes[0,0].legend(loc=1)
-axes[0,0].set_ylabel(r"$E_0/L$")
+axes[0,0].legend(loc=3)
+axes[0,0].set_ylabel(r"$\mathcal{E}_0/L$")
 ymargin = (ymax[1]-ymin[1])/100
 axes[0,0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 axes[0,0].invert_xaxis()
@@ -124,7 +125,10 @@ axes[0,0].invert_xaxis()
 axes[1,0].set_ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
 axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]))
 axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]))
-axes[1,0].set_ylabel(r"$E_1-E_0$")
+axes[1,0].set_ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$")
+
+# Remove common tick
+axes[1,1].xaxis.set_major_locator(MaxNLocator(prune='lower', nbins=6))
 
 
 # JOINT PLOT
