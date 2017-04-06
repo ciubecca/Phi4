@@ -19,7 +19,7 @@ Llist["renloc"] = [6,8,10]
 
 output = "pdf"
 renlist = ("rentails", "renloc")
-renlist = ("rentails", )
+# renlist = ("rentails", )
 
 method='dogbox'
 
@@ -35,17 +35,26 @@ plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 # fmassStr = r"$m_{ph} - B \frac{3}{16 \pi^2 L} e^{- m_{ph} L}$"
 
 
-def Massfun(L, m, b, c):
-    return m - m*1/(L*m)**(3/2)*exp(-m*L)*(b+c/(L*m))
-boundsMass = ([0,-np.inf,-np.inf],[1,np.inf,np.inf])
-fmassStr = r"$m_{ph} - \frac{m_{ph}}{(L m_{ph})^{3/2}} e^{- m_{ph} L}(b+c/Lm)$"
+# def Massfun(L, m, b, c):
+    # return m - m*1/(L*m)**(3/2)*exp(-m*L)*(b+c/(L*m))
+# boundsMass = ([0,-np.inf,-np.inf],[1,np.inf,np.inf])
+# fmassStr = r"$m_{ph} - \frac{m_{ph}}{(L m_{ph})^{3/2}}"\
+            # "e^{- m_{ph} L}(b+c/(L m_{ph}))$"
 
-def Lambdafun(L, a, b):
-    return a - b/(pi*L)*kn(1, b*L)
-boundsLambda = ([-np.inf,0],[0,1])
-p0Lambda = [-.182, 0.5]
-p0Lambda = [-.007, 0.93]
+def Massfun(L, m, b, c):
+    return m + b/L*kn(1, m*L) + c*exp(-m*L)/(L)**(5/2)
+fmassStr = r"$m_{ph} + \frac{b}{L} K_1(m_{ph} L) + c\,e^{-m_{ph}L}\frac{1}{L^{5/2}}$"
+
+def Lambdafun(L, a, m):
+    return a - m/(pi*L)*kn(1, m*L)
+# boundsLambda = ([-np.inf,0],[0,1])
+# p0Lambda = [-.182, 0.5]
+# p0Lambda = [-.007, 0.93]
 fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
+
+# def Lambdafun(L, a, m, b):
+    # return a - m/(pi*L)*kn(1, m*L) + (b/L)*1/(L**(3/2))*exp(-2*m*L)
+# fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L) + \frac{b}{L} \frac{1}{L^{3/2}}e^{-2 m_{ph}L}$"
 
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -108,16 +117,19 @@ def plotvsL(Llist):
 
     # sigma = LambdaErr
     sigma = None
+    bounds = None
+    p0 = None
     popt, pcov = curve_fit(Lambdafun, Llist["rentails"], LambdaInf.ravel(),
-            bounds=boundsLambda, method=method, p0=p0Lambda, sigma=sigma)
+            method=method, sigma=sigma)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Lambdafun(xdata, *popt))
     msg = [
             r"$\Lambda = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0])),
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1]))
+            # ,r"$b = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
             ]
     for i, m in enumerate(msg):
-        ax.text(0.8, 0.2-i*0.05, msg[i], horizontalalignment='center',
+        ax.text(0.8, 0.1-i*0.05, msg[i], horizontalalignment='center',
             verticalalignment='center', fontsize=13, transform=ax.transAxes)
 
 
@@ -134,18 +146,18 @@ def plotvsL(Llist):
             MassInf, MassErr, marker=marker, label=r"$E_T=\infty$")
 
     sigma = MassErr
-    # sigma = None
+    sigma = None
     popt, pcov = curve_fit(Massfun, Llist["rentails"], MassInf.ravel(),
-            bounds=boundsMass, method=method, sigma=sigma)
+            method=method, sigma=sigma)
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, Massfun(xdata, *popt))
     msg = [
-            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0])),
-            r"$b = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1])),
-            r"$c = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
+            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[0],np.sqrt(pcov[0,0]))
+            ,r"$b = {:.7f} \pm {:.7f}$".format(popt[1],np.sqrt(pcov[1,1]))
+            ,r"$c = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
             ]
     for i, m in enumerate(msg):
-        ax.text(0.8, 0.2-i*0.05, msg[i], horizontalalignment='center',
+        ax.text(0.8, 0.85-i*0.05, msg[i], horizontalalignment='center',
             verticalalignment='center', fontsize=13, transform=ax.transAxes)
 
 
@@ -173,20 +185,20 @@ title = r"$g$={:.1f}, \quad $\alpha$={}, \quad f(x)={}".format(g, alpha,fvacStr)
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
-plt.ylabel(r"$E_0/L$")
+plt.ylabel(r"$\mathcal{E}_0/L$")
 ymargin = 10**(-5)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 plt.legend(loc=2)
-plt.savefig("extrLambdavsL_"+fname)
+plt.savefig("extrLambdavsL_"+fname, bbox_inches='tight')
 
 # MASS
 title = r"$g$={:.1f}, \quad $\alpha$={}, \quad f(x)={}".format(g, alpha,fmassStr)
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
-plt.ylabel(r"$M$")
+plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$")
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
 plt.legend(loc=1)
-plt.savefig("extrMassvsL_"+fname)
+plt.savefig("extrMassvsL_"+fname, bbox_inches='tight')

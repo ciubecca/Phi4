@@ -11,6 +11,7 @@ from sys import exit
 import numpy as np
 from extrapolate import Extrapolator
 from matplotlib.ticker import MaxNLocator
+from itertools import cycle
 
 power = {"renloc":2, "rentails":3}
 
@@ -24,6 +25,18 @@ rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
+
+# plt.rc('axes', prop_cycle=(
+    # cycler('marker', ['x', 'o', 'v'])
+    # +cycler('linestyle', ['-', '--', ':'])
+    # +cycler('markersize', [5.,3.,3.])
+    # +cycler('color', ['r','b','g'])
+    # ))
+
+sty_cycle = cycler('marker', ['D', 'o', '^'])\
+    +cycler('linestyle', ['-', '--', ':'])\
+    +cycler('s', [10.,8.,20.])\
+    +cycler('color', ['r','b','g'])
 
 neigs = 6
 
@@ -42,7 +55,14 @@ def plotvsET(Llist, axes):
     global ymin, ymax, xmax
 
     for ren in ("renloc","rentails"):
+
+        optIter = cycle(sty_cycle)
+
         for i,L in enumerate(Llist):
+
+            opt = next(optIter)
+            # print(opt)
+
             spectrum = {}
             ydata = {}
             yinf = {}
@@ -65,11 +85,10 @@ def plotvsET(Llist, axes):
             " VACUUM ENERGY "
             if ren=="rentails":
                 ax = axes[0,0]
-                ax.plot(xdata, ydata[1]/L, color=color[L])
+                ax.plot(xdata, ydata[1]/L, c=opt['color'])
             else:
                 ax = axes[0,1]
-            ax.scatter(xlist, spectrum[1]/L, label=label,
-                    marker=marker, color=color[L])
+            ax.scatter(xlist, spectrum[1]/L, label=label, **opt)
             ymax[1] = max(ymax[1], max(spectrum[1]/L))
             ymin[1] = min(ymin[1], min(spectrum[1]/L))
             if ren=="rentails":
@@ -79,11 +98,11 @@ def plotvsET(Llist, axes):
             " MASS "
             if ren=="rentails":
                 ax = axes[1,0]
-                ax.plot(xdata, ydata[-1]-ydata[1], color=color[L])
+                ax.plot(xdata, ydata[-1]-ydata[1], c=opt['color'])
             else:
                 ax = axes[1,1]
             mass = spectrum[-1]-spectrum[1]
-            ax.scatter(xlist, mass, label=label, marker=marker, color=color[L])
+            ax.scatter(xlist, mass, label=label, **opt)
             ymax[-1] = max(ymax[-1], max(mass))
             ymin[-1] = min(ymin[-1], min(mass))
             if ren=="rentails":
