@@ -17,7 +17,7 @@ power = 3
 
 Llist = [6, 7, 8, 9, 10]
 
-output = "pdf"
+output = "png"
 
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -43,6 +43,7 @@ def plotvsET(Llist, axes):
         spectrum = {}
         ydata = {}
         yinf = {}
+        yerr = {}
 
         global ymin, ymax, xmax
 
@@ -58,6 +59,7 @@ def plotvsET(Llist, axes):
             ydata[k] = e.predict(xdata**(-1/power))
 
             yinf[k] = e.asymValue()
+            yerr[k] = e.asymErr()
 
 
         label = "L = {}".format(L)
@@ -67,7 +69,12 @@ def plotvsET(Llist, axes):
         else:
             ax = axes[0,1]
         ax.scatter(xlist, spectrum[1]/L, label=label, marker=marker, color=color[L])
+
+        xerr = 10**(-5)
+
         ax.plot(xdata, ydata[1]/L, color=color[L])
+        err = yerr[1]/L
+        ax.errorbar([xerr], yinf[1]/L, err, color=color[L])
         ymax[1] = max(ymax[1], max(ydata[1])/L, max(spectrum[1]/L))
         ymin[1] = min(ymin[1], min(ydata[1])/L, min(spectrum[1]/L))
 
@@ -78,9 +85,13 @@ def plotvsET(Llist, axes):
             ax = axes[1,1]
         mass = spectrum[-1]-spectrum[1]
         ax.scatter(xlist, mass, label=label, marker=marker, color=color[L])
-        ax.plot(xdata, ydata[-1]-ydata[1], color=color[L])
-        ymax[-1] = max(ymax[-1], max(ydata[-1]-ydata[1]), max(mass))
-        ymin[-1] = min(ymin[-1], min(ydata[-1]-ydata[1]), min(mass))
+        data = ydata[-1]-ydata[1]
+        ax.plot(xdata, data, color=color[L])
+
+        err = max(yerr[1], yerr[-1])
+        ax.errorbar([xerr], yinf[-1]-yinf[1], err, color=color[L])
+        ymax[-1] = max(ymax[-1], max(data), max(mass))
+        ymin[-1] = min(ymin[-1], min(data), min(mass))
 
 
 argv = sys.argv
