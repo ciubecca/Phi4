@@ -26,6 +26,10 @@ rc('text', usetex=True)
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
+
+def featureVec(ET):
+    return [1/ET**3]
+
 neigs = 6
 
 color = {5:"k", 6:"r", 6.5:"k", 7:"g", 8:"y", 9:"b", 10:"c"}
@@ -54,7 +58,7 @@ def plotvsET(Llist, axes, g, alpha):
                 xmax[ren] = max(max(xlist), xmax[ren])
                 spectrum[k] = e.spectrum
 
-                e.train(alpha=alpha)
+                e.train(alpha=alpha, featureVec=featureVec)
                 res[k] = spectrum[k] - e.predict(xlist**(-1/power[ren]))
 
 
@@ -62,14 +66,17 @@ def plotvsET(Llist, axes, g, alpha):
 
             " VACUUM ENERGY RESIDUALS"
             ax = axes[0]
-            ax.scatter(xlist, res[1]/L, color=color[L], label=label)
+            ax.plot(1/xlist**(1/3),
+                    res[1]/L, color=color[L], label=label, marker='o',
+                    markersize=5)
 
             ymax[1] = max(ymax[1], max(res[1]/L))
             ymin[1] = min(ymin[1], min(res[1]/L))
 
             " MASS RESIDUALS"
             ax = axes[1]
-            ax.scatter(xlist, res[1]-res[-1], color=color[L], label=label)
+            ax.plot(1/xlist**(1/3), res[1]-res[-1], color=color[L], label=label,
+                    marker='o', markersize=5)
 
             ymax[-1] = max(ymax[-1], max(res[1]-res[-1]))
             ymin[-1] = min(ymin[-1], min(res[1]-res[-1]))
@@ -101,7 +108,7 @@ def main(argv):
 
 
     axes[0].legend(loc=2)
-    axes[0].set_xlim(0, xmax["rentails"]+10**(-5))
+    # axes[0].set_xlim(0, xmax["rentails"]+10**(-5))
     axes[0].legend(loc=1)
     axes[0].set_ylabel(r"$E_0/L$")
     ymargin = (ymax[1]-ymin[1])/100
