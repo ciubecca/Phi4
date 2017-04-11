@@ -68,7 +68,7 @@ class Extrapolator():
         self.spectrum = np.array([db.getEigs(k, ren, g, L, ET)[0]
             for ET in self.ETlist])
 
-    def train(self, alpha, weights=None, featureVec=None):
+    def train(self, alpha=0, weights=None, featureVec=None):
 
         if weights==None:
             weights = stdWeights

@@ -15,7 +15,7 @@ import itertools
 from extrapolate import *
 from sklearn.linear_model import Ridge, LinearRegression
 
-output = "png"
+output = "pdf"
 # renlist = ("rentails", "renloc")
 renlist = ("rentails", )
 

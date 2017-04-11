@@ -75,7 +75,7 @@ def plotvsET(Llist, axes):
                 spectrum[k] = e.spectrum
 
                 if ren=="rentails":
-                    e.train(alpha=alpha)
+                    e.train()
                     xdata = scipy.linspace(0, min(ETlist)**-power[ren], 100)
                     ydata[k] = e.predict(xdata**(-1/power[ren]))
                     yinf[k] = e.asymValue()
@@ -111,23 +111,22 @@ def plotvsET(Llist, axes):
 
 argv = sys.argv
 
-if len(argv) < 3:
-    print(argv[0], "<g> <alpha>")
+if len(argv) < 2:
+    print(argv[0], "<g>")
     sys.exit(-1)
 
 g = float(argv[1])
-alpha = float(argv[2])
 
 print("g=", g)
 
 
-title = r"$g$={0:.1f}, $\alpha$={1}".format(g, alpha)
-fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
+title = r"$g$={0:.1f}".format(g)
+fname = "g={0:.1f}.{1}".format(g,output)
 
 
 f, axes = plt.subplots(2, 2, sharex='col', sharey='row')
 f.subplots_adjust(hspace=0, wspace=0, top=.94, right=1, left=0)
-f.suptitle(r"$g={}, \quad \alpha={}$".format(g,alpha), fontsize=15)
+f.suptitle(r"$g={}$".format(g), fontsize=15)
 
 plotvsET(Llist, axes)
 

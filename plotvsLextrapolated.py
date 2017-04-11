@@ -16,7 +16,7 @@ Llist = {}
 Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 Llist["renloc"] = [6,8,10]
 
-output = "png"
+output = "pdf"
 # renlist = ("rentails", "renloc")
 renlist = ("rentails", )
 
@@ -105,12 +105,11 @@ def plotvsL(Llist):
 
 argv = sys.argv
 
-if len(argv) < 3:
-    print(argv[0], "<g> <alpha>")
+if len(argv) < 2:
+    print(argv[0], "<g>")
     sys.exit(-1)
 
 g = float(argv[1])
-alpha = float(argv[2])
 
 print("g=", g)
 
@@ -119,10 +118,10 @@ plt.rcParams.update(params)
 
 plotvsL(Llist)
 
-fname = "g={0:.1f}_alpha={1}.{2}".format(g, alpha, output)
+fname = "g={0:.1f}.{1}".format(g, output)
 
 # VACUUM ENERGY DENSITY
-title = r"$g$={:.1f}, \quad $\alpha$={}, \quad f(x)={}".format(g, alpha,fvacStr)
+title = r"$g$={:.1f}, \quad f(x)={}".format(g, fvacStr)
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
@@ -134,7 +133,7 @@ plt.legend(loc=2)
 plt.savefig("extrLambdavsL_"+fname, bbox_inches='tight')
 
 # MASS
-title = r"$g$={:.1f}, \quad $\alpha$={}, \quad f(x)={}".format(g, alpha,fmassStr)
+title = r"$g$={:.1f}, \quad f(x)={}".format(g, fmassStr)
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
