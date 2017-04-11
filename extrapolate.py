@@ -6,11 +6,12 @@ from scipy import pi, log, log10, array, sqrt, stats, exp
 import database
 from sys import exit
 import numpy as np
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, LinearRegression
 from scipy.special import kn
 from itertools import combinations
 
 LList = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
+# LList = [5,6,7,8,9,10]
 
 ETmax = {}
 ETmin = {}
@@ -157,8 +158,10 @@ class ExtrvsL():
 
         popt[1], pcov[1] = curve_fit(Lambdafun, LList, self.LambdaInf.ravel())
         self.msg[1] = [
-            r"$\Lambda = {:.7f} \pm {:.7f}$".format(popt[1][0],np.sqrt(pcov[1][0,0])),
-            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[1][1],np.sqrt(pcov[1][1,1]))
+            r"$\Lambda = {:.7f} \pm {:.7f}$".format(popt[1][0],
+                np.sqrt(pcov[1][0,0])),
+            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[1][1],
+                np.sqrt(pcov[1][1,1]))
             # ,r"$b = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
         ]
 
@@ -175,4 +178,5 @@ class ExtrvsL():
 
     def asymErr(self):
 ### XXX CHECK
-        return {1: np.mean(self.LambdaErr), -1: np.mean(self.MassErr)}
+        return {1: np.mean(self.LambdaErr, axis=1), \
+                -1: np.mean(self.MassErr, axis=1)}

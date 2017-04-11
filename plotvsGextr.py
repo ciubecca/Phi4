@@ -9,8 +9,11 @@ from cycler import cycler
 import database
 from sys import exit
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 from numpy import concatenate as concat
+import itertools
 from extrapolate import *
+from sklearn.linear_model import Ridge, LinearRegression
 
 output = "png"
 # renlist = ("rentails", "renloc")
@@ -33,11 +36,14 @@ xmin = min(glist)-0.01
 
 db = database.Database("data/spectra3.db")
 
+def mfun(g, gc, a):
+    return a*(gc-g)
 
-def plotvsG(Llist):
+def plotvsG(Llist, axes):
 
     MassInf = np.zeros(len(glist))
     MassErr = np.zeros((2, len(glist)))
+
 
     for i,g in enumerate(glist):
         a = ExtrvsL(db, g)
@@ -46,12 +52,50 @@ def plotvsG(Llist):
         MassErr[:,i] = a.asymErr()[-1]
 
 
-    print(MassInf)
-    print(MassErr)
-
     # Plot extrapolated data
-    plt.errorbar(glist, MassInf, MassErr, label=r"$E_T=\infty$")
+    axes[0].errorbar(glist, MassInf, MassErr, label=r"$E_T=\infty$")
 
+    mask = np.logical_and(1.3<glist,  glist<2.5)
+    xfit = glist[mask]
+    yfit = MassInf[mask]
+    errfit = MassErr[:, mask]
+    errfit[0, :] = -errfit[0, :]
+    models = []
+    for x in itertools.product((0,1), repeat=len(xfit)):
+        x = list(x)
+        Y = np.zeros(len(xfit))
+        for i in range(len(x)):
+            Y[i] = yfit[i] + errfit[x[i], i]
+        X = np.array([xfit]).transpose()
+        models.append(LinearRegression().fit(X.reshape(-1,1), Y))
+
+    ints = np.array([model.intercept_ for model in models])
+    coefs = np.array([model.coef_[0] for model in models])
+
+    def predict(x):
+        return (x*np.mean(coefs) + np.mean(ints))
+
+    gc = -np.sum(ints)/np.sum(coefs)
+
+    gcs = -ints/coefs
+    gcerr = (np.max(gc-gcs), np.max(gcs-gc))
+
+    xlist = scipy.linspace(min(xfit), max(xfit), 100)
+    axes[0].plot(xlist, predict(xlist), c='g')
+
+    xlist = scipy.linspace(max(xfit), gc, 100)
+    axes[0].plot(xlist, predict(xlist), c='g', linestyle='--')
+
+    msg = [
+            r"$g_c = {:.7f} +{:.7f} -{:.7f}$".format(gc, gcerr[1], gcerr[0])
+    ]
+    print(msg[0])
+
+    for i, m in enumerate(msg):
+        axes[0].text(0.8, 0.85-i*0.05, msg[i], horizontalalignment='center',
+            verticalalignment='center', fontsize=13, transform=axes[0].transAxes)
+
+        axes[1].errorbar(xfit, yfit-predict(xfit), MassErr[:, mask])
 
 argv = sys.argv
 
@@ -62,17 +106,23 @@ if len(argv) < 1:
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-plotvsG(glist)
+f, axes = plt.subplots(2, 1, sharex='col')
+f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
+
+plotvsG(glist, axes)
+
+axes[0].set_ylabel(r"$m_{ph}$")
+axes[0].set_ylim(-0.01, 1)
+axes[0].set_xlim(xmin, xmax)
+axes[1].set_ylabel("residuals")
+axes[1].set_xlabel(r"$g$")
+axes[1].set_xlim(xmin, xmax)
+
+# Remove common tick
+axes[1].xaxis.set_major_locator(MaxNLocator(prune='upper', nbins=8))
 
 fname = ".{0}".format(output)
 
 # MASS
-title = r"".format()
-plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$g$")
-plt.ylabel(r"$m_{ph}$")
-plt.xlim(xmin, xmax)
-plt.ylim(-0.01, 1)
-plt.legend(loc=1)
-plt.savefig("MvsG_"+fname, bbox_inches='tight')
+plt.figure(1, figsize=(4, 2.5), dpi=300)
+plt.savefig("MvsG"+fname, bbox_inches='tight')
