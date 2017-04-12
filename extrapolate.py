@@ -149,34 +149,45 @@ class ExtrvsL():
 
     def train(self):
 
-        self.popt = {}
-        self.pcov = {}
+        self.popt = {k: [None, None] for k in (-1,1)}
         self.msg = {}
+        self.coefs = {k: [] for k in (-1,1)}
+        self.errs = {k: [] for k in (-1,1)}
 
         popt = self.popt
         pcov = self.pcov
+        coefs = self.coefs
+        errs = self.errs
 
-        popt[1], pcov[1] = curve_fit(Lambdafun, LList, self.LambdaInf.ravel())
+        # Upper or lower values
+        for n in (0,1):
+            y = self.LambdaInf -(-1)**n*LambdaErr[n]
+            popt[1][n], pcov = curve_fit(Lambdafun, LList, y.ravel())
+
+            y = self.MassInf -(-1)**n*MassErr[n]
+            popt[-1][n], pcov = curve_fit(Massfun, LList, y.ravel())
+
+
+        for k in (-1,1):
+            for i in range(len(popt[k,0])):
+                c1, c2 = popt[k][:,i]
+                coefs[k].append((c1+c2)/2)
+                errs[k].append(abs(c1-c2)/2)
+
         self.msg[1] = [
-            r"$\Lambda = {:.7f} \pm {:.7f}$".format(popt[1][0],
-                np.sqrt(pcov[1][0,0])),
-            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(popt[1][1],
-                np.sqrt(pcov[1][1,1]))
+            r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0]),
+            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
             # ,r"$b = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
         ]
 
-        popt[-1], pcov[-1] = curve_fit(Massfun, LList, self.MassInf.ravel())
         self.msg[-1] = [
-            r"$m_{{ph}} = {:.7f} \pm {:.7f}$"\
-                .format(popt[-1][0], np.sqrt(pcov[-1][0,0]))
-            , r"$b = {:.7f} \pm {:.7f}$".format(popt[-1][1], np.sqrt(pcov[-1][1,1]))
-            , r"$c = {:.7f} \pm {:.7f}$".format(popt[-1][2], np.sqrt(pcov[-1][2,2]))
+            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[-1][0], errs[-1][0])
+            , r"$b = {:.7f} \pm {:.7f}$".format(coefs[-1][1], errs[-1][1])
+            , r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
         ]
 
     def asymValue(self):
-        return {k: self.popt[k][0] for k in (-1,1)}
+        return {k: self.coef[k][0] for k in (-1,1)}
 
     def asymErr(self):
-### XXX CHECK
-        return {1: np.mean(self.LambdaErr, axis=1), \
-                -1: np.mean(self.MassErr, axis=1)}
+        return {k: self.errs[k][0] for k in (-1,1)}

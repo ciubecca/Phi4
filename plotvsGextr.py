@@ -49,7 +49,7 @@ def plotvsG(Llist, axes):
         a = ExtrvsL(db, g)
         a.train()
         MassInf[i] = a.asymValue()[-1]
-        MassErr[:,i] = a.asymErr()[-1]
+        MassErr[i] = a.asymErr()[-1]
 
 
     # Plot extrapolated data
@@ -58,14 +58,14 @@ def plotvsG(Llist, axes):
     mask = np.logical_and(1.3<glist,  glist<2.5)
     xfit = glist[mask]
     yfit = MassInf[mask]
-    errfit = MassErr[:, mask]
-    errfit[0, :] = -errfit[0, :]
+    errfit = MassErr[mask]
     models = []
-    for x in itertools.product((0,1), repeat=len(xfit)):
-        x = list(x)
-        Y = np.zeros(len(xfit))
-        for i in range(len(x)):
-            Y[i] = yfit[i] + errfit[x[i], i]
+    for signvec in itertools.product((-1,1), repeat=len(xfit)):
+        x = np.array(list(signvec))
+        Y = y + x*errfit
+        # Y = np.zeros(len(xfit))
+        # for i in range(len(x)):
+            # Y[i] = yfit[i] -(-1)**(x[i])
         X = np.array([xfit]).transpose()
         models.append(LinearRegression().fit(X.reshape(-1,1), Y))
 
