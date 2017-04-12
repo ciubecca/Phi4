@@ -125,6 +125,7 @@ def Lambdafun(L, a, m):
     return a - m/(pi*L)*kn(1, m*L)
 fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 
+method = 'dogbox'
 
 class ExtrvsL():
     def __init__(self, db, g, alpha=0):
@@ -155,24 +156,23 @@ class ExtrvsL():
         self.errs = {k: [] for k in (-1,1)}
 
         popt = self.popt
-        pcov = self.pcov
         coefs = self.coefs
         errs = self.errs
 
         # Upper or lower values
         for n in (0,1):
-            y = self.LambdaInf -(-1)**n*LambdaErr[n]
-            popt[1][n], pcov = curve_fit(Lambdafun, LList, y.ravel())
+            y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
+            popt[1][n], pcov = curve_fit(Lambdafun, LList, y.ravel(), method=method)
 
-            y = self.MassInf -(-1)**n*MassErr[n]
-            popt[-1][n], pcov = curve_fit(Massfun, LList, y.ravel())
+            y = self.MassInf -(-1)**n*self.MassErr[n]
+            popt[-1][n], pcov = curve_fit(Massfun, LList, y.ravel(), method=method)
 
 
         for k in (-1,1):
-            for i in range(len(popt[k,0])):
-                c1, c2 = popt[k][:,i]
-                coefs[k].append((c1+c2)/2)
-                errs[k].append(abs(c1-c2)/2)
+            for i in range(len(popt[k][0])):
+                x = popt[k][0][i], popt[k][1][i]
+                coefs[k].append((x[0]+x[1])/2)
+                errs[k].append(abs(x[0]-x[1])/2)
 
         self.msg[1] = [
             r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0]),

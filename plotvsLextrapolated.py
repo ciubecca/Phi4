@@ -77,7 +77,7 @@ def plotvsL(Llist):
             a.LambdaInf, a.LambdaErr, marker=marker, label=r"$E_T=\infty$")
 
     xdata = scipy.linspace(xmin, xmax, 100)
-    popt = a.popt[1]
+    popt = a.coefs[1]
     ax.plot(xdata, Lambdafun(xdata, *popt))
 
     for i, m in enumerate(a.msg[1]):
@@ -96,7 +96,7 @@ def plotvsL(Llist):
     ax.errorbar(LList, a.MassInf, a.MassErr, marker=marker, label=r"$E_T=\infty$")
 
     xdata = scipy.linspace(xmin, xmax, 100)
-    popt = a.popt[-1]
+    popt = a.coefs[-1]
     ax.plot(xdata, Massfun(xdata, *popt))
     for i, m in enumerate(a.msg[-1]):
         ax.text(0.8, 0.85-i*0.05, a.msg[-1][i], horizontalalignment='center',
