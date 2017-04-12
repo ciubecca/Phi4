@@ -83,7 +83,7 @@ class Extrapolator():
         self.models = []
 
         # Number of points to exclude
-        for m in (0,1,2):
+        for m in (0,1,2,3):
             for nlist in combinations(range(nmax+1), m):
                 # print(nlist)
                 mask = np.ones(len(self.ETlist), dtype=bool)
@@ -145,8 +145,8 @@ class ExtrvsL():
             self.LambdaErr[:,i] = e[1].asymErr()/L
             self.MassInf[i] = e[-1].asymValue()-e[1].asymValue()
             # XXX Check
-            self.MassErr[:,i] = np.amax([e[-1].asymErr(),e[1].asymErr()[::-1]], axis=0)
-            # MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
+        # self.MassErr[:,i] = np.amax([e[-1].asymErr(),e[1].asymErr()[::-1]], axis=0)
+            self.MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
 
     def train(self):
 
