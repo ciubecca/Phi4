@@ -29,7 +29,7 @@ rc('text', usetex=True)
 
 klist = (1,-1)
 
-glist = scipy.linspace(0.2, 3.0, 15)
+glist = scipy.linspace(0.2, 2.6, 13)
 
 xmax = max(glist)+0.01
 xmin = min(glist)-0.01
@@ -42,7 +42,7 @@ def mfun(g, gc, a):
 def plotvsG(Llist, axes):
 
     MassInf = np.zeros(len(glist))
-    MassErr = np.zeros((2, len(glist)))
+    MassErr = np.zeros(len(glist))
 
 
     for i,g in enumerate(glist):
@@ -62,7 +62,7 @@ def plotvsG(Llist, axes):
     models = []
     for signvec in itertools.product((-1,1), repeat=len(xfit)):
         x = np.array(list(signvec))
-        Y = y + x*errfit
+        Y = yfit + x*errfit
         # Y = np.zeros(len(xfit))
         # for i in range(len(x)):
             # Y[i] = yfit[i] -(-1)**(x[i])
@@ -95,7 +95,7 @@ def plotvsG(Llist, axes):
         axes[0].text(0.8, 0.85-i*0.05, msg[i], horizontalalignment='center',
             verticalalignment='center', fontsize=13, transform=axes[0].transAxes)
 
-        axes[1].errorbar(xfit, yfit-predict(xfit), MassErr[:, mask])
+        axes[1].errorbar(xfit, yfit-predict(xfit), errfit)
 
 argv = sys.argv
 

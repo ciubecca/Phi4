@@ -130,6 +130,8 @@ method = 'dogbox'
 class ExtrvsL():
     def __init__(self, db, g, alpha=0):
 
+        self.g = g
+
         self.LambdaInf = np.zeros(len(LList))
         self.LambdaErr = np.zeros((2, len(LList)))
         self.MassInf = np.zeros(len(LList))
@@ -160,13 +162,18 @@ class ExtrvsL():
         errs = self.errs
 
         # Upper or lower values
-        for n in (0,1):
-            y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
-            popt[1][n], pcov = curve_fit(Lambdafun, LList, y.ravel(), method=method)
+        try:
+            for n in (0,1):
+                y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
+                popt[1][n], pcov = curve_fit(Lambdafun, LList,
+                        y.ravel(), method=method)
 
-            y = self.MassInf -(-1)**n*self.MassErr[n]
-            popt[-1][n], pcov = curve_fit(Massfun, LList, y.ravel(), method=method)
+                y = self.MassInf -(-1)**n*self.MassErr[n]
+                popt[-1][n], pcov = curve_fit(Massfun, LList, y.ravel(), method=method)
 
+        except RuntimeError as e:
+            print("Exception for g={}".format(self.g))
+            raise e
 
         for k in (-1,1):
             for i in range(len(popt[k][0])):
@@ -186,8 +193,16 @@ class ExtrvsL():
             , r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
         ]
 
+    def predict(self, k, x):
+        if k==1:
+            fun = Lambdafun
+        else:
+            fun = Massfun
+
+        return (fun(x, *self.popt[k][1])+fun(x, *self.popt[k][0]))/2
+
     def asymValue(self):
-        return {k: self.coef[k][0] for k in (-1,1)}
+        return {k: self.coefs[k][0] for k in (-1,1)}
 
     def asymErr(self):
         return {k: self.errs[k][0] for k in (-1,1)}
