@@ -13,6 +13,12 @@ from itertools import combinations
 LList = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 # LList = [5,6,7,8,9,10]
 
+# Fitting vs ET, number of lowest values of ET to potentially exclude
+nmax = 5
+# Maximum number of points to exclude at low ET
+pmax = 2
+
+
 ETmax = {}
 ETmin = {}
 
@@ -79,11 +85,10 @@ class Extrapolator():
 
 
         # Position of the highest ET to exclude
-        nmax = 5
         self.models = []
 
         # Number of points to exclude
-        for m in (0,1,2,3):
+        for m in range(0,pmax+1):
             for nlist in combinations(range(nmax+1), m):
                 # print(nlist)
                 mask = np.ones(len(self.ETlist), dtype=bool)
@@ -120,6 +125,12 @@ class Extrapolator():
 def Massfun(L, m, b, c):
     return m + b/L*kn(1, m*L) + c*exp(-m*L)/(L)**(5/2)
 fmassStr = r"$m_{ph} + \frac{b}{L} K_1(m_{ph} L) + c\,e^{-m_{ph}L}\frac{1}{L^{5/2}}$"
+
+
+def Massfun(L, m, b):
+    return m*(1 + b*kn(1, m*L))
+fmassStr = r"$m_{ph}(1 + b  K_1(m_{ph} L))$"
+
 
 def Lambdafun(L, a, m):
     return a - m/(pi*L)*kn(1, m*L)
@@ -190,7 +201,7 @@ class ExtrvsL():
         self.msg[-1] = [
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[-1][0], errs[-1][0])
             , r"$b = {:.7f} \pm {:.7f}$".format(coefs[-1][1], errs[-1][1])
-            , r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
+            # , r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
         ]
 
     def predict(self, k, x):

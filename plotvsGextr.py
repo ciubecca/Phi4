@@ -36,10 +36,14 @@ xmin = min(glist)-0.01
 
 db = database.Database("data/spectra3.db")
 
+gc = 0
+
 def mfun(g, gc, a):
     return a*(gc-g)
 
 def plotvsG(Llist, axes):
+
+    global gc
 
     MassInf = np.zeros(len(glist))
     MassErr = np.zeros(len(glist))
@@ -111,15 +115,16 @@ f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
 plotvsG(glist, axes)
 
+print(gc)
+
 axes[0].set_ylabel(r"$m_{ph}$")
 axes[0].set_ylim(-0.01, 1)
-axes[0].set_xlim(xmin, xmax)
+axes[0].set_xlim(xmin, gc)
 axes[1].set_ylabel("residuals")
 axes[1].set_xlabel(r"$g$")
-axes[1].set_xlim(xmin, xmax)
 
 # Remove common tick
-axes[1].xaxis.set_major_locator(MaxNLocator(prune='upper', nbins=8))
+axes[1].yaxis.set_major_locator(MaxNLocator(prune='upper', nbins=8))
 
 fname = ".{0}".format(output)
 
