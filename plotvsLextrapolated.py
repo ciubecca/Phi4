@@ -12,6 +12,8 @@ import numpy as np
 from numpy import concatenate as concat
 from extrapolate import *
 
+nparam=2
+
 Llist = {}
 Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 Llist["renloc"] = [6,8,10]
@@ -54,7 +56,7 @@ def plotvsL(Llist):
 
 
     a = ExtrvsL(db, g)
-    a.train()
+    a.train(nparam)
 
     ymax[1] = max(max(max(Lambda[ren]) for ren in renlist),
             max(a.LambdaInf+a.LambdaErr[1]))
@@ -132,7 +134,11 @@ plt.legend(loc=2)
 plt.savefig("extrLambdavsL_"+fname, bbox_inches='tight')
 
 # MASS
-title = r"$g$={:.1f}, \quad f(x)={}".format(g, fmassStr)
+if nparam == 2:
+    f = fmassStr2
+else:
+    f = fmassStr
+title = r"$g$={:.1f}, \quad f(x)={}".format(g, f)
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
@@ -140,4 +146,8 @@ plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$")
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
 plt.legend(loc=1)
-plt.savefig("extrMassvsL_"+fname, bbox_inches='tight')
+
+s = "extrMassvsL_"
+if nparam==2:
+    s += "p=2_"
+plt.savefig(s+fname, bbox_inches='tight')

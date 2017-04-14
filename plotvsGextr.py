@@ -19,6 +19,7 @@ output = "pdf"
 # renlist = ("rentails", "renloc")
 renlist = ("rentails", )
 
+nparams = 3
 
 plt.style.use('ggplot')
 plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
@@ -47,13 +48,19 @@ def plotvsG(Llist, axes):
 
     MassInf = np.zeros(len(glist))
     MassErr = np.zeros(len(glist))
-
+    MassInf2 = np.zeros(len(glist))
+    MassErr2 = np.zeros(len(glist))
 
     for i,g in enumerate(glist):
         a = ExtrvsL(db, g)
-        a.train()
+        a.train(nparam=3)
         MassInf[i] = a.asymValue()[-1]
         MassErr[i] = a.asymErr()[-1]
+
+        a = ExtrvsL(db, g)
+        a.train(nparam=2)
+        MassInf2[i] = a.asymValue()[-1]
+        MassErr2[i] = a.asymErr()[-1]
 
 
     # Plot extrapolated data
@@ -99,7 +106,9 @@ def plotvsG(Llist, axes):
         axes[0].text(0.8, 0.85-i*0.05, msg[i], horizontalalignment='center',
             verticalalignment='center', fontsize=13, transform=axes[0].transAxes)
 
-        axes[1].errorbar(xfit, yfit-predict(xfit), errfit)
+    axes[1].errorbar(xfit, yfit-predict(xfit), errfit, color='r')
+    axes[1].errorbar(xfit, MassInf2[mask]-predict(xfit), MassErr2[mask], color='b')
+
 
 argv = sys.argv
 
@@ -130,4 +139,7 @@ fname = ".{0}".format(output)
 
 # MASS
 plt.figure(1, figsize=(4, 2.5), dpi=300)
-plt.savefig("MvsG"+fname, bbox_inches='tight')
+s = "MvsG"
+if nparams==2:
+    s += "_p=2"
+plt.savefig(s+fname, bbox_inches='tight')

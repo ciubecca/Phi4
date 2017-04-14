@@ -2,7 +2,7 @@ import sys
 import scipy
 from scipy.optimize import curve_fit
 import math
-from scipy import pi, log, log10, array, sqrt, stats, exp
+from scipy import pi, log, log10, array, sqrt, stats, exp, e
 import database
 from sys import exit
 import numpy as np
@@ -123,14 +123,12 @@ class Extrapolator():
             ])
 
 def Massfun(L, m, b, c):
-    return m + b/L*kn(1, m*L) + c*exp(-m*L)/(L)**(5/2)
-fmassStr = r"$m_{ph} + \frac{b}{L} K_1(m_{ph} L) + c\,e^{-m_{ph}L}\frac{1}{L^{5/2}}$"
+    return m*(1 + b*kn(1, m*L) + c/(L*m)**(3/2)*e**(-m*L))
+fmassStr = r"$m_{ph}(1 + b  K_1(m_{ph} L) + c/(L m_{ph})^{3/2} e^{-m_{ph L}} )$"
 
-
-def Massfun(L, m, b):
+def Massfun2(L, m, b):
     return m*(1 + b*kn(1, m*L))
-fmassStr = r"$m_{ph}(1 + b  K_1(m_{ph} L))$"
-
+fmassStr2 = r"$m_{ph}(1 + b  K_1(m_{ph} L))$"
 
 def Lambdafun(L, a, m):
     return a - m/(pi*L)*kn(1, m*L)
@@ -158,10 +156,11 @@ class ExtrvsL():
             self.LambdaErr[:,i] = e[1].asymErr()/L
             self.MassInf[i] = e[-1].asymValue()-e[1].asymValue()
             # XXX Check
-        # self.MassErr[:,i] = np.amax([e[-1].asymErr(),e[1].asymErr()[::-1]], axis=0)
-            self.MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
+            self.MassErr[:,i] = np.amax([e[-1].asymErr(),e[1].asymErr()[::-1]], axis=0)
+            # self.MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
 
-    def train(self):
+    def train(self, nparam=3):
+        """ if nparam=2, use only 2 free coefficients for fitting the mass """
 
         self.popt = {k: [None, None] for k in (-1,1)}
         self.msg = {}
@@ -180,7 +179,12 @@ class ExtrvsL():
                         y.ravel(), method=method)
 
                 y = self.MassInf -(-1)**n*self.MassErr[n]
-                popt[-1][n], pcov = curve_fit(Massfun, LList, y.ravel(), method=method)
+                if nparam==2:
+                    self.mfun = Massfun2
+                else:
+                    self.mfun = Massfun
+                popt[-1][n], pcov =\
+                    curve_fit(self.mfun, LList, y.ravel(), method=method)
 
         except RuntimeError as e:
             print("Exception for g={}".format(self.g))
@@ -195,20 +199,22 @@ class ExtrvsL():
         self.msg[1] = [
             r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0]),
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
-            # ,r"$b = {:.7f} \pm {:.7f}$".format(popt[2],np.sqrt(pcov[2,2]))
         ]
 
         self.msg[-1] = [
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[-1][0], errs[-1][0])
             , r"$b = {:.7f} \pm {:.7f}$".format(coefs[-1][1], errs[-1][1])
-            # , r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
         ]
+        if nparam==3:
+            self.msg[-1].append(
+                    r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
+                    )
 
     def predict(self, k, x):
         if k==1:
             fun = Lambdafun
         else:
-            fun = Massfun
+            fun = self.mfun
 
         return (fun(x, *self.popt[k][1])+fun(x, *self.popt[k][0]))/2
 
