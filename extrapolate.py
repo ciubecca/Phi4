@@ -54,6 +54,7 @@ errcoeff = 3.
 def stdFeatureVec(ET):
     return [1/ET**3, 1/ET**4]
 
+
 class Extrapolator():
 
     def __init__(self, db, k, L, g, ren="rentails"):
@@ -71,10 +72,12 @@ class Extrapolator():
         else:
             self.ETlist = scipy.linspace(ETMin, ETMax, (ETMax-ETMin)*2+1)
 
-        self.spectrum = np.array([db.getEigs(k, ren, g, L, ET)[0]
+        self.spectrum = np.array([np.array(db.getEigs(k, ren, g, L, ET))
             for ET in self.ETlist])
 
-    def train(self, alpha=0, weights=None, featureVec=None):
+    def train(self, neigs=1, alpha=0, weights=None, featureVec=None):
+
+        self.neigs = neigs
 
         if weights==None:
             weights = stdWeights
@@ -88,39 +91,43 @@ class Extrapolator():
         self.models = []
 
         # Number of points to exclude
-        for m in range(0,pmax+1):
-            for nlist in combinations(range(nmax+1), m):
-                # print(nlist)
-                mask = np.ones(len(self.ETlist), dtype=bool)
-                mask[list(nlist)] = False
-                data = self.spectrum[mask]
-                xlist = self.ETlist[mask]
-                X = np.array(self.featureVec(xlist)).transpose()
-                self.models.append(Ridge(alpha=alpha, normalize=True)\
-                        .fit(X, data, sample_weight=1/weights(xlist)))
+        for n in range(neigs):
+            self.models.append([])
 
+            for m in range(0,pmax+1):
+                for nlist in combinations(range(nmax+1), m):
+                    # print(nlist)
+                    mask = np.ones(len(self.ETlist), dtype=bool)
+                    mask[list(nlist)] = False
+                    data = self.spectrum[mask, n]
+                    xlist = self.ETlist[mask]
+                    X = np.array(self.featureVec(xlist)).transpose()
+                    self.models[n].append(Ridge(alpha=alpha, normalize=True)\
+                            .fit(X, data, sample_weight=1/weights(xlist)))
 
     def predict(self, x):
         x = np.array(x)
-        N = len(self.models)
-        return sum(self.models[n].predict(np.array(self.featureVec(x)).transpose())\
-                for n in range(N))/N
+        N = len(self.models[0])
+        return np.array([sum(self.models[m, n].predict(np.array(self.featureVec(x)).\
+                        transpose())for n in range(N))/N for m in self.neigs])
 
     def asymValue(self):
         N = len(self.models)
-        ints = np.array([self.models[n].intercept_ for n in range(N)])
-        return np.mean(ints)
+        ints = [np.array([self.models[m][n].intercept_ for n in range(N)])
+            for m in range(self.neigs)]
+        return [np.mean(x) for x in ints]
 
     def asymErr(self):
         N = len(self.models)
-        ints = np.array([self.models[n].intercept_ for n in range(N)])
+        ints = [np.array([self.models[m][n].intercept_ for n in range(N)])
+            for m in range(self.neigs)]
         asymVal = self.asymValue()
         return np.array([
-            max(max(asymVal-ints),
-            max((self.predict(self.ETlist)-self.spectrum)[-10:])),
-            max(max(ints-asymVal),
-            max((self.spectrum-self.predict(self.ETlist))[-10:]))
-            ])
+            [max(max(asymVal[m]-ints[m]),
+            max((self.predict(self.ETlist)[m]-self.spectrum[m])[-10:])),
+            max(max(ints[m]-asymVal[m]),
+            max((self.spectrum[m]-self.predict(self.ETlist)[m])[-10:]))]
+                for m in range(self.neigs)])
 
 def Massfun(L, m, b, c):
     return m*(1 + b*kn(1, m*L) + c/(L*m)**(3/2)*e**(-m*L))
@@ -152,11 +159,12 @@ class ExtrvsL():
             e[-1] = Extrapolator(db, -1, L, g)
             e[1].train(alpha)
             e[-1].train(alpha)
-            self.LambdaInf[i] = e[1].asymValue()/L
-            self.LambdaErr[:,i] = e[1].asymErr()/L
-            self.MassInf[i] = e[-1].asymValue()-e[1].asymValue()
+            self.LambdaInf[i] = e[1].asymValue()[0]/L
+            self.LambdaErr[:,i] = e[1].asymErr()[0]/L
+            self.MassInf[i] = e[-1].asymValue()[0]-e[1].asymValue()[0]
             # XXX Check
-            self.MassErr[:,i] = np.amax([e[-1].asymErr(),e[1].asymErr()[::-1]], axis=0)
+            self.MassErr[:,i] = np.amax([e[-1].asymErr()[0],
+                e[1].asymErr()[0][::-1]], axis=0)
             # self.MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
 
     def train(self, nparam=3):
