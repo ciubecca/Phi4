@@ -61,6 +61,7 @@ class Extrapolator():
         ETMin = ETmin[ren][L]
         ETMax = ETmax[ren][L]
 
+        self.g = g
         self.L = L
         self.k = k
 
@@ -75,16 +76,18 @@ class Extrapolator():
         self.spectrum = np.array([np.array(db.getEigs(k, ren, g, L, ET))
             for ET in self.ETlist])
 
-    def train(self, neigs=1, alpha=0, weights=None, featureVec=None):
+    def train(self, neigs=1, alpha=0, weights=None):
 
         self.neigs = neigs
 
         if weights==None:
             weights = stdWeights
-        if featureVec==None:
-            self.featureVec = stdFeatureVec
+
+        # Use just linear fit because of fluctuations
+        if self.g < 1:
+            self.featureVec = lambda ET: [1/ET**3]
         else:
-            self.featureVec = featureVec
+            self.featureVec = lambda ET: [1/ET**3, 1/ET**4]
 
 
         # Position of the highest ET to exclude
@@ -96,7 +99,6 @@ class Extrapolator():
 
             for m in range(0,pmax+1):
                 for nlist in combinations(range(nmax+1), m):
-                    # print(nlist)
                     mask = np.ones(len(self.ETlist), dtype=bool)
                     mask[list(nlist)] = False
                     data = self.spectrum[mask, n]
@@ -108,25 +110,27 @@ class Extrapolator():
     def predict(self, x):
         x = np.array(x)
         N = len(self.models[0])
-        return np.array([sum(self.models[m, n].predict(np.array(self.featureVec(x)).\
-                        transpose())for n in range(N))/N for m in self.neigs])
+        return np.array([sum(self.models[m][n].predict(np.array(self.featureVec(x)).\
+                        transpose()) for n in range(N))/N for m in range(self.neigs)])
 
     def asymValue(self):
-        N = len(self.models)
+        N = len(self.models[0])
         ints = [np.array([self.models[m][n].intercept_ for n in range(N)])
             for m in range(self.neigs)]
-        return [np.mean(x) for x in ints]
+        return np.array([np.mean(x) for x in ints])
 
     def asymErr(self):
-        N = len(self.models)
-        ints = [np.array([self.models[m][n].intercept_ for n in range(N)])
-            for m in range(self.neigs)]
+        N = len(self.models[0])
+        ints = np.array([np.array([self.models[m][n].intercept_ for n in range(N)])
+            for m in range(self.neigs)])
         asymVal = self.asymValue()
+        # print(asymVal.shape, ints.shape)
+        # print(self.predict(self.ETlist).shape, self.spectrum[:,:self.neigs].shape)
         return np.array([
             [max(max(asymVal[m]-ints[m]),
-            max((self.predict(self.ETlist)[m]-self.spectrum[m])[-10:])),
+                max((self.predict(self.ETlist)[m]-self.spectrum[:,m])[-10:])),
             max(max(ints[m]-asymVal[m]),
-            max((self.spectrum[m]-self.predict(self.ETlist)[m])[-10:]))]
+                max((self.spectrum[:,m]-self.predict(self.ETlist)[m])[-10:]))]
                 for m in range(self.neigs)])
 
 def Massfun(L, m, b, c):
@@ -157,9 +161,10 @@ class ExtrvsL():
             e = {}
             e[1] = Extrapolator(db, 1, L, g)
             e[-1] = Extrapolator(db, -1, L, g)
-            e[1].train(alpha)
-            e[-1].train(alpha)
+            e[1].train()
+            e[-1].train()
             self.LambdaInf[i] = e[1].asymValue()[0]/L
+            # print(self.LambdaErr.shape, e[1].asymErr()[0].shape)
             self.LambdaErr[:,i] = e[1].asymErr()[0]/L
             self.MassInf[i] = e[-1].asymValue()[0]-e[1].asymValue()[0]
             # XXX Check
