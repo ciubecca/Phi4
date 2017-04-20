@@ -15,9 +15,9 @@ xmargin = 10**(-4)
 
 power = 3
 
-Llist = [6, 7, 8, 9, 10]
+Llist = [7, 8, 9, 10]
 
-output = "png"
+output = "pdf"
 
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -52,14 +52,14 @@ def plotvsET(Llist, axes):
             ETlist = e.ETlist
             xlist = 1/ETlist**power
             xmax = max(max(xlist), xmax)
-            spectrum[k] = e.spectrum
+            spectrum[k] = e.spectrum[:,0]
 
-            e.train(alpha=alpha)
+            e.train()
             xdata = scipy.linspace(0, min(ETlist)**-power, 100)
-            ydata[k] = e.predict(xdata**(-1/power))
+            ydata[k] = e.predict(xdata**(-1/power))[0]
 
-            yinf[k] = e.asymValue()
-            yerr[k] = e.asymErr()
+            yinf[k] = e.asymValue()[0]
+            yerr[k] = e.asymErr()[0]
 
 
         label = "L = {}".format(L)
@@ -74,7 +74,7 @@ def plotvsET(Llist, axes):
 
         ax.plot(xdata, ydata[1]/L, color=color[L])
         err = yerr[1]/L
-        ax.errorbar([xerr], yinf[1]/L, err, color=color[L])
+        ax.errorbar([xerr], [yinf[1]/L], [err], color=color[L])
         ymax[1] = max(ymax[1], max(ydata[1])/L, max(spectrum[1]/L))
         ymin[1] = min(ymin[1], min(ydata[1])/L, min(spectrum[1]/L))
 
@@ -88,31 +88,31 @@ def plotvsET(Llist, axes):
         data = ydata[-1]-ydata[1]
         ax.plot(xdata, data, color=color[L])
 
-        err = max(yerr[1], yerr[-1])
-        ax.errorbar([xerr], yinf[-1]-yinf[1], err, color=color[L])
+        err = np.array([max(yerr[1][0], yerr[-1][0]), max(yerr[1][1],yerr[-1][1])])
+        print(xerr, yinf[-1]-yinf[1], err)
+        ax.errorbar([xerr], [yinf[-1]-yinf[1]], [err], color=color[L])
         ymax[-1] = max(ymax[-1], max(data), max(mass))
         ymin[-1] = min(ymin[-1], min(data), min(mass))
 
 
 argv = sys.argv
 
-if len(argv) < 3:
-    print(argv[0], "<g> <alpha>")
+if len(argv) < 2:
+    print(argv[0], "<g>")
     sys.exit(-1)
 
 g = float(argv[1])
-alpha = float(argv[2])
 
 print("g=", g)
 
 
-title = r"$g$={0:.1f}, $\alpha$={1}".format(g, alpha)
-fname = "g={0:.1f}_alpha={1}.{2}".format(g,alpha,output)
+title = r"$g$={0:.1f}".format(g)
+fname = "g={0:.1f}.{1}".format(g,output)
 
 
 f, axes = plt.subplots(2, 2, sharex='col', sharey='row')
 f.subplots_adjust(hspace=0, wspace=0, top=0.93, right=0.95)
-f.suptitle(r"$g={}, \quad \alpha={}$".format(g,alpha), fontsize=15)
+f.suptitle(r"$g={}$".format(g), fontsize=15)
 
 plotvsET(Llist, axes)
 
