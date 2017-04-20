@@ -11,7 +11,6 @@ from scipy.special import kn
 from itertools import combinations
 
 LList = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
-# LList = [5,6,7,8,9,10]
 
 # Fitting vs ET, number of lowest values of ET to potentially exclude
 nmax = 5
@@ -24,9 +23,6 @@ ETmin = {}
 
 ETmax["rentails"] = {5:31, 5.5:29, 6:27.5, 6.5:26.5, 7:25, 7.5:24, 8:23,
         8.5:22, 9:21, 9.5:20.5, 10:20}
-
-# ETmax["rentails"] = {5:31, 5.5:29, 6:27, 6.5:25.5, 7:24, 7.5:22, 8:22,
-         # 8.5:20.5, 9:20.5, 9.5:19.5, 10:19}
 
 ETmin["rentails"] = {5:10, 5.5:10, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
         8.5:10, 9:10, 9.5:10, 10:10}
@@ -44,18 +40,9 @@ step["rentails"] = 0.5
 
 missing = {6:[], 8:[32], 10:[]}
 
-def stdWeights(ET):
-    return 1
-
-absolute_sigma=False
-errcoeff = 3.
-
-
-def stdFeatureVec(ET):
-    return [1/ET**3, 1/ET**4]
-
 
 class Extrapolator():
+    """ Extrapolate vs ET """
 
     def __init__(self, db, k, L, g, ren="rentails"):
         ETMin = ETmin[ren][L]
@@ -76,12 +63,9 @@ class Extrapolator():
         self.spectrum = np.array([np.array(db.getEigs(k, ren, g, L, ET))
             for ET in self.ETlist])
 
-    def train(self, neigs=1, alpha=0, weights=None):
+    def train(self, neigs=1):
 
         self.neigs = neigs
-
-        if weights==None:
-            weights = stdWeights
 
         # Use just linear fit because of fluctuations
         if self.g < 1:
@@ -104,8 +88,7 @@ class Extrapolator():
                     data = self.spectrum[mask, n]
                     xlist = self.ETlist[mask]
                     X = np.array(self.featureVec(xlist)).transpose()
-                    self.models[n].append(Ridge(alpha=alpha, normalize=True)\
-                            .fit(X, data, sample_weight=1/weights(xlist)))
+                    self.models[n].append(LinearRegression().fit(X, data))
 
     def predict(self, x):
         x = np.array(x)
@@ -124,8 +107,7 @@ class Extrapolator():
         ints = np.array([np.array([self.models[m][n].intercept_ for n in range(N)])
             for m in range(self.neigs)])
         asymVal = self.asymValue()
-        # print(asymVal.shape, ints.shape)
-        # print(self.predict(self.ETlist).shape, self.spectrum[:,:self.neigs].shape)
+
         return np.array([
             [max(max(asymVal[m]-ints[m]),
                 max((self.predict(self.ETlist)[m]-self.spectrum[:,m])[-10:])),
@@ -148,7 +130,7 @@ fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 method = 'dogbox'
 
 class ExtrvsL():
-    def __init__(self, db, g, alpha=0):
+    def __init__(self, db, g):
 
         self.g = g
 
@@ -188,16 +170,18 @@ class ExtrvsL():
         try:
             for n in (0,1):
                 y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
+                # Weigh points by error bars
                 popt[1][n], pcov = curve_fit(Lambdafun, LList,
-                        y.ravel(), method=method)
+                        y.ravel(), method=method, sigma=self.LambdaErr[n])
 
                 y = self.MassInf -(-1)**n*self.MassErr[n]
                 if nparam==2:
                     self.mfun = Massfun2
                 else:
                     self.mfun = Massfun
-                popt[-1][n], pcov =\
-                    curve_fit(self.mfun, LList, y.ravel(), method=method)
+                # Weigh points by error bars
+                popt[-1][n], pcov = curve_fit(self.mfun, LList, y.ravel(),
+                        method=method, sigma=self.MassErr[n])
 
         except RuntimeError as e:
             print("Exception for g={}".format(self.g))
