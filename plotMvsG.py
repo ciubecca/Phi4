@@ -30,7 +30,7 @@ rc('text', usetex=True)
 
 klist = (1,-1)
 
-glist = scipy.linspace(0.2, 2.6, 13)
+glist = scipy.linspace(0.2, 2.4, 12)
 
 xmax = max(glist)+0.01
 xmin = min(glist)-0.01

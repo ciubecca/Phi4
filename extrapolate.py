@@ -6,11 +6,15 @@ from scipy import pi, log, log10, array, sqrt, stats, exp, e
 import database
 from sys import exit
 import numpy as np
+from numpy import testing
 from sklearn.linear_model import Ridge, LinearRegression
 from scipy.special import kn
 from itertools import combinations
 
 LList = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
+
+# Minimum g for which we use nonlinear fit
+glim = 1.
 
 # Fitting vs ET, number of lowest values of ET to potentially exclude
 nmax = 5
@@ -68,7 +72,7 @@ class Extrapolator():
         self.neigs = neigs
 
         # Use just linear fit because of fluctuations
-        if self.g < 1:
+        if self.g < glim:
             self.featureVec = lambda ET: [1/ET**3]
         else:
             self.featureVec = lambda ET: [1/ET**3, 1/ET**4]
@@ -98,22 +102,45 @@ class Extrapolator():
 
     def asymValue(self):
         N = len(self.models[0])
-        ints = [np.array([self.models[m][n].intercept_ for n in range(N)])
-            for m in range(self.neigs)]
-        return np.array([np.mean(x) for x in ints])
+        ints = np.array([[self.models[m][n].intercept_ for n in range(N)]
+            for m in range(self.neigs)])
+        return np.mean(ints, axis=1)
 
     def asymErr(self):
+# Number of models
         N = len(self.models[0])
-        ints = np.array([np.array([self.models[m][n].intercept_ for n in range(N)])
+
+        # Intercepts
+        ints = np.array([[self.models[m][n].intercept_ for n in range(N)]
             for m in range(self.neigs)])
+
         asymVal = self.asymValue()
 
-        return np.array([
-            [max(max(asymVal[m]-ints[m]),
-                max((self.predict(self.ETlist)[m]-self.spectrum[:,m])[-10:])),
-            max(max(ints[m]-asymVal[m]),
-                max((self.spectrum[:,m]-self.predict(self.ETlist)[m])[-10:]))]
-                for m in range(self.neigs)])
+        # Residuals
+        predictions = np.array([[self.models[m][n].predict(
+            np.array(self.featureVec(self.ETlist)).transpose()) for n in range(N)]
+            for m in range(self.neigs)])
+        residuals = self.spectrum[:,:self.neigs].transpose() - predictions
+
+        # Intercepts plus max residuals of the last 10 points
+        def positive(x):
+            return (x>0)*x
+        upperBounds = ints + np.amax(positive(residuals)[:,:,-10:], axis=2)
+        # Select the highest upper bound among all the models
+        upperBound = np.amax(upperBounds, axis=1)
+
+        # Intercepts plus min residuals of the last 10 points
+        def negative(x):
+            return (x<0)*x
+        lowerBounds = ints + np.amin(negative(residuals)[:,:,-10:], axis=2)
+        # Select the highest upper bound among all the models
+        lowerBound = np.amin(lowerBounds, axis=1)
+
+        testing.assert_array_less(lowerBound, asymVal)
+        testing.assert_array_less(asymVal, upperBound)
+
+        # Return two-dim array (lowerErr, upperErr)
+        return np.array([asymVal-lowerBound,upperBound-asymVal]).transpose()
 
 def Massfun(L, m, b, c):
     return m*(1 + b*kn(1, m*L) + c/(L*m)**(3/2)*e**(-m*L))
