@@ -78,11 +78,12 @@ def plotvsET(Llist, axes):
         ax.scatter(xlist, spectrum[1]/L, label=label, marker=marker, color=color[L])
 
         # Position of error bar
-        xerr = 2*np.array([10**(-6)])
+        xerr = np.array([10**(-5)])
 
         ax.plot(xdata, ydata[1]/L, color=color[L])
         err = np.expand_dims(yerr[1]/L, axis=1)
-        ax.errorbar(xerr, np.array([yinf[1]/L]), err, color=color[L])
+        ax.errorbar(xerr, np.array([yinf[1]/L]), err, color=color[L],
+                elinewidth=3)
         ymax[1] = max(ymax[1], max(ydata[1]/L+err[0]), max(spectrum[1]/L))
         ymin[1] = min(ymin[1], min(ydata[1]/L-err[1]), min(spectrum[1]/L))
 

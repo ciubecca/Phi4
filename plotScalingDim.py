@@ -53,8 +53,6 @@ def plotvsL(Llist, g):
     LambdaErr = np.zeros((2, len(Llist)))
 
     for i,L in enumerate(Llist):
-        print("L=", L)
-
         e = {}
         e[1] = Extrapolator(db, 1, L, g)
         e[-1] = Extrapolator(db, -1, L, g)
@@ -86,11 +84,11 @@ def plotvsL(Llist, g):
     plt.errorbar(Llist, Lambda, LambdaErr)
 
 
-    X = np.array([1/Llist]).transpose()
+    X = np.array([1/Llist**2]).transpose()
     Y = Lambda
     model = LinearRegression().fit(X, Y, sample_weight=1/np.amax(LambdaErr,axis=0))
     xlist = np.linspace(min(Llist), max(Llist), 100)
-    plt.plot(xlist, model.predict(np.array([1/xlist]).transpose()))
+    plt.plot(xlist, model.predict(np.array([1/xlist**2]).transpose()))
 
     # Mass
     fig = plt.figure(2)
