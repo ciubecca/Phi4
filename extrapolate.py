@@ -110,6 +110,10 @@ class Extrapolator():
 # Number of models
         N = len(self.models[0])
 
+        # print("Number of models:", N)
+        # print("neigs:", self.neigs)
+        # print("len ETlist:", self.ETlist.shape)
+
         # Intercepts
         ints = np.array([[self.models[m][n].intercept_ for n in range(N)]
             for m in range(self.neigs)])
@@ -120,7 +124,7 @@ class Extrapolator():
         predictions = np.array([[self.models[m][n].predict(
             np.array(self.featureVec(self.ETlist)).transpose()) for n in range(N)]
             for m in range(self.neigs)])
-        residuals = self.spectrum[:,:self.neigs].transpose() - predictions
+        residuals = self.spectrum[:, np.newaxis, :self.neigs].transpose() - predictions
 
         # Intercepts plus max residuals of the last 10 points
         def positive(x):
@@ -139,8 +143,10 @@ class Extrapolator():
         testing.assert_array_less(lowerBound, asymVal)
         testing.assert_array_less(asymVal, upperBound)
 
+        ret = np.array([asymVal-lowerBound,upperBound-asymVal]).transpose()
+
         # Return two-dim array (lowerErr, upperErr)
-        return np.array([asymVal-lowerBound,upperBound-asymVal]).transpose()
+        return ret
 
 def Massfun(L, m, b, c):
     return m*(1 + b*kn(1, m*L) + c/(L*m)**(3/2)*e**(-m*L))
@@ -156,6 +162,7 @@ fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 
 method = 'dogbox'
 
+# XXX maybe we should fit the subtracted spectrum directly!
 class ExtrvsL():
     def __init__(self, db, g):
 

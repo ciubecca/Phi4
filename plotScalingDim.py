@@ -17,11 +17,9 @@ neigs = {}
 neigs[1] = 1
 neigs[-1] = 2
 
-Llist = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
+Llist = np.array([5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10])
 
 output = "pdf"
-# renlist = ("rentails", "renloc")
-renlist = ("rentails", )
 
 marker = 'o'
 markersize = 2.5
@@ -49,12 +47,14 @@ db = database.Database("data/spectra3.db")
 def plotvsL(Llist, g):
 
     Spectrum = {k: np.zeros((neigs[k], len(Llist))) for k in klist}
-    Lambda = np.zeros(len(Llist))
+    SpectrumErr = {k: np.zeros((neigs[k], 2, len(Llist))) for k in klist}
 
+    Lambda = np.zeros(len(Llist))
     LambdaErr = np.zeros((2, len(Llist)))
 
     for i,L in enumerate(Llist):
-#           print("L:{}".format(L))
+        print("L=", L)
+
         e = {}
         e[1] = Extrapolator(db, 1, L, g)
         e[-1] = Extrapolator(db, -1, L, g)
@@ -63,9 +63,7 @@ def plotvsL(Llist, g):
         e[-1].train(neigs=neigs[-1])
 
         Lambda[i] = e[1].asymValue()[0]/L
-
-        print(e[1].asymErr().shape)
-        # LambdaErr[:,i] =
+        LambdaErr[:,i] = e[1].asymErr()[0]/L
 
         for k in klist:
             if k==1: n=1
@@ -73,10 +71,26 @@ def plotvsL(Llist, g):
             Spectrum[k][:, i] = (e[k].asymValue()[n:neigs[k]+n]-
                     e[1].asymValue()[0])*L/(2*pi)
 
+            # Error bars of the eigenvalues
+            en = e[k].asymErr()[n:neigs[k]+n]
+            # Error bars of the vacuum to subtract
+            e0 = np.repeat(e[1].asymErr()[[0],::-1], neigs[k], axis=0)
+
+            # XXX
+            SpectrumErr[k][:, :, i] = np.amax(np.array([e0, en]), axis=0)*L/(2*pi)
+            SpectrumErr[k][:, :, i] = (e0+en)*L/(2*pi)
+
     # Lambda
     fig = plt.figure(1)
     ax = fig.add_subplot(111)
-    plt.fill_between(Llist, Lambda[0], Lambda[1])
+    plt.errorbar(Llist, Lambda, LambdaErr)
+
+
+    X = np.array([1/Llist]).transpose()
+    Y = Lambda
+    model = LinearRegression().fit(X, Y, sample_weight=1/np.amax(LambdaErr,axis=0))
+    xlist = np.linspace(min(Llist), max(Llist), 100)
+    plt.plot(xlist, model.predict(np.array([1/xlist]).transpose()))
 
     # Mass
     fig = plt.figure(2)
@@ -103,7 +117,7 @@ def plotvsL(Llist, g):
                 label = "k={}".format(k)
             else:
                 label = None
-            plt.fill_between(Llist, Spectrum[0][k][n], Spectrum[1][k][n],
+            plt.errorbar(Llist, Spectrum[k][n], SpectrumErr[k][n],
                     color=color[k], label=label)
 
 argv = sys.argv

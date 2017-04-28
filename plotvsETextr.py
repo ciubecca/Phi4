@@ -11,6 +11,9 @@ from sys import exit
 import numpy as np
 from extrapolate import Extrapolator
 
+# Take the first (nth+1) odd eigenvalue
+nth = 0
+
 xmargin = 10**(-4)
 
 power = 3
@@ -36,7 +39,6 @@ xmax = 0
 
 db = database.Database('data/spectra3.db')
 
-
 def plotvsET(Llist, axes):
 
     for i,L in enumerate(Llist):
@@ -52,14 +54,19 @@ def plotvsET(Llist, axes):
             ETlist = e.ETlist
             xlist = 1/ETlist**power
             xmax = max(max(xlist), xmax)
-            spectrum[k] = e.spectrum[:,0]
 
-            e.train()
+            if k==-1:
+                n = nth
+            else:
+                n = 0
+            spectrum[k] = e.spectrum[:,n]
+
+            e.train(neigs=n+1)
             xdata = scipy.linspace(0, min(ETlist)**-power, 100)
-            ydata[k] = e.predict(xdata**(-1/power))[0]
+            ydata[k] = e.predict(xdata**(-1/power))[n]
 
-            yinf[k] = e.asymValue()[0]
-            yerr[k] = e.asymErr()[0]
+            yinf[k] = e.asymValue()[n]
+            yerr[k] = e.asymErr()[n]
 
 
         label = "L = {}".format(L)
@@ -70,13 +77,14 @@ def plotvsET(Llist, axes):
             ax = axes[0,1]
         ax.scatter(xlist, spectrum[1]/L, label=label, marker=marker, color=color[L])
 
-        xerr = 10**(-5)
+        # Position of error bar
+        xerr = 2*np.array([10**(-6)])
 
         ax.plot(xdata, ydata[1]/L, color=color[L])
-        err = yerr[1]/L
-        ax.errorbar([xerr], [yinf[1]/L], [err], color=color[L])
-        ymax[1] = max(ymax[1], max(ydata[1])/L, max(spectrum[1]/L))
-        ymin[1] = min(ymin[1], min(ydata[1])/L, min(spectrum[1]/L))
+        err = np.expand_dims(yerr[1]/L, axis=1)
+        ax.errorbar(xerr, np.array([yinf[1]/L]), err, color=color[L])
+        ymax[1] = max(ymax[1], max(ydata[1]/L+err[0]), max(spectrum[1]/L))
+        ymin[1] = min(ymin[1], min(ydata[1]/L-err[1]), min(spectrum[1]/L))
 
         " MASS "
         if i%2==0:
@@ -88,11 +96,12 @@ def plotvsET(Llist, axes):
         data = ydata[-1]-ydata[1]
         ax.plot(xdata, data, color=color[L])
 
-        err = np.array([max(yerr[1][0], yerr[-1][0]), max(yerr[1][1],yerr[-1][1])])
-        print(xerr, yinf[-1]-yinf[1], err)
-        ax.errorbar([xerr], [yinf[-1]-yinf[1]], [err], color=color[L])
-        ymax[-1] = max(ymax[-1], max(data), max(mass))
-        ymin[-1] = min(ymin[-1], min(data), min(mass))
+        # NOTE Take average of error
+# XXX For small m this is pessimistic
+        err = np.expand_dims((yerr[-1]+yerr[1][::-1])/2, axis=1)
+        ax.errorbar(xerr, np.array([yinf[-1]-yinf[1]]), err, color=color[L])
+        ymax[-1] = max(ymax[-1], max(data+err[0]), max(mass))
+        ymin[-1] = min(ymin[-1], min(data-err[1]), min(mass))
 
 
 argv = sys.argv
