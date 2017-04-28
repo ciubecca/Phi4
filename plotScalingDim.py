@@ -46,37 +46,32 @@ xmin = min(Llist)-0.1
 db = database.Database("data/spectra3.db")
 
 
-def plotvsL(Llist, gmin, gmax):
+def plotvsL(Llist, g):
 
-    Spectrum = []
-    Lambda = []
+    Spectrum = {k: np.zeros((neigs[k], len(Llist))) for k in klist}
+    Lambda = np.zeros(len(Llist))
 
-    for j,g in enumerate((gmin, gmax)):
-        # print("g:{}".format(g))
+    LambdaErr = np.zeros((2, len(Llist)))
 
-        Spectrum.append({k: np.zeros((neigs[k], len(Llist))) for k in klist})
-        Lambda.append(np.zeros(len(Llist)))
-
-        for i,L in enumerate(Llist):
+    for i,L in enumerate(Llist):
 #           print("L:{}".format(L))
-            e = {}
-            e[1] = Extrapolator(db, 1, L, g)
-            e[-1] = Extrapolator(db, -1, L, g)
+        e = {}
+        e[1] = Extrapolator(db, 1, L, g)
+        e[-1] = Extrapolator(db, -1, L, g)
 
-            e[1].train(neigs=neigs[1]+1)
-            e[-1].train(neigs=neigs[-1])
+        e[1].train(neigs=neigs[1]+1)
+        e[-1].train(neigs=neigs[-1])
 
-            Lambda[j][i] = e[1].asymValue()[0]/L
+        Lambda[i] = e[1].asymValue()[0]/L
 
-            for k in klist:
-                if k==1: n=1
-                else: n=0
-                # if k==1:
-                    # print(e[k].asymValue())
-                    # print(e[k].asymValue()[n:neigs[k]+n])
-                    # print(e[1].asymValue()[0])
-                Spectrum[j][k][:, i] = (e[k].asymValue()[n:neigs[k]+n]-
-                        e[1].asymValue()[0])*L/(2*pi)
+        print(e[1].asymErr().shape)
+        # LambdaErr[:,i] =
+
+        for k in klist:
+            if k==1: n=1
+            else: n=0
+            Spectrum[k][:, i] = (e[k].asymValue()[n:neigs[k]+n]-
+                    e[1].asymValue()[0])*L/(2*pi)
 
     # Lambda
     fig = plt.figure(1)
@@ -113,24 +108,23 @@ def plotvsL(Llist, gmin, gmax):
 
 argv = sys.argv
 
-if len(argv) < 3:
-    print(argv[0], "<gmin> <gmax>")
+if len(argv) < 2:
+    print(argv[0], "<g>")
     sys.exit(-1)
 
-gmin = float(argv[1])
-gmax = float(argv[2])
+g = float(argv[1])
 
-print("g=", gmin, gmax)
+print("g=", g)
 
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-plotvsL(Llist, gmin, gmax)
+plotvsL(Llist, g)
 
 fname = "{}".format(output)
 
 # VACUUM ENERGY DENSITY
-title = r"$g$=[{}, {}]".format(gmin, gmax)
+title = r"$g$={}".format(g)
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
@@ -141,7 +135,7 @@ plt.legend(loc=2)
 plt.savefig("LambdaCritvsL."+fname, bbox_inches='tight')
 
 # MASS
-title = r"$g$=[{}, {}]".format(gmin, gmax)
+title = r"$g$={}".format(g)
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
