@@ -212,15 +212,18 @@ class ExtrvsL():
                         method=method, sigma=self.MassErr[n])
 
             # Estimate of physical mass
-            mph = (popt[-1][0][0]+popt[-1][1][0])/2
-            self.LambdaFixedM = lambda L,a: Lambdafun(L, a, mph)
+            # mph = (+popt[-1][1][0])/2
+            # self.LambdaFixedM = lambda L,a: Lambdafun(L, a, mph)
+
+            # Estimated bounds on the physical mass
+            bounds = ([-np.inf, popt[-1][0][0]], [np.inf, popt[-1][1][0]])
 
             for n in (0,1):
                 # NOTE Fix Mph instead of fitting it
                 y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
                 # Weigh points by error bars
-                popt[1][n], pcov = curve_fit(self.LambdaFixedM, LList,
-                        y.ravel(), method=method, sigma=self.LambdaErr[n])
+                popt[1][n], pcov = curve_fit(Lambdafun, LList, y.ravel(),
+                        bounds=bounds, method=method, sigma=self.LambdaErr[n])
 
         except RuntimeError as e:
             print("Exception for g={}".format(self.g))
@@ -234,7 +237,7 @@ class ExtrvsL():
 
         self.msg[1] = [
             r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0])
-            # ,r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
+            ,r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
         ]
 
         self.msg[-1] = [
@@ -248,7 +251,7 @@ class ExtrvsL():
 
     def predict(self, k, x):
         if k==1:
-            fun = self.LambdaFixedM
+            fun = Lambdafun
         else:
             fun = self.mfun
 
