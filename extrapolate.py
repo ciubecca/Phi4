@@ -19,7 +19,7 @@ glim = 1.
 # Fitting vs ET, number of lowest values of ET to potentially exclude
 nmax = 5
 # Maximum number of points to exclude at low ET
-pmax = 2
+pmax = 3
 
 
 ETmax = {}
@@ -48,13 +48,12 @@ missing = {6:[], 8:[32], 10:[]}
 class Extrapolator():
     """ Extrapolate vs ET """
 
-    def __init__(self, db, k, L, g, ren="rentails"):
+    def __init__(self, db, L, g, ren="rentails"):
         ETMin = ETmin[ren][L]
         ETMax = ETmax[ren][L]
 
         self.g = g
         self.L = L
-        self.k = k
 
         mult = 1/step[ren]
 
@@ -64,8 +63,13 @@ class Extrapolator():
         else:
             self.ETlist = scipy.linspace(ETMin, ETMax, (ETMax-ETMin)*2+1)
 
-        self.spectrum = np.array([np.array(db.getEigs(k, ren, g, L, ET))
-            for ET in self.ETlist])
+        self.spectrum = {k: np.array([np.array(db.getEigs(k, ren, g, L, ET))
+            for ET in self.ETlist]) for k in (-1,1)}
+
+        # Subtracted spectrum, apart from the first k=1 eigenvalues which is just
+        # the vacuum energy
+        self.spectrumSub = {k: self.spectrum[k]-self.spectrum[1][:,[0]] for k in (-1,1)}
+        self.spectrumSub[1][:,0] = self.spectrum[1][:,0]
 
     def train(self, neigs=1):
 
@@ -78,50 +82,54 @@ class Extrapolator():
             self.featureVec = lambda ET: [1/ET**3, 1/ET**4]
 
 
-        # Position of the highest ET to exclude
-        self.models = []
+        self.models = {}
 
-        # Number of points to exclude
-        for n in range(neigs):
-            self.models.append([])
+        for k in (-1,1):
+            self.models[k] = []
 
-            for m in range(0,pmax+1):
-                for nlist in combinations(range(nmax+1), m):
-                    mask = np.ones(len(self.ETlist), dtype=bool)
-                    mask[list(nlist)] = False
-                    data = self.spectrum[mask, n]
-                    xlist = self.ETlist[mask]
-                    X = np.array(self.featureVec(xlist)).transpose()
-                    self.models[n].append(LinearRegression().fit(X, data))
+            # Number of points to exclude
+            for n in range(neigs):
+                self.models[k].append([])
 
-    def predict(self, x):
+                for m in range(0,pmax+1):
+                    for nlist in combinations(range(nmax+1), m):
+                        mask = np.ones(len(self.ETlist), dtype=bool)
+                        mask[list(nlist)] = False
+                        data = self.spectrumSub[k][mask, n]
+                        xlist = self.ETlist[mask]
+                        X = np.array(self.featureVec(xlist)).transpose()
+                        self.models[k][n].append(LinearRegression().fit(X, data))
+
+    def predict(self, k, x):
         x = np.array(x)
-        N = len(self.models[0])
-        return np.array([sum(self.models[m][n].predict(np.array(self.featureVec(x)).\
-                        transpose()) for n in range(N))/N for m in range(self.neigs)])
+        # Number of models
+        N = len(self.models[1][0])
+        return np.array([sum(self.models[k][m][n].predict(
+                    np.array(self.featureVec(x)).transpose())
+                    for n in range(N))/N for m in range(self.neigs)])
 
-    def asymValue(self):
-        N = len(self.models[0])
-        ints = np.array([[self.models[m][n].intercept_ for n in range(N)]
+    def asymValue(self, k):
+        N = len(self.models[1][0])
+        ints = np.array([[self.models[k][m][n].intercept_ for n in range(N)]
             for m in range(self.neigs)])
         return np.mean(ints, axis=1)
 
-    def asymErr(self):
+    def asymErr(self, k):
         # Number of models
-        N = len(self.models[0])
-
+        N = len(self.models[1][0])
 
         # Intercepts
-        ints = np.array([[self.models[m][n].intercept_ for n in range(N)]
+        ints = np.array([[self.models[k][m][n].intercept_ for n in range(N)]
             for m in range(self.neigs)])
 
-        asymVal = self.asymValue()
+        asymVal = self.asymValue(k)
 
         # Residuals
-        predictions = np.array([[self.models[m][n].predict(
+        predictions = np.array([[self.models[k][m][n].predict(
             np.array(self.featureVec(self.ETlist)).transpose()) for n in range(N)]
             for m in range(self.neigs)])
-        residuals = self.spectrum[:, np.newaxis, :self.neigs].transpose() - predictions
+        residuals = self.spectrumSub[k][:,np.newaxis,:self.neigs].transpose()\
+                    -predictions
 
         # Intercepts plus max residuals of the last 10 points
         def positive(x):
@@ -171,20 +179,20 @@ class ExtrvsL():
         self.MassErr = np.zeros((2, len(LList)))
 
         for i,L in enumerate(LList):
-            e = {}
-            e[1] = Extrapolator(db, 1, L, g)
-            e[-1] = Extrapolator(db, -1, L, g)
-            e[1].train()
-            e[-1].train()
+            e = Extrapolator(db, L, g)
+            e.train()
 
-            self.LambdaInf[i] = e[1].asymValue()[0]/L
-            self.LambdaErr[:,i] = e[1].asymErr()[0]/L
+            self.LambdaInf[i] = e.asymValue(1)[0]/L
+            self.LambdaErr[:,i] = e.asymErr(1)[0]/L
 
-            self.MassInf[i] = e[-1].asymValue()[0]-e[1].asymValue()[0]
+            self.MassInf[i] = e.asymValue(-1)[0]
             # XXX Check
-            self.MassErr[:,i] = np.amax([e[-1].asymErr()[0],
-                e[1].asymErr()[0][::-1]], axis=0)
+            self.MassErr[:,i] = e.asymErr(-1)[0]
+            # self.MassErr[:,i] = np.amax([e[-1].asymErr()[0],
+                # e[1].asymErr()[0][::-1]], axis=0)
             # self.MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
+
+        print(self.MassErr)
 
     def train(self, nparam=3):
         """ if nparam=2, use only 2 free coefficients for fitting the mass.
@@ -210,10 +218,6 @@ class ExtrvsL():
                 # Weigh points by error bars
                 popt[-1][n], pcov = curve_fit(self.mfun, LList, y.ravel(),
                         method=method, sigma=self.MassErr[n])
-
-            # Estimate of physical mass
-            # mph = (+popt[-1][1][0])/2
-            # self.LambdaFixedM = lambda L,a: Lambdafun(L, a, mph)
 
             # Estimated bounds on the physical mass
             bounds = ([-np.inf, popt[-1][0][0]], [np.inf, popt[-1][1][0]])
@@ -257,8 +261,8 @@ class ExtrvsL():
 
         return (fun(x, *self.popt[k][1])+fun(x, *self.popt[k][0]))/2
 
-    def asymValue(self):
-        return {k: self.coefs[k][0] for k in (-1,1)}
+    def asymValue(self, k):
+        return self.coefs[k][0]
 
-    def asymErr(self):
-        return {k: self.errs[k][0] for k in (-1,1)}
+    def asymErr(self, k):
+        return self.errs[k][0]

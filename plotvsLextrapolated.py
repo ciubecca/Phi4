@@ -54,7 +54,6 @@ def plotvsL(Llist):
             Lambda[ren][i] = E0/L
             Mass[ren][i] = (E1-E0)
 
-
     a = ExtrvsL(db, g)
     a.train(nparam)
 
