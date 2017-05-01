@@ -64,6 +64,7 @@ def plotvsET(Llist, axes):
 
             spectrum = {}
             ydata = {}
+            yerr = {}
             yinf = {}
 
             e = Extrapolator(db, L, g, ren=ren)
@@ -79,35 +80,51 @@ def plotvsET(Llist, axes):
                     xdata = scipy.linspace(0, min(ETlist)**-power[ren], 100)
                     ydata[k] = e.predict(k, xdata**(-1/power[ren]))[0]
                     yinf[k] = e.asymValue(k)[0]
+                    yerr[k] = e.asymErr(k)[0]
 
+            # Position of error bar
+            xerr = np.array([10**(-5)])
+            xerr = np.array([0])
 
             label = "ren = {}, L = {}".format(ren,L)
             " VACUUM ENERGY "
             if ren=="rentails":
                 ax = axes[0,0]
-                ax.plot(xdata, ydata[1]/L, c=opt['color'])
             else:
                 ax = axes[0,1]
             ax.scatter(xlist, spectrum[1]/L, label=label, **opt)
             ymax[1] = max(ymax[1], max(spectrum[1]/L))
             ymin[1] = min(ymin[1], min(spectrum[1]/L))
             if ren=="rentails":
-                ymax[1] = max(ymax[1], max(ydata[1])/L)
-                ymin[1] = min(ymin[1], min(ydata[1])/L)
+                ax.plot(xdata, ydata[1]/L, c=opt['color'])
+
+                err = np.expand_dims(yerr[1], axis=1)
+                # ax.errorbar(xerr, np.array([yinf[1]/L]), err/L, color=color[L],
+                    # elinewidth=1)
+
+                ymax[1] = max(ymax[1], max(ydata[1]+err[0])/L, max(ydata[1])/L)
+                ymin[1] = min(ymin[1], min(ydata[1]-err[1])/L, min(ydata[1])/L)
+
 
             " MASS "
             if ren=="rentails":
                 ax = axes[1,0]
-                ax.plot(xdata, ydata[-1], c=opt['color'])
             else:
                 ax = axes[1,1]
             mass = spectrum[-1]
             ax.scatter(xlist, mass, label=label, **opt)
             ymax[-1] = max(ymax[-1], max(mass))
             ymin[-1] = min(ymin[-1], min(mass))
+
             if ren=="rentails":
-                ymax[-1] = max(ymax[-1], max(ydata[-1]))
-                ymin[-1] = min(ymin[-1], min(ydata[-1]))
+                ax.plot(xdata, ydata[-1], c=opt['color'])
+
+                err = np.expand_dims(yerr[-1], axis=1)
+                # ax.errorbar(xerr, np.array([yinf[-1]]), err, color=color[L],
+                    # elinewidth=1)
+
+                ymax[-1] = max(ymax[-1], max(ydata[-1]+err[0]), max(ydata[-1]))
+                ymin[-1] = min(ymin[-1], min(ydata[-1]-err[1]), min(ydata[-1]))
 
 argv = sys.argv
 

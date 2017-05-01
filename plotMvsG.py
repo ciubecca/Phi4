@@ -24,36 +24,67 @@ nparams = 3
 plt.style.use('ggplot')
 plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
 
+# Imported from Mathematica
+gc = 1/0.363112
+def fit(g):
+    return ((1 - 0.363112*g)*(1 + 3.44561*g + 1.4152*g**2))/\
+            ((1 + 0.325964*g)*(1 + 2.75653*g))
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
 klist = (1,-1)
 
-glist = scipy.linspace(0.2, 2.4, 12)
+glist = scipy.linspace(0.2, 2.6, 13)
+glistTot = scipy.linspace(0.2, 3, 15)
 
-xmax = max(glist)+0.01
-xmin = min(glist)-0.01
+xmax = max(glistTot)+0.01
+xmin = min(glistTot)-0.01
 
 db = database.Database("data/spectra3.db")
 
 
 def plotvsG(Llist, axes):
 
+    MassFiniteL = np.zeros(len(glistTot))
+    MassErrFiniteL = np.zeros((2, len(glistTot)))
     MassInf = np.zeros(len(glist))
     MassErr = np.zeros(len(glist))
 
     for i,g in enumerate(glist):
         a = ExtrvsL(db, g)
         a.train(nparam=3)
-        MassInf[i] = a.asymValue()[-1]
-        MassErr[i] = a.asymErr()[-1]
+        MassInf[i] = a.asymValue(-1)
+        MassErr[i] = a.asymErr(-1)
+
+    for i,g in enumerate(glistTot):
+        b = Extrapolator(db, L=10, g=g)
+        b.train(neigs=1)
+        MassFiniteL[i] = b.asymValue(-1)[0]
+        MassErrFiniteL[:,i] = b.asymErr(-1)[0]
 
     # Plot extrapolated data
-    axes.errorbar(glist, MassInf, MassErr, label=r"$E_T=\infty$")
-    print(glist)
+    axes.errorbar(glist, MassInf, MassErr, label=r"$L=\infty$",
+            ls='none')
+    axes.errorbar(glistTot, MassFiniteL, MassErrFiniteL,
+            label=r"$L = 10$", color="green", ls='none')
+
+# Plot fitted function imported from Mathematica
+    xlist = scipy.linspace(0, gc, 100)
+    axes.plot(xlist, fit(xlist), color='blue')
+
+
+    print("glist:", glist)
+    print("MassInf:")
     print("{"+",".join("{:f}".format(x) for x in MassInf)+"}")
+    print("MassErr:")
     print("{"+",".join("{:f}".format(x) for x in MassErr)+"}")
+
+    print("MassFiniteL:")
+    print("{"+",".join("{:f}".format(x) for x in MassFiniteL)+"}")
+    print("MassErrFiniteL:")
+    print("{"+",".join("{"+"{0:f}, {1:f}".format(x[0],x[1])+"}"
+        for x in MassErrFiniteL.transpose())+"}")
 
 argv = sys.argv
 
@@ -72,11 +103,13 @@ plotvsG(glist, axes)
 axes.set_ylabel(r"$m_{ph}$")
 axes.set_ylim(-0.01, 1)
 axes.set_xlabel(r"$g$")
+axes.set_xlim(0, xmax)
 
 fname = ".{0}".format(output)
 
 # MASS
 plt.figure(1, figsize=(4, 2.5), dpi=300)
+plt.legend()
 s = "MvsGraw"
 if nparams==2:
     s += "_p=2"

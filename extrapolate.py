@@ -68,7 +68,8 @@ class Extrapolator():
 
         # Subtracted spectrum, apart from the first k=1 eigenvalues which is just
         # the vacuum energy
-        self.spectrumSub = {k: self.spectrum[k]-self.spectrum[1][:,[0]] for k in (-1,1)}
+        self.spectrumSub = {k: self.spectrum[k]-self.spectrum[1][:,[0]]
+                for k in (-1,1)}
         self.spectrumSub[1][:,0] = self.spectrum[1][:,0]
 
     def train(self, neigs=1):
@@ -192,7 +193,7 @@ class ExtrvsL():
                 # e[1].asymErr()[0][::-1]], axis=0)
             # self.MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
 
-        print(self.MassErr)
+        # print(self.MassErr)
 
     def train(self, nparam=3):
         """ if nparam=2, use only 2 free coefficients for fitting the mass.
