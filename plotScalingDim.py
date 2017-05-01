@@ -13,9 +13,7 @@ import numpy as np
 from numpy import concatenate as concat
 from extrapolate import *
 
-neigs = {}
-neigs[1] = 1
-neigs[-1] = 2
+neigs = 2
 
 Llist = np.array([5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10])
 
@@ -46,47 +44,35 @@ db = database.Database("data/spectra3.db")
 
 def plotvsL(Llist, g):
 
-    Spectrum = {k: np.zeros((neigs[k], len(Llist))) for k in klist}
-    SpectrumErr = {k: np.zeros((neigs[k], 2, len(Llist))) for k in klist}
+    Spectrum = {k: np.zeros((neigs, len(Llist))) for k in klist}
+    SpectrumErr = {k: np.zeros((neigs, 2, len(Llist))) for k in klist}
 
     Lambda = np.zeros(len(Llist))
     LambdaErr = np.zeros((2, len(Llist)))
 
     for i,L in enumerate(Llist):
-        e = {}
-        e[1] = Extrapolator(db, 1, L, g)
-        e[-1] = Extrapolator(db, -1, L, g)
-
-        e[1].train(neigs=neigs[1]+1)
-        e[-1].train(neigs=neigs[-1])
-
-        Lambda[i] = e[1].asymValue()[0]/L
-        LambdaErr[:,i] = e[1].asymErr()[0]/L
+        e = Extrapolator(db, L, g)
+        e.train(neigs=neigs)
 
         for k in klist:
-            if k==1: n=1
-            else: n=0
-            Spectrum[k][:, i] = (e[k].asymValue()[n:neigs[k]+n]-
-                    e[1].asymValue()[0])*L/(2*pi)
+            Spectrum[k][:, i] = e.asymValue(k)*L/(2*pi)
+            Spectrum[1][0, i] = e.asymValue(1)[0]
 
             # Error bars of the eigenvalues
-            en = e[k].asymErr()[n:neigs[k]+n]
-            # Error bars of the vacuum to subtract
-            e0 = np.repeat(e[1].asymErr()[[0],::-1], neigs[k], axis=0)
-
-            # XXX
-            SpectrumErr[k][:, :, i] = np.amax(np.array([e0, en]), axis=0)*L/(2*pi)
-            SpectrumErr[k][:, :, i] = (e0+en)*L/(2*pi)
+            SpectrumErr[k][:, :, i] = e.asymErr(k)*L/(2*pi)
+            SpectrumErr[1][:, 0, i] = e.asymErr(1)[:,0]
 
     # Lambda
     fig = plt.figure(1)
     ax = fig.add_subplot(111)
-    plt.errorbar(Llist, Lambda, LambdaErr)
+    err = SpectrumErr[1][:,0]/Llist
+    Y = Spectrum[1][0]/Llist
+    plt.errorbar(Llist, Y, err)
 
 
     X = np.array([1/Llist**2]).transpose()
-    Y = Lambda
-    model = LinearRegression().fit(X, Y, sample_weight=1/np.amax(LambdaErr,axis=0))
+
+    model = LinearRegression().fit(X, Y, sample_weight=1/np.amax(err,axis=0))
     xlist = np.linspace(min(Llist), max(Llist), 100)
     plt.plot(xlist, model.predict(np.array([1/xlist**2]).transpose()))
 
@@ -110,8 +96,10 @@ def plotvsL(Llist, g):
             va='center')
 
     for k in (-1,1):
-        for n in range(neigs[k]):
-            if n ==0:
+        for n in range(neigs):
+            if n ==0 and k==1:
+                continue
+            elif (n==0 and k==-1) or (n==1 and k==1):
                 label = "k={}".format(k)
             else:
                 label = None
