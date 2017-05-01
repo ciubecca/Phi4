@@ -44,7 +44,7 @@ step["rentails"] = 0.5
 
 missing = {6:[], 8:[32], 10:[]}
 
-
+# TODO Probably need to do the fit on the subtracted spectrum directly
 class Extrapolator():
     """ Extrapolate vs ET """
 
@@ -107,12 +107,9 @@ class Extrapolator():
         return np.mean(ints, axis=1)
 
     def asymErr(self):
-# Number of models
+        # Number of models
         N = len(self.models[0])
 
-        # print("Number of models:", N)
-        # print("neigs:", self.neigs)
-        # print("len ETlist:", self.ETlist.shape)
 
         # Intercepts
         ints = np.array([[self.models[m][n].intercept_ for n in range(N)]
@@ -150,7 +147,7 @@ class Extrapolator():
 
 def Massfun(L, m, b, c):
     return m*(1 + b*kn(1, m*L) + c/(L*m)**(3/2)*e**(-m*L))
-fmassStr = r"$m_{ph}(1 + b  K_1(m_{ph} L) + c/(L m_{ph})^{3/2} e^{-m_{ph L}} )$"
+fmassStr = r"$m_{ph}(1 + b  K_1(m_{ph} L) + c/(L m_{ph})^{3/2} e^{-m_{ph}L} )$"
 
 def Massfun2(L, m, b):
     return m*(1 + b*kn(1, m*L))
@@ -179,9 +176,10 @@ class ExtrvsL():
             e[-1] = Extrapolator(db, -1, L, g)
             e[1].train()
             e[-1].train()
+
             self.LambdaInf[i] = e[1].asymValue()[0]/L
-            # print(self.LambdaErr.shape, e[1].asymErr()[0].shape)
             self.LambdaErr[:,i] = e[1].asymErr()[0]/L
+
             self.MassInf[i] = e[-1].asymValue()[0]-e[1].asymValue()[0]
             # XXX Check
             self.MassErr[:,i] = np.amax([e[-1].asymErr()[0],
@@ -189,7 +187,8 @@ class ExtrvsL():
             # self.MassErr[:,i] = e[-1].asymErr()+e[1].asymErr()[::-1]
 
     def train(self, nparam=3):
-        """ if nparam=2, use only 2 free coefficients for fitting the mass """
+        """ if nparam=2, use only 2 free coefficients for fitting the mass.
+        This should be better in the critical region, where S=-1 """
 
         self.popt = {k: [None, None] for k in (-1,1)}
         self.msg = {}
@@ -203,11 +202,6 @@ class ExtrvsL():
         # Upper or lower values
         try:
             for n in (0,1):
-                y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
-                # Weigh points by error bars
-                popt[1][n], pcov = curve_fit(Lambdafun, LList,
-                        y.ravel(), method=method, sigma=self.LambdaErr[n])
-
                 y = self.MassInf -(-1)**n*self.MassErr[n]
                 if nparam==2:
                     self.mfun = Massfun2
@@ -216,6 +210,17 @@ class ExtrvsL():
                 # Weigh points by error bars
                 popt[-1][n], pcov = curve_fit(self.mfun, LList, y.ravel(),
                         method=method, sigma=self.MassErr[n])
+
+            # Estimate of physical mass
+            mph = (popt[-1][0][0]+popt[-1][1][0])/2
+            self.LambdaFixedM = lambda L,a: Lambdafun(L, a, mph)
+
+            for n in (0,1):
+                # NOTE Fix Mph instead of fitting it
+                y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
+                # Weigh points by error bars
+                popt[1][n], pcov = curve_fit(self.LambdaFixedM, LList,
+                        y.ravel(), method=method, sigma=self.LambdaErr[n])
 
         except RuntimeError as e:
             print("Exception for g={}".format(self.g))
@@ -228,8 +233,8 @@ class ExtrvsL():
                 errs[k].append(abs(x[0]-x[1])/2)
 
         self.msg[1] = [
-            r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0]),
-            r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
+            r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0])
+            # ,r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
         ]
 
         self.msg[-1] = [
@@ -243,7 +248,7 @@ class ExtrvsL():
 
     def predict(self, k, x):
         if k==1:
-            fun = Lambdafun
+            fun = self.LambdaFixedM
         else:
             fun = self.mfun
 
