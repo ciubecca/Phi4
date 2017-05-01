@@ -61,24 +61,24 @@ def plotvsET(Llist, axes):
         for i,L in enumerate(Llist):
 
             opt = next(optIter)
-            # print(opt)
 
             spectrum = {}
             ydata = {}
             yinf = {}
 
+            e = Extrapolator(db, L, g, ren=ren)
+            e.train(neigs=1)
+            ETlist = e.ETlist
+            xlist = 1/ETlist**power[ren]
+            xmax[ren] = max(max(xlist), xmax[ren])
+
             for k in (-1,1):
-                e = Extrapolator(db, k, L, g, ren=ren)
-                ETlist = e.ETlist
-                xlist = 1/ETlist**power[ren]
-                xmax[ren] = max(max(xlist), xmax[ren])
-                spectrum[k] = e.spectrum
+                spectrum[k] = e.spectrumSub[k][:,0]
 
                 if ren=="rentails":
-                    e.train()
                     xdata = scipy.linspace(0, min(ETlist)**-power[ren], 100)
-                    ydata[k] = e.predict(xdata**(-1/power[ren]))
-                    yinf[k] = e.asymValue()
+                    ydata[k] = e.predict(k, xdata**(-1/power[ren]))[0]
+                    yinf[k] = e.asymValue(k)[0]
 
 
             label = "ren = {}, L = {}".format(ren,L)
@@ -98,16 +98,16 @@ def plotvsET(Llist, axes):
             " MASS "
             if ren=="rentails":
                 ax = axes[1,0]
-                ax.plot(xdata, ydata[-1]-ydata[1], c=opt['color'])
+                ax.plot(xdata, ydata[-1], c=opt['color'])
             else:
                 ax = axes[1,1]
-            mass = spectrum[-1]-spectrum[1]
+            mass = spectrum[-1]
             ax.scatter(xlist, mass, label=label, **opt)
             ymax[-1] = max(ymax[-1], max(mass))
             ymin[-1] = min(ymin[-1], min(mass))
             if ren=="rentails":
-                ymax[-1] = max(ymax[-1], max(ydata[-1]-ydata[1]))
-                ymin[-1] = min(ymin[-1], min(ydata[-1]-ydata[1]))
+                ymax[-1] = max(ymax[-1], max(ydata[-1]))
+                ymin[-1] = min(ymin[-1], min(ydata[-1]))
 
 argv = sys.argv
 
