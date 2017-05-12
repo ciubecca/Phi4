@@ -65,18 +65,23 @@ class Database():
 
         return listRes
 
-    def getEigs(self, k, ren, g, L, ET, neigs=6):
+    def getEigs(self, k, ren, g, L, ET, EL=None, ELp=None, loc2=True, test=False,
+            neigs=6):
 
         approxQuery = {"g":g, "L":L, "ET":ET}
         exactQuery = {"k": k, "ren":ren, "neigs":neigs, "finiteL":True}
 
         if ren=="rentails":
-            EL = ratioELET*ET
-            ELp = ratioELpET*ET
+            if EL==None:
+                EL = ratioELET*ET
+            if ELp==None:
+                ELp = ratioELpET*ET
             ELpp = ratioELppELp*ELp
 
+            exactQuery["loc2"] = loc2
+            exactQuery["test"] = test
 
-            exactQuery["maxntails"] = None
+            # exactQuery["maxntails"] = None
             # exactQuery["tailsComputedAtET"] = ET
             approxQuery["EL"] = EL
             approxQuery["ELp"] = ELp

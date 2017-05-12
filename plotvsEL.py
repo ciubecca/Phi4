@@ -6,114 +6,134 @@ from scipy import pi, log, log10, array, sqrt, stats
 from matplotlib import rc
 from cycler import cycler
 import database
+from sys import exit
+import numpy as np
 
-output = "png"
-# renlist = ("raw", "renloc", "rentails")
-renlist = ("rentails",)
+dbname = "data/spectravsEL.db"
+test = False
+
+output = "pdf"
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-neigs = 2
+params = {'legend.fontsize': 8, 'lines.markersize':2.5, 'lines.marker':"o"}
+plt.rcParams.update(params)
 
-minoverlap = 10**(-2)
+plt.style.use('ggplot')
+
+plt.rc('axes', prop_cycle=(
+    cycler('marker', ['x', 'o', 'v'])
+    +cycler('linestyle', ['-', '--', ':'])
+    +cycler('markersize', [5.,3.,3.])
+    ))
+
+color = {1:"b", -1:"r"}
+
+k = 1
+neigs = 6
+
+# Ratio between ELp and ET
+ratioELpET = 2
 # Ratio between ELpp and ELp
-ratio3 = 1.5
+ratioELppELp = 1.5
 
 
 def plotvsEL(ELlist):
 
-    xlist = ELlist
-    nonloc3mix, loc3mix, loc3 = (True, True, True)
+    db = database.Database(dbname)
 
-    db = database.Database()
+    for loc2 in [False,True]:
+        spectrum = np.array([db.getEigs(k,"rentails",g,L,ET,EL=EL,test=test)
+            for EL in ELlist]).transpose()
 
-    exactQuery = {"loc3":loc3, "loc3mix":loc3mix, "nonloc3mix":nonloc3mix,
-            "ren":"rentails", "minoverlap":minoverlap}
-    approxQuery = {"g":g, "L":L, "ELp":ELp, "ELpp":ELpp, "ET":ET}
+        # VACUUM
+        plt.figure(1)
 
-    oddSp = []
-    evenSp = []
+        label=r"$\Delta H_2^<$"
+        if loc2==True:
+            label += r"$ + \Delta H_2^>$"
 
-    for EL in ELlist:
-        approxQuery["EL"] = EL
-
-        exactQuery["k"] = 1
-        evenSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
-
-        exactQuery["k"] = -1
-        oddSp.append(db.getObjList('spec', exactQuery, approxQuery)[0])
+        data = spectrum[0]
+        plt.plot(ELlist, data, label=label, color='k')
 
 
-    evenSp = array(evenSp)
-    oddSp = array(oddSp)
+    # SPECTRUM
+#     plt.figure(2)
+    # for k, n0 in ((1,1),(-1,0)):
 
-    # EVEN SPECTRUM
-    plt.figure(1)
+        # for i in range(n0,neigs):
 
-    for i in range(neigs):
-        data = evenSp[:,i]
-        plt.plot(xlist, data)
+            # for ren in renlist:
+                # data = spectrum[k][ren][i]-spectrum[1][ren][0]
+                # if i==n0:
+                    # label="k={}, ren={}".format(k,ren)
+                # else:
+                    # label = None
+                # plt.plot(ETlist[ren], data, label=label, color=color[k])
 
+            # plt.gca().set_prop_cycle(None)
 
-    # ODD SPECTRUM
-    plt.figure(2)
+    # MASS
+    # plt.figure(3)
+    # for ren in renlist:
+        # data = spectrum[-1][ren][0]-spectrum[1][ren][0]
+        # label="ren={}".format(ren)
+        # plt.plot(ETlist[ren], data, label=label, color="k")
+        # ymin[-1] = min(ymin[-1], min(data))
+        # ymax[-1] = max(ymax[-1], max(data))
 
-    for i in range(neigs):
-        data = oddSp[:,i]
-        plt.plot(xlist, data)
+    plt.gca().set_prop_cycle(None)
 
 
 argv = sys.argv
 
 
-if len(argv) < 7:
-    print(argv[0], "<L> <g> <ET> <ELp> <ELmin> <ELmax>")
+if len(argv) < 6:
+    print(argv[0], "<L> <g> <ET> <ELmin> <ELmax>")
     sys.exit(-1)
 
 L = float(argv[1])
 g = float(argv[2])
 ET = float(argv[3])
-ELp = float(argv[4])
-ELmin = float(argv[5])
-ELmax = float(argv[6])
+ELmin = float(argv[4])
+ELmax = float(argv[5])
 
-ELpp = ELp*ratio3
 
 ELlist = scipy.linspace(ELmin, ELmax, (ELmax-ELmin)*2+1)
 print("ELlist:", ELlist)
 
-
-params = {'legend.fontsize': 8}
-plt.rcParams.update(params)
-
-plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
-    cycler('linestyle', ['-', '--', ':', '-.'])))
-
-
 plotvsEL(ELlist)
 
 
-title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}, $E_L'$={3:.1f},$E_L''$={4:.1f}".format(g,L,ET,ELp,ELpp)
-fname = "g={0:.1f}_L={1:.1f}_ET={2:.1f}_ELp={3:.1f}_ELpp={4:.1f}.{5}".format(g,L,ET,ELp,ELpp,output)
-loc = "lower right"
+title = r"$g$={0:.1f}, $L$={1:.1f}".format(g,L)
+fname = "g={0:.1f}_L={1:.1f}.{2}".format(g,L,output)
 
+# VACUUM
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_{L}$")
-plt.ylabel(r"$E_i$ even")
-# plt.legend(loc=loc)
+plt.ylabel(r"$\mathcal{E}_0$")
+dx = 5*10**-1
+plt.legend(loc=1)
+plt.savefig("E0vsEL_"+fname, bbox_inches='tight')
 
 
-plt.savefig("evenSp_"+fname)
+# MASSES
+# plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+# plt.title(title)
+# plt.xlabel(r"$E_{T}$")
+# plt.ylabel(r"$\mathcal{E}_I - \mathcal{E}_0$")
+# plt.xlim(xlims)
+# plt.legend(loc=2)
+# plt.savefig("specvsET_"+fname)
 
-
-
-plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_{L}$")
-plt.ylabel(r"$E_i$ odd")
-# plt.legend(loc=loc)
-
-
-plt.savefig("oddSp_"+fname)
+# MASS
+# plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+# plt.title(title)
+# plt.xlabel(r"$E_{T}$")
+# plt.ylabel(r"$\mathcal{E}_1 - \mathcal{E}_0$")
+# plt.xlim(xlims[0]-dx, xlims[1]+dx)
+# plt.ylim(ymin[-1]-10**-3,ymax[-1]+10**-3)
+# plt.legend(loc=1)
+# plt.savefig("massvsET_"+fname, bbox_inches='tight')
