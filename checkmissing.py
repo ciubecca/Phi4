@@ -12,6 +12,7 @@ ETmin = {5:10, 5.5:10, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
 Llist = sorted(ETmax.keys())
 
 dbname = "data/spectra3.db"
+dbname = "data/spectra.db"
 
 def main(argv):
 
