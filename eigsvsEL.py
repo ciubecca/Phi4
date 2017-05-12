@@ -6,7 +6,7 @@ import scipy
 import math
 import database
 
-dbname = "spectravsEL.db"
+dbname = "data/spectravsEL.db"
 saveondb = True
 test = True
 
@@ -33,13 +33,11 @@ ELmin = float(argv[4])
 ELmax = float(argv[5])
 
 ELp = ratioELpET*ET
-ELpp = ratioELpELpp*ELp
+ELpp = ratioELppELp*ELp
 print("ELp:", ELp, "ELpp", ELpp)
 
 ELlist = scipy.linspace(ELmin, ELmax, (ELmax-ELmin)*2+1)
 print("ELlist:", ELlist)
-
-
 
 a = phi4.Phi4(m, L, k)
 a.buildBasis(Emax=ET)
@@ -71,7 +69,7 @@ for EL in ELlist:
 
     for loc2 in (True, False):
         a.computeEigval(ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-            neigs=neigs, loc2=loc2, loc3=True)
+            neigs=neigs, loc2=loc2, loc3=True, memsave=False)
 
         if saveondb:
             datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp,

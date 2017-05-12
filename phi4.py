@@ -506,7 +506,7 @@ class Phi4():
 
     def computeEigval(self, ET, ren, EL=None, ELp=None, ELpp=None, loc2=True,
             eps=None, neigs=6, subbasisl=None, loc3=True, loc3mix=True,
-            nonloc3mix=True, memdbg=False):
+            nonloc3mix=True, memdbg=False, memsave=True):
         """ Compute the eigenvalues for sharp cutoff ET and local cutoff EL
         ET: ET
         EL: EL. Should be set to None for "raw" and to EL for "renlocal"
@@ -574,8 +574,9 @@ class Phi4():
                     loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, memdbg=memdbg)
 
             # Saving memory
-            del self.basisH
-            gc.collect()
+            if memsave:
+                del self.basisH
+                gc.collect()
 
             print("Diagonalizing matrices...")
 
