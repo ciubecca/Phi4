@@ -74,5 +74,5 @@ for EL in ELlist:
         if saveondb:
             datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp,
                     ELpp=ELpp, ntails=a.ntails, eps=eps[g], neigs=neigs,
-                    basisSize=a.compSize, finiteL=True, loc2=loc2)
+                    basisSize=a.compSize, finiteL=True, loc2=loc2, test=test)
             db.insert(datadict=datadict, spec=a.eigenvalues[g]["rentails"])

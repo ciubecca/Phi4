@@ -8,7 +8,7 @@ import database
 
 dbname = "data/spectravsEL.db"
 saveondb = True
-test = True
+test = False
 
 # Ratio between ELp and ET
 ratioELET = 3
@@ -71,11 +71,12 @@ for ELp in ELplist:
 
     for (nonloc3mix, loc3mix, loc3) in ((False, False, False),(True,True,True)):
         a.computeEigval(ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-            neigs=neigs, nonloc3mix=nonloc3mix, loc3mix=loc3mix, loc3=loc3, memsave=False)
+            neigs=neigs, nonloc3mix=nonloc3mix, loc3mix=loc3mix, loc3=loc3,
+            memsave=False)
 
         if saveondb:
             datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp,
                     ELpp=ELpp, ntails=a.ntails, eps=eps[g], neigs=neigs,
-                    basisSize=a.compSize, finiteL=True,
-                    nonloc3mix=nonloc3mix, loc3mix=loc3mix, loc3=loc3)
+                    basisSize=a.compSize, finiteL=True, test=test,
+                    loc2=True, nonloc3mix=nonloc3mix, loc3mix=loc3mix, loc3=loc3)
             db.insert(datadict=datadict, spec=a.eigenvalues[g]["rentails"])

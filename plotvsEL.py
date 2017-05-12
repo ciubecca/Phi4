@@ -44,8 +44,8 @@ def plotvsEL(ELlist):
     db = database.Database(dbname)
 
     for loc2 in [False,True]:
-        spectrum = np.array([db.getEigs(k,"rentails",g,L,ET,EL=EL,test=test)
-            for EL in ELlist]).transpose()
+        spectrum = np.array([db.getEigs(k,"rentails",g,L,ET,EL=EL,loc2=loc2,
+            test=test) for EL in ELlist]).transpose()
 
         # VACUUM
         plt.figure(1)
