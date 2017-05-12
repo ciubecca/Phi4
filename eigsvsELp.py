@@ -6,32 +6,20 @@ import scipy
 import math
 import database
 
-# Suppose we want to generate all the eigenvalues with L=10, g=1 with truncation energies
-# ET = 10, 10.5, 11, ..., 20
-# Then we should call this file as:
-# eigsvsE.py 10 1 10 20
-
-# Whether we should save the results in the database data/spectra.db
+dbname = "data/spectravsEL.db"
 saveondb = True
-# saveondb = False
-m = 1
-# List of parity quantum numbers
-klist = (1,-1)
-# Maximum number of tails
-maxntails = 300
+test = True
 
-# Ratio between EL and ET
+# Ratio between ELp and ET
 ratioELET = 3
 # Ratio between ELpp and ELp
 ratioELppELp = 1.5
 
-neigs = 10
+m = 1
+k = 1
+neigs = 6
 
-# List of all the contributions to DH3. Sequentially, we add DH3<<, DH3<> and DH3>>
-# tlist = ((False,False,False),(True,True,False),(True,True,True))
-tlist = ((False,False,False),(True,True,True))
-
-
+db = database.Database(dbname)
 
 argv = sys.argv
 if len(argv) < 6:
@@ -46,98 +34,48 @@ ELpmax = float(argv[5])
 
 EL = ratioELET*ET
 ELppmax = ratioELppELp*ELpmax
+print("EL:", EL)
 
 ELplist = scipy.linspace(ELpmin, ELpmax, (ELpmax-ELpmin)*2+1)
 print("ELplist:", ELplist)
 
-print("ELpp/ELp:", ratioELppELp)
-print("EL/ET:", ratioELET)
-
-if saveondb:
-    db = database.Database()
-
-a = phi4.Phi4(m, L)
+a = phi4.Phi4(m, L, k)
 a.buildBasis(Emax=ET)
+print("basis size: ", a.basis.size)
+
+a.computePotential()
+glist = [g]
+a.setglist([g])
+
+a.computeEigval(ET, "raw", neigs=neigs)
+epsraw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
+
+basisl = a.basis
+a.computeLEVs(basisl, loc3=True)
+
+a.genHEBasis(EL=EL, ELp=ELpmax, ELpp=ELppmax)
+print("Size of HE basis:", a.basisH.size)
+
+a.computeHEVs()
+
+a.computeEigval(ET, "renloc", eps=epsraw, neigs=neigs)
+eps = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
+print("Local ren vacuum:", eps)
 
 
-for k in klist:
+for ELp in ELplist:
+    ELpp = ratioELppELp*ELp
+    print("ELp={}, ELpp={}".format(ELp,ELpp))
 
-    # Compute the potential matrices in the low-energy space below ET
-    a.computePotential(k)
+    a.calcVV3(ELp, eps, test=test)
 
-    print("k=", k)
-    print("Full basis size: ", a.basis[k].size)
+    for (nonloc3mix, loc3mix, loc3) in ((False, False, False),(True,True,True)):
+        a.computeEigval(ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
+            neigs=neigs, nonloc3mix=nonloc3mix, loc3mix=loc3mix, loc3=loc3, memsave=False)
 
-    a.setCouplings(g4=g)
-    print("g=", g)
-
-    print("Computing raw eigenvalues for highest cutoff")
-    a.computeEigval(k, ET, "raw")
-
-    # Select a set of tails and construct a Basis object, ordered in overlap with
-    # the vacuum
-    vectorlist = [state for i,state in sorted(enumerate(a.basis[k]), key=lambda x:
-            -abs(a.eigenvectors["raw"][k][0][x[0]]))][:maxntails]
-    basisl = statefuncs.Basis(k, vectorlist, a.basis[k].helper, orderEnergy=False)
-    print("Total number of tails:", basisl.size)
-
-
-    print("Generating high energy basis...")
-    # Generate the high-energy "selected" basis by passing a set of tails
-    # and a maximum cutoff EL
-    a.genHEBases(k, basisl, EL=EL, ELpp=ELppmax)
-    print("Size of HE basis:", a.basisH[k].size)
-
-    a.computeLEVs(k)
-
-
-    print("Computing high energy matrices...")
-# Compute the matrices VLH, VHL, VHH, for the highest local cutoff ELmax.
-# Later we will be varying EL, therefore taking submatrices of these.
-# Computing VHH is expensive
-    a.computeHEVs(k)
-
-
-
-# Compute the raw eigenvalues for cutoff ET
-    a.computeEigval(k, ET, "raw")
-    print("Raw vacuum:", a.eigenvalues["raw"][k][0])
-    eps = a.eigenvalues["raw"][k][0]
-
-
-# Compute "local" renormalized eigenvalues for cutoff ET
-# Since we are passing EL=ET to the method call, the matrices VHL, VHH will be computed
-# only in the local approximation
-    a.computeEigval(k, ET, "renloc", EL=ET, eps=eps)
-    print("Local ren vacuum:", a.eigenvalues["renloc"][k][0])
-    eps = a.eigenvalues["renloc"][k][0]
-
-
-
-    if True in (t[2] for t in tlist):
-        a.calcVV3(ELplist, eps)
-
-    for t in tlist:
-
-        nonloc3mix, loc3mix, loc3 = t
-
-        for ELp in ELplist:
-
-            ELpp = ratioELppELp*ELp
-            print("ELp={}, ELpp={}".format(ELp,ELpp))
-
-            a.computeEigval(k, ET, "rentails", EL=EL, ELp=ELp, ELpp=ELpp, eps=eps,
-                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, neigs=neigs)
-            print("Non-Local ren vacuum:", a.eigenvalues["rentails"][k][0])
-
-            print("Number of tails:", a.ntails)
-
-
-            if saveondb:
-                datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g,
-                    EL=EL, ELp=ELp, ELpp=ELpp, ntails=a.ntails, eps=eps, neigs=neigs,
-                    loc3=loc3, loc3mix=loc3mix, nonloc3mix=nonloc3mix, basisSize=a.compSize)
-
-                db.insert(datadict=datadict, spec=a.eigenvalues["rentails"][k])
-
-    del a.VLH[k]
+        if saveondb:
+            datadict = dict(k=k, ET=ET, L=L, ren="rentails", g=g, EL=EL, ELp=ELp,
+                    ELpp=ELpp, ntails=a.ntails, eps=eps[g], neigs=neigs,
+                    basisSize=a.compSize, finiteL=True,
+                    nonloc3mix=nonloc3mix, loc3mix=loc3mix, loc3=loc3)
+            db.insert(datadict=datadict, spec=a.eigenvalues[g]["rentails"])
