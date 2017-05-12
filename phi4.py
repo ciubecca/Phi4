@@ -83,7 +83,8 @@ class Phi4():
         self.EL = EL
         self.ELp = ELp
         self.ELpp = ELpp
-        Emax = max(EL, ELp, ELpp)
+# "or" in case arguments are None
+        Emax = max(EL or 0, ELp or 0, ELpp or 0)
 
         # Generate all the operators between the selected states and the states
         # in the range [0, Emax]
@@ -99,8 +100,11 @@ class Phi4():
 
         helper = Vlist[0].helper
 
-        # Basis of selected states with energy <= Emax
-        self.basisH = Basis(self.k, vectorset, helper, repr1=False, repr1Emax=ELp)
+# Basis of selected states with energy <= Emax. We only need to save
+# states in the type 1 representation (most memory consuming) for states
+# with energy <= ELp, or ET when ELp=None
+        self.basisH = Basis(self.k, vectorset, helper, repr1=False,
+                repr1Emax=max(ELp or 0, self.basis.Emax))
 
 
 # XXX We could compute either Vhl or VHl to save time
@@ -327,7 +331,6 @@ class Phi4():
         MHl = {}
         MlH = {}
         for g in glist:
-# XXX Check they are in csc format
             MHl[g] = (self.g[2][g]*VHl[2] + g*VHl[4])
             MlH[g] = MHl[g].transpose().tocsc()
 
@@ -373,10 +376,6 @@ class Phi4():
                         basis.size,basis.size).tocsc()
 
                 for g in glist:
-
-                    # print([type(M) for M in
-                            # (MHl[g],propagatorh[g],MlH[g],VhhHalfPart,VhhDiagPart)])
-
                     DH3llPart = MHl[g]*propagatorh[g]*VhhHalfPart*propagatorh[g]\
                             *MlH[g]*self.g[n][g]
                     DH3llPart += DH3llPart.transpose()
@@ -418,10 +417,6 @@ class Phi4():
                             sumTranspose=False,idxList=idxList)*self.L
 
                     for g in glist:
-
-                        # print([type(M) for M in
-                                # (MHl[g],propagatorh[g],MlH[g],propagatorH[g])])
-
                         DH3llPart = MHl[g]*propagatorh[g]*VHhPart*propagatorH[g]\
                                 *MlH[g]*self.g[n][g]
                         DH3llPart += DH3llPart.transpose()
@@ -439,7 +434,6 @@ class Phi4():
 
         if loc3mix:
             for g in glist:
-#XXX Set g2 not equal to 0
                 VV2 = renorm.renVV2(g4=g, g2=self.g[2][g], EL=ELpp, eps=eps[g]).VV2
 
                 DH3llPart = VHl[2]*VV2[2]*propagatorh[g]*MlH[g]
