@@ -10,7 +10,7 @@ from sys import exit
 import numpy as np
 
 dbname = "data/spectravsEL.db"
-test = True
+test = False
 
 output = "pdf"
 
@@ -39,7 +39,7 @@ def plotvsELp(ELplist):
     db = database.Database(dbname)
 
     for (nonloc3mix, loc3mix, loc3) in ((False, False, False),(True,True,True)):
-        spectrum = np.array([db.getEigs(k,"rentails",g,L,ET,EL=ELp,test=test,\
+        spectrum = np.array([db.getEigs(k,"rentails",g,L,ET,ELp=ELp,test=test,\
             nonloc3mix=nonloc3mix, loc3mix=loc3mix, loc3=loc3)
             for ELp in ELplist]).transpose()
 

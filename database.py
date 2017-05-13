@@ -27,6 +27,7 @@ class Database():
 
         datadict["date"] = datetime.datetime.now()
         datadict["spec"] = spec.tostring()
+        print(datadict)
         self.table.insert(datadict)
 
     # Get a list of all objects satisfying the query
@@ -99,7 +100,7 @@ class Database():
         except IndexError:
             msg = "L={}, ET={}, ren={}".format(approxQuery["L"],
                     approxQuery["ET"], exactQuery["ren"])
-            print("Not found: ", msg)
+            print("Not found: ", exactQuery, approxQuery)
             exit(-1)
         except TypeError as e:
             print(exactQuery, approxQuery)
