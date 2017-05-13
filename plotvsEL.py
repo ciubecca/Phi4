@@ -106,8 +106,8 @@ print("ELlist:", ELlist)
 plotvsEL(ELlist)
 
 
-title = r"$g$={0:.1f}, $L$={1:.1f}".format(g,L)
-fname = "g={0:.1f}_L={1:.1f}.{2}".format(g,L,output)
+title = r"$g$={0:.1f}, $L$={1:.1f}, $E_T$={2:.1f}".format(g,L,ET)
+fname = ".{}".format(output)
 
 # VACUUM
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
@@ -116,7 +116,7 @@ plt.xlabel(r"$E_{L}$")
 plt.ylabel(r"$\mathcal{E}_0$")
 dx = 5*10**-1
 plt.legend(loc=1)
-plt.savefig("E0vsEL_"+fname, bbox_inches='tight')
+plt.savefig("E0vsEL"+fname, bbox_inches='tight')
 
 
 # MASSES
