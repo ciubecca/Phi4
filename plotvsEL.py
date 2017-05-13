@@ -10,7 +10,7 @@ from sys import exit
 import numpy as np
 
 dbname = "data/spectravsEL.db"
-test = True
+test = False
 
 output = "pdf"
 

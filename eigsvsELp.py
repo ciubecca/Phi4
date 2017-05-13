@@ -8,7 +8,7 @@ import database
 
 dbname = "data/spectravsEL.db"
 saveondb = True
-test = True
+test = False
 
 # Ratio between ELp and ET
 ratioELET = 3
