@@ -188,16 +188,17 @@ class Phi4():
         basis = self.basisl
         c = MatrixConstructor(basis, basis)
 
-        Vlist = V6OpsSelectedFull(basis, basis.Emax)
-        self.Vll[6] = c.buildMatrix(Vlist, ignKeyErr=True,
-                sumTranspose=False)*self.L
 
         ###################################
         # Generate all the "bilocal" matrices on the selected
         # low-energy states
         ###################################
-
         if loc3:
+            Vlist = V6OpsSelectedFull(basis, basis.Emax)
+            self.Vll[6] = c.buildMatrix(Vlist, ignKeyErr=True,
+                sumTranspose=False)*self.L
+
+
             basis.helper.calcOscEnergyDict()
             self.V0V4 = self.Vll[4]*self.L
 

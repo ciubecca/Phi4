@@ -31,14 +31,15 @@ ETmax["rentails"] = {5:31, 5.5:29, 6:27.5, 6.5:26.5, 7:25, 7.5:24, 8:23,
 ETmin["rentails"] = {5:10, 5.5:10, 6:10, 6.5:10, 7:10, 7.5:10, 8:10,
         8.5:10, 9:10, 9.5:10, 10:10}
 
-ETmax["raw"] = {6:50, 8:38, 10:34}
+ETmax["raw"] = {5:59, 5.5:30, 6:50, 6.5:26.5, 7:45, 7.5:24, 8:38, 8.5:22,
+        9:36, 9.5:21, 10:34}
 ETmax["renloc"] = ETmax["raw"]
 
 ETmin["raw"] = ETmin["rentails"]
 ETmin["renloc"] = ETmin["rentails"]
 
 step = {}
-step["raw"] = 1
+step["raw"] = 0.5
 step["renloc"] = step["raw"]
 step["rentails"] = 0.5
 
