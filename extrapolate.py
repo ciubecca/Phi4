@@ -223,6 +223,7 @@ class ExtrvsL():
 
             # Estimated bounds on the physical mass
             bounds = ([-np.inf, popt[-1][0][0]], [np.inf, popt[-1][1][0]])
+            bounds = ([-np.inf, -np.inf], [np.inf, np.inf])
 
             for n in (0,1):
                 # NOTE Fix Mph instead of fitting it
@@ -245,6 +246,9 @@ class ExtrvsL():
             r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0])
             ,r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
         ]
+        print("Estimates from k=1 fit")
+        print("Lambda: {} +- {}".format(coefs[1][0], errs[1][0]))
+        print("Mass: {} +- {}".format(coefs[1][1], errs[1][1]))
 
         self.msg[-1] = [
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[-1][0], errs[-1][0])
@@ -254,6 +258,9 @@ class ExtrvsL():
             self.msg[-1].append(
                     r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
                     )
+        print("Estimates from k=1 fit")
+        print("Mass: {} +- {}".format(coefs[-1][0], errs[-1][0]))
+
 
     def predict(self, k, x):
         if k==1:
