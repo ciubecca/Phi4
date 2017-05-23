@@ -19,8 +19,8 @@ Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 Llist["renloc"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,10]
 
 output = "pdf"
-renlist = ("rentails", "renloc")
-# renlist = ("rentails", )
+# renlist = ("rentails", "renloc")
+renlist = ("rentails", )
 
 marker = 'o'
 markersize = 2.5

@@ -163,11 +163,15 @@ def Massfun2(L, m, b):
     return m*(1 + b*kn(1, m*L))
 fmassStr2 = r"$m_{ph}(1 + b  K_1(m_{ph} L))$"
 
-def Lambdafun(L, a, m):
+def Lambdafun(L, a, m, b):
+    return a - m/(pi*L)*kn(1, m*L) + b*m/L*kn(1, 2*m*L)
+fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)+\frac{b*m_{ph}}{\pi L} K_1(2 m_{ph} L)$"
+
+def Lambdafun2(L, a, m):
     return a - m/(pi*L)*kn(1, m*L)
 fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 
-method = 'dogbox'
+method = 'trf'
 
 # XXX maybe we should fit the subtracted spectrum directly!
 class ExtrvsL():
@@ -215,21 +219,23 @@ class ExtrvsL():
                 y = self.MassInf -(-1)**n*self.MassErr[n]
                 if nparam==2:
                     self.mfun = Massfun2
+                    self.lambdafun = Lambdafun2
                 else:
                     self.mfun = Massfun
+                    self.lambdafun = Lambdafun
                 # Weigh points by error bars
                 popt[-1][n], pcov = curve_fit(self.mfun, LList, y.ravel(),
                         method=method, sigma=self.MassErr[n])
 
             # Estimated bounds on the physical mass
-            bounds = ([-np.inf, popt[-1][0][0]], [np.inf, popt[-1][1][0]])
-            bounds = ([-np.inf, -np.inf], [np.inf, np.inf])
+            bounds = ([-np.inf, popt[-1][0][0],-np.inf], [np.inf, popt[-1][1][0],np.inf])
+            # bounds = ([-np.inf, -np.inf,-np.inf], [np.inf, np.inf,np.inf])
 
             for n in (0,1):
                 # NOTE Fix Mph instead of fitting it
                 y = self.LambdaInf -(-1)**n*self.LambdaErr[n]
                 # Weigh points by error bars
-                popt[1][n], pcov = curve_fit(Lambdafun, LList, y.ravel(),
+                popt[1][n], pcov = curve_fit(self.lambdafun, LList, y.ravel(),
                         bounds=bounds, method=method, sigma=self.LambdaErr[n])
 
         except RuntimeError as e:
@@ -246,9 +252,14 @@ class ExtrvsL():
             r"$\Lambda = {:.7f} \pm {:.7f}$".format(coefs[1][0], errs[1][0])
             ,r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[1][1], errs[1][1])
         ]
+        if nparam==3:
+            self.msg[1].append(
+                    r"$b = {:.7f} \pm {:.7f}$".format(coefs[1][2], errs[1][2])
+                    )
         print("Estimates from k=1 fit")
         print("Lambda: {} +- {}".format(coefs[1][0], errs[1][0]))
         print("Mass: {} +- {}".format(coefs[1][1], errs[1][1]))
+        print("b: {} +- {}".format(coefs[1][2], errs[1][2]))
 
         self.msg[-1] = [
             r"$m_{{ph}} = {:.7f} \pm {:.7f}$".format(coefs[-1][0], errs[-1][0])
@@ -258,13 +269,13 @@ class ExtrvsL():
             self.msg[-1].append(
                     r"$c = {:.7f} \pm {:.7f}$".format(coefs[-1][2], errs[-1][2])
                     )
-        print("Estimates from k=1 fit")
+        print("Estimates from E1-E0 fit")
         print("Mass: {} +- {}".format(coefs[-1][0], errs[-1][0]))
 
 
     def predict(self, k, x):
         if k==1:
-            fun = Lambdafun
+            fun = self.lambdafun
         else:
             fun = self.mfun
 
