@@ -20,15 +20,10 @@ output = "pdf"
 renlist = ("rentails", )
 
 nparams = 3
+L = 10
 
 plt.style.use('ggplot')
 plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
-
-# Imported from Mathematica
-gc = 1/0.363112
-def fit(g):
-    return ((1 - 0.363112*g)*(1 + 3.44561*g + 1.4152*g**2))/\
-            ((1 + 0.325964*g)*(1 + 2.75653*g))
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
@@ -44,47 +39,43 @@ xmin = min(glistTot)-0.01
 db = database.Database("data/spectra3.db")
 
 
-def plotvsG(Llist, axes):
+def plotvsG(glist, axes):
 
-    MassFiniteL = np.zeros(len(glistTot))
-    MassErrFiniteL = np.zeros((2, len(glistTot)))
-    MassInf = np.zeros(len(glist))
-    MassErr = np.zeros(len(glist))
+    LambdaFiniteL = np.zeros(len(glistTot))
+    LambdaErrFiniteL = np.zeros((2, len(glistTot)))
+    LambdaInf = np.zeros(len(glist))
+    LambdaErr = np.zeros(len(glist))
 
     for i,g in enumerate(glist):
         a = ExtrvsL(db, g)
         a.train(nparam=3)
-        MassInf[i] = a.asymValue(-1)
-        MassErr[i] = a.asymErr(-1)
+        LambdaInf[i] = a.asymValue(1)
+        LambdaErr[i] = a.asymErr(1)
 
     for i,g in enumerate(glistTot):
-        b = Extrapolator(db, L=10, g=g)
+        b = Extrapolator(db, L=L, g=g)
         b.train(neigs=1)
-        MassFiniteL[i] = b.asymValue(-1)[0]
-        MassErrFiniteL[:,i] = b.asymErr(-1)[0]
+        LambdaFiniteL[i] = b.asymValue(1)[0]/L
+        LambdaErrFiniteL[:,i] = b.asymErr(1)[0]/L
 
     # Plot extrapolated data
-    axes.errorbar(glist, MassInf, MassErr, label=r"$L=\infty$",
+    axes.errorbar(glist, LambdaInf, LambdaErr, label=r"$L=\infty$",
             ls='none')
-    axes.errorbar(glistTot, MassFiniteL, MassErrFiniteL,
-            label=r"$L = 10$", color="green", ls='none')
-
-# Plot fitted function imported from Mathematica
-    xlist = scipy.linspace(0, gc, 100)
-    axes.plot(xlist, fit(xlist), color='blue')
+    axes.errorbar(glistTot, LambdaFiniteL, LambdaErrFiniteL,
+            label=r"$L = {}$".format(L), color="green", ls='none')
 
 
     print("glist:", glist)
-    print("MassInf:")
-    print("{"+",".join("{:f}".format(x) for x in MassInf)+"}")
-    print("MassErr:")
-    print("{"+",".join("{:f}".format(x) for x in MassErr)+"}")
+    print("LambdaInf:")
+    print("{"+",".join("{:f}".format(x) for x in LambdaInf)+"}")
+    print("LambdaErr:")
+    print("{"+",".join("{:f}".format(x) for x in LambdaErr)+"}")
 
-    print("MassFiniteL:")
-    print("{"+",".join("{:f}".format(x) for x in MassFiniteL)+"}")
-    print("MassErrFiniteL:")
+    print("LambdaFiniteL:")
+    print("{"+",".join("{:f}".format(x) for x in LambdaFiniteL)+"}")
+    print("LambdaErrFiniteL:")
     print("{"+",".join("{"+"{0:f}, {1:f}".format(x[0],x[1])+"}"
-        for x in MassErrFiniteL.transpose())+"}")
+        for x in LambdaErrFiniteL.transpose())+"}")
 
 argv = sys.argv
 
@@ -100,17 +91,17 @@ f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
 plotvsG(glist, axes)
 
-axes.set_ylabel(r"$m_{ph}$")
-axes.set_ylim(-0.01, 1)
+axes.set_ylabel(r"$\mathcal{E}_0/L$")
+# axes.set_ylim(-0.01, 1)
 axes.set_xlabel(r"$g$")
 axes.set_xlim(0, xmax)
 
 fname = ".{0}".format(output)
 
-# MASS
+# LAMBDA
 plt.figure(1, figsize=(4, 2.5), dpi=300)
 plt.legend()
-s = "MvsG"
+s = "LambdavsG"
 if nparams==2:
     s += "_p=2"
 plt.savefig(s+fname, bbox_inches='tight')
