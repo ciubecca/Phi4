@@ -38,8 +38,11 @@ klist = (1,-1)
 glist = scipy.linspace(0.2, 2.6, 13)
 glistTot = scipy.linspace(0.2, 3, 15)
 
-xmax = max(glistTot)+0.01
-xmin = min(glistTot)-0.01
+# glist = scipy.linspace(0.2, 0.4, 2)
+# glistTot = scipy.linspace(0.2, 0.6, 3)
+
+xmax = max(glistTot)+0.03
+xmin = min(glistTot)-0.03
 
 db = database.Database("data/spectra3.db")
 
@@ -64,14 +67,22 @@ def plotvsG(Llist, axes):
         MassErrFiniteL[:,i] = b.asymErr(-1)[0]
 
     # Plot extrapolated data
-    axes.errorbar(glist, MassInf, MassErr, label=r"$L=\infty$",
+    axes[0].errorbar(glist, MassInf, MassErr, label=r"$L=\infty$",
             ls='none')
-    axes.errorbar(glistTot, MassFiniteL, MassErrFiniteL,
+    axes[0].errorbar(glistTot, MassFiniteL, MassErrFiniteL,
             label=r"$L = 10$", color="green", ls='none')
 
 # Plot fitted function imported from Mathematica
     xlist = scipy.linspace(0, gc, 100)
-    axes.plot(xlist, fit(xlist), color='blue')
+    axes[0].plot(xlist, fit(xlist), color='blue')
+
+
+# Plot residuals
+    axes[1].errorbar(glist, MassInf-fit(glist), MassErr, label=r"$L=\infty$",
+            ls='none')
+    # axes[1].errorbar(glist, MassFiniteL[:glist.size]-fit(glist),
+            # MassErrFiniteL[:, :glist.size], label=r"$L = 10$", color="green",
+            # ls='none')
 
 
     print("glist:", glist)
@@ -95,21 +106,26 @@ if len(argv) < 1:
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-f, axes = plt.subplots(1, 1)
+f, axes = plt.subplots(2, 1, sharex='col', gridspec_kw = {'height_ratios':[3,1]})
 f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
-plotvsG(glist, axes)
+axes[0].set_ylabel(r"$m_{ph}$")
+axes[0].set_ylim(-0.01, 1.01)
+axes[1].set_ylabel("residuals")
+axes[1].set_xlabel(r"$g$")
+axes[1].set_xlim(xmin, xmax)
+axes[1].set_ylim(-0.03, 0.03)
+# axes[1].yaxis.set_ticks(np.arange(-0.001, 0.001, 5))
+axes[1].locator_params(nbins=8, axis='y')
+axes[1].yaxis.set_major_locator(MaxNLocator(prune='upper', nbins=6))
 
-axes.set_ylabel(r"$m_{ph}$")
-axes.set_ylim(-0.01, 1)
-axes.set_xlabel(r"$g$")
-axes.set_xlim(0, xmax)
+plotvsG(glist, axes)
+axes[0].legend(loc=1)
 
 fname = ".{0}".format(output)
 
 # MASS
 plt.figure(1, figsize=(4, 2.5), dpi=300)
-plt.legend()
 s = "MvsG"
 if nparams==2:
     s += "_p=2"
