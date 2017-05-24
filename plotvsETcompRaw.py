@@ -18,7 +18,7 @@ power = {"raw":2, "renloc":2, "rentails":3}
 Llist = [6, 8, 10]
 
 output = "pdf"
-renlist = ("raw", "renloc")
+renlist = ("raw", "rentails")
 
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -141,9 +141,9 @@ f.suptitle(r"$g={}$".format(g), fontsize=15)
 plotvsET(Llist, axes)
 
 
-axes[0,1].set_xlim(0, xmax["renloc"]+10**(-4))
+axes[0,1].set_xlim(0, xmax[renlist[1]]+10**(-4))
 axes[0,1].legend(loc=1)
-axes[0,0].set_xlim(0, xmax["raw"]+10**(-5))
+axes[0,0].set_xlim(0, xmax[renlist[0]]+10**(-5))
 axes[0,0].legend(loc=3)
 axes[0,0].set_ylabel(r"$\mathcal{E}_0/L$")
 ymargin = (ymax[1]-ymin[1])/100
@@ -151,8 +151,8 @@ axes[0,0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 axes[0,0].invert_xaxis()
 
 axes[1,0].set_ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
-axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["raw"]))
-axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]))
+axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power[renlist[0]]))
+axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power[renlist[1]]))
 axes[1,0].set_ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$")
 
 # Remove common tick
