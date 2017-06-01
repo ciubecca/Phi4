@@ -34,7 +34,7 @@ glist = scipy.linspace(0.2, 2.6, 13)
 glistTot = scipy.linspace(0.2, 3, 15)
 
 xmax = max(glistTot)+0.01
-xmin = min(glistTot)-0.01
+xmin = 0
 
 db = database.Database("data/spectra3.db")
 
@@ -59,11 +59,14 @@ def plotvsG(glist, axes):
         LambdaErrFiniteL[:,i] = b.asymErr(1)[0]/L
 
     # Plot extrapolated data
-    axes.errorbar(glist, LambdaInf, LambdaErr, label=r"$L=\infty$",
+    axes[0].errorbar(glist, LambdaInf, LambdaErr, label=r"$L=\infty$",
             ls='none')
-    axes.errorbar(glistTot, LambdaFiniteL, LambdaErrFiniteL,
+    axes[0].errorbar(glistTot, LambdaFiniteL, LambdaErrFiniteL,
             label=r"$L = {}$".format(L), color="green", ls='none')
 
+    # Plot just error bars, divided by g^2
+    axes[1].errorbar(glist, [0]*len(glist),
+            LambdaErr/glist**2, label=r"$L=\infty$", ls='none')
 
     print("glist:", glist)
     print("LambdaInf:")
@@ -86,15 +89,21 @@ if len(argv) < 1:
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-f, axes = plt.subplots(1, 1)
+f, axes = plt.subplots(2, 1, sharex='col', gridspec_kw = {'height_ratios':[3,1]})
 f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
 plotvsG(glist, axes)
 
-axes.set_ylabel(r"$\mathcal{E}_0/L$")
-# axes.set_ylim(-0.01, 1)
-axes.set_xlabel(r"$g$")
-axes.set_xlim(0, xmax)
+axes[0].set_ylabel(r"$\mathcal{E}_0/L$")
+# axes[0].set_ylim(-0.01, 1.01)
+axes[1].set_ylabel(r"errors$/g^2$")
+axes[1].set_xlabel(r"$g$")
+axes[1].set_xlim(xmin, xmax)
+# axes[1].set_ylim(-0.03, 0.03)
+# axes[1].yaxis.set_ticks(np.arange(-0.001, 0.001, 5))
+axes[1].locator_params(nbins=8, axis='y')
+axes[1].yaxis.set_major_locator(MaxNLocator(prune='upper', nbins=6))
+
 
 fname = ".{0}".format(output)
 

@@ -18,15 +18,20 @@ Llist = {}
 Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 Llist["renloc"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,10]
 
+label = {"rentails":"NLO", "renloc":"local LO"}
+
 output = "pdf"
 renlist = ("rentails", "renloc")
-# renlist = ("rentails", )
+renlist = ("rentails", )
 
-marker = 'o'
+marker = '*'
 markersize = 2.5
 
 plt.style.use('ggplot')
-plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y'])))
+plt.rc('axes', prop_cycle=(
+    cycler('marker', ['*', '', 'o', '^'])
+    +cycler('color', ['r', 'g', 'b', 'y'])
+    ))
 
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -69,13 +74,10 @@ def plotvsL(Llist):
     # Lambda
     fig = plt.figure(1)
     ax = fig.add_subplot(111)
-    # Plot non-extrapolated data
-    for ren in renlist:
-        plt.plot(Llist[ren], Lambda[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
-    ax.errorbar(Llist["rentails"],
-            a.LambdaInf, a.LambdaErr, marker=marker, label=r"$E_T=\infty$")
+    ax.errorbar(Llist["rentails"], a.LambdaInf, a.LambdaErr,
+            marker=marker, label=r"$E_T=\infty$")
 
     xdata = scipy.linspace(xmin, xmax, 100)
     ax.plot(xdata, a.predict(1, xdata))
@@ -84,13 +86,14 @@ def plotvsL(Llist):
         # ax.text(0.8, 0.1-i*0.05, a.msg[1][i], horizontalalignment='center',
             # verticalalignment='center', fontsize=13, transform=ax.transAxes)
 
+    # Plot non-extrapolated data
+    for ren in renlist:
+        plt.plot(Llist[ren], Lambda[ren], label=label[ren])
+
 
     # Mass
     fig = plt.figure(2)
     ax = fig.add_subplot(111)
-    # Plot non-extrapolated data
-    for ren in renlist:
-        plt.plot(Llist[ren], Mass[ren], marker=marker, label=ren)
 
     # Plot extrapolated data
     ax.errorbar(LList, a.MassInf, a.MassErr, marker=marker, label=r"$E_T=\infty$")
@@ -101,6 +104,10 @@ def plotvsL(Llist):
     # for i, m in enumerate(a.msg[-1]):
         # ax.text(0.8, 0.85-i*0.05, a.msg[-1][i], horizontalalignment='center',
             # verticalalignment='center', fontsize=13, transform=ax.transAxes)
+
+    # Plot non-extrapolated data
+    for ren in renlist:
+        plt.plot(Llist[ren], Mass[ren], label=label[ren])
 
 
 argv = sys.argv
@@ -123,10 +130,10 @@ fname = "g={0:.1f}.{1}".format(g, output)
 # VACUUM ENERGY DENSITY
 title = r"$g$={:.1f}, \quad f(x)={}".format(g, fvacStr)
 title = r"$g$={:.1f}".format(g)
-plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$L$")
-plt.ylabel(r"$\mathcal{E}_0/L$")
+plt.figure(1, figsize=(2.5, 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title, fontsize=15)
+plt.xlabel(r"$L$", fontsize=15)
+plt.ylabel(r"$\mathcal{E}_0/L$", fontsize=15)
 ymargin = 10**(-5)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[1]-ymargin, ymax[1]+ymargin)
@@ -141,9 +148,9 @@ else:
 title = r"$g$={:.1f}, \quad f(x)={}".format(g, f)
 title = r"$g$={:.1f}".format(g)
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$L$")
-plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$")
+plt.title(title, fontsize=15)
+plt.xlabel(r"$L$", fontsize=15)
+plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$", fontsize=15)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
 plt.legend(loc=1)

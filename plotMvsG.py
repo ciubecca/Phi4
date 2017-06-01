@@ -42,7 +42,7 @@ glistTot = scipy.linspace(0.2, 3, 15)
 # glistTot = scipy.linspace(0.2, 0.6, 3)
 
 xmax = max(glistTot)+0.03
-xmin = min(glistTot)-0.03
+xmin = 0
 
 db = database.Database("data/spectra3.db")
 
@@ -77,9 +77,9 @@ def plotvsG(Llist, axes):
     axes[0].plot(xlist, fit(xlist), color='blue')
 
 
-# Plot residuals
-    axes[1].errorbar(glist, MassInf-fit(glist), MassErr, label=r"$L=\infty$",
-            ls='none')
+# Plot residuals, divided by g^2
+    axes[1].errorbar(glist, (MassInf-fit(glist))/glist**2,
+            MassErr/glist**2, label=r"$L=\infty$", ls='none')
     # axes[1].errorbar(glist, MassFiniteL[:glist.size]-fit(glist),
             # MassErrFiniteL[:, :glist.size], label=r"$L = 10$", color="green",
             # ls='none')
@@ -111,10 +111,10 @@ f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
 axes[0].set_ylabel(r"$m_{ph}$")
 axes[0].set_ylim(-0.01, 1.01)
-axes[1].set_ylabel("residuals")
+axes[1].set_ylabel(r"residuals$/g^2$")
 axes[1].set_xlabel(r"$g$")
 axes[1].set_xlim(xmin, xmax)
-axes[1].set_ylim(-0.03, 0.03)
+# axes[1].set_ylim(-0.03, 0.03)
 # axes[1].yaxis.set_ticks(np.arange(-0.001, 0.001, 5))
 axes[1].locator_params(nbins=8, axis='y')
 axes[1].yaxis.set_major_locator(MaxNLocator(prune='upper', nbins=6))
