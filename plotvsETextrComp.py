@@ -87,7 +87,7 @@ def plotvsET(Llist, axes):
             xerr = np.array([10**(-5)])
             xerr = np.array([0])
 
-            label = "ren = {}, L = {}".format(labelStr[ren],L)
+            label = "{}, L = {}".format(labelStr[ren],L)
             " VACUUM ENERGY "
             if ren=="rentails":
                 ax = axes[0,0]
@@ -159,8 +159,8 @@ axes[0,0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 axes[0,0].invert_xaxis()
 
 axes[1,0].set_ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
-axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]), fontsize=12)
-axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]), fontsize=12)
+axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]), fontsize=15)
+axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]), fontsize=15)
 axes[1,0].set_ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$")
 
 # Remove common tick

@@ -12,9 +12,9 @@ from extrapolate import ETmin, ETmax, step
 
 dbname = "data/spectra3.db"
 
-
 output = "pdf"
 renlist = ("raw", "rentails", "renloc")
+labelStr = {"raw":"raw", "rentails":"NLO", "renloc":"local LO"}
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
@@ -57,8 +57,7 @@ def plotvsET(ETlist):
     plt.figure(1)
     for ren in renlist:
         data = spectrum[1][ren][0]
-        label = "ren="+ren
-        plt.plot(ETlist[ren], data, label=label, color='k')
+        plt.plot(ETlist[ren], data, label=labelStr[ren], color='k')
         ymin[1] = min(ymin[1], min(data))
         ymax[1] = max(ymax[1], max(data))
     plt.gca().set_prop_cycle(None)
@@ -73,7 +72,7 @@ def plotvsET(ETlist):
             for ren in renlist:
                 data = spectrum[k][ren][i]-spectrum[1][ren][0]
                 if i==n0:
-                    label="k={}, ren={}".format(k,ren)
+                    label="k={}, {}".format(k,labelStr[ren])
                 else:
                     label = None
                 plt.plot(ETlist[ren], data, label=label, color=color[k])
@@ -84,8 +83,7 @@ def plotvsET(ETlist):
     plt.figure(3)
     for ren in renlist:
         data = spectrum[-1][ren][0]-spectrum[1][ren][0]
-        label="ren={}".format(ren)
-        plt.plot(ETlist[ren], data, label=label, color="k")
+        plt.plot(ETlist[ren], data, label=labelStr[ren], color="k")
         ymin[-1] = min(ymin[-1], min(data))
         ymax[-1] = max(ymax[-1], max(data))
 
@@ -110,7 +108,6 @@ ETlist = {ren: scipy.linspace(ETmin[ren][L], ETmax[ren][L],
 
 plotvsET(ETlist)
 
-
 title = r"$g$={0:.1f}, $L$={1:.1f}".format(g,L)
 fname = "g={0:.1f}_L={1:.1f}.{2}".format(g,L,output)
 
@@ -120,12 +117,12 @@ xlims = (min(min(ETlist[ren]) for ren in renlist),
 # VACUUM
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
-plt.xlabel(r"$E_{T}$")
-plt.ylabel(r"$\mathcal{E}_0$")
+plt.xlabel(r"$E_{T}$", fontsize=15)
+plt.ylabel(r"$\mathcal{E}_0$", fontsize=15)
 dx = 5*10**-1
 plt.xlim(xlims[0]-dx,xlims[1]+dx)
 plt.ylim(ymin[1]-10**-2,ymax[1]+10**-2)
-plt.legend(loc=1)
+plt.legend(loc=1, fontsize=12)
 plt.savefig("E0vsET_"+fname, bbox_inches='tight')
 
 
@@ -141,9 +138,9 @@ plt.savefig("specvsET_"+fname)
 # MASS
 plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
-plt.xlabel(r"$E_{T}$")
-plt.ylabel(r"$\mathcal{E}_1 - \mathcal{E}_0$")
+plt.xlabel(r"$E_{T}$", fontsize=15)
+plt.ylabel(r"$\mathcal{E}_1 - \mathcal{E}_0$", fontsize=15)
 plt.xlim(xlims[0]-dx, xlims[1]+dx)
 plt.ylim(ymin[-1]-10**-3,ymax[-1]+10**-3)
-plt.legend(loc=1)
+plt.legend(loc=1, fontsize=12)
 plt.savefig("massvsET_"+fname, bbox_inches='tight')

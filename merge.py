@@ -2,7 +2,7 @@ import database
 import extrapolate
 
 db1 = database.Database("data/spectra.db")
-db2 = database.Database("data/spectra2.db")
+db2 = database.Database("data/spectra4.db")
 db3 = database.Database("data/spectra3.db")
 
 for x in db1.table:

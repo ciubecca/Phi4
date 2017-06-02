@@ -39,7 +39,7 @@ ETmin["raw"] = ETmin["rentails"]
 ETmin["renloc"] = ETmin["rentails"]
 
 step = {}
-step["raw"] = 0.5
+step["raw"] = 1
 step["renloc"] = step["raw"]
 step["rentails"] = 0.5
 
@@ -55,8 +55,6 @@ class Extrapolator():
 
         self.g = g
         self.L = L
-
-        mult = 1/step[ren]
 
         if ren != "rentails":
             self.ETlist = np.array([ETMin + n for n in range(ETMax-ETMin+1) if
