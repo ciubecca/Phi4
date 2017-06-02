@@ -12,7 +12,7 @@ import numpy as np
 from numpy import concatenate as concat
 from extrapolate import *
 
-nparam=3
+nparam = 3
 
 Llist = {}
 Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
@@ -21,7 +21,7 @@ Llist["renloc"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,10]
 label = {"rentails":"NLO", "renloc":"local LO"}
 
 output = "pdf"
-renlist = ("rentails", "renloc")
+# renlist = ("rentails", "renloc")
 renlist = ("rentails", )
 
 marker = '*'
@@ -76,11 +76,16 @@ def plotvsL(Llist):
     ax = fig.add_subplot(111)
 
     # Plot extrapolated data
+
     ax.errorbar(Llist["rentails"], a.LambdaInf, a.LambdaErr,
             marker=marker, label=r"$E_T=\infty$")
 
+    # Plot fitted function
     xdata = scipy.linspace(xmin, xmax, 100)
-    ax.plot(xdata, a.predict(1, xdata))
+    ax.plot(xdata, a.predict(1, xdata), label=r"$f(L)$")
+
+    # ax.text(0.7, 0.1, "f(L) = "+fvacStr, horizontalalignment='center',
+            # verticalalignment='center', fontsize=12, transform=ax.transAxes)
 
     # for i, m in enumerate(a.msg[1]):
         # ax.text(0.8, 0.1-i*0.05, a.msg[1][i], horizontalalignment='center',
@@ -98,9 +103,11 @@ def plotvsL(Llist):
     # Plot extrapolated data
     ax.errorbar(LList, a.MassInf, a.MassErr, marker=marker, label=r"$E_T=\infty$")
 
+    # Plot fits
     xdata = scipy.linspace(xmin, xmax, 100)
-    ax.plot(xdata, a.predict(-1, xdata))
+    ax.plot(xdata, a.predict(-1, xdata), label=r"$f(L)$")
 
+    # Print fitted parameters
     # for i, m in enumerate(a.msg[-1]):
         # ax.text(0.8, 0.85-i*0.05, a.msg[-1][i], horizontalalignment='center',
             # verticalalignment='center', fontsize=13, transform=ax.transAxes)
@@ -137,7 +144,7 @@ plt.ylabel(r"$\mathcal{E}_0/L$", fontsize=15)
 ymargin = 10**(-5)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[1]-ymargin, ymax[1]+ymargin)
-plt.legend(loc=2)
+plt.legend(loc=2, fontsize=10)
 plt.savefig("extrLambdavsL_"+fname, bbox_inches='tight')
 
 # MASS
@@ -153,7 +160,7 @@ plt.xlabel(r"$L$", fontsize=15)
 plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$", fontsize=15)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
-plt.legend(loc=1)
+plt.legend(loc=1, fontsize=10)
 
 s = "extrMassvsL_"
 if nparam==2:

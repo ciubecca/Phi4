@@ -10,6 +10,7 @@ from sys import exit
 
 output = "png"
 renlist = ("raw", "rentails", "renloc")
+label = {"raw":"raw", "rentails":"NLO", "renloc":"local LO"}
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
@@ -110,7 +111,7 @@ def plotvsET(ETlist):
                     label = None
                 if ren == "rentails":
                     print("k=",k, " ", ",".join(str(x) for x in data))
-                plt.plot(xlist, data, label=label, marker=marker,
+                plt.plot(xlist, data, label=label[ren], marker=marker,
                         markersize=markersize)
             plt.gca().set_prop_cycle(None)
 
@@ -126,7 +127,7 @@ def plotvsET(ETlist):
                     label="ren="+ren
                 else:
                     label = None
-                plt.plot(xlist, data, label=label,
+                plt.plot(xlist, data, label=label[ren],
                         markersize=markersize, marker=marker)
             plt.gca().set_prop_cycle(None)
 

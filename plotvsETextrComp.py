@@ -19,6 +19,7 @@ Llist = [6, 8, 10]
 
 output = "pdf"
 renlist = ("rentails", "renloc")
+labelStr = {"raw":"raw", "rentails":"NLO", "renloc":"local LO"}
 
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -86,7 +87,7 @@ def plotvsET(Llist, axes):
             xerr = np.array([10**(-5)])
             xerr = np.array([0])
 
-            label = "ren = {}, L = {}".format(ren,L)
+            label = "ren = {}, L = {}".format(labelStr[ren],L)
             " VACUUM ENERGY "
             if ren=="rentails":
                 ax = axes[0,0]
@@ -149,17 +150,17 @@ plotvsET(Llist, axes)
 
 
 axes[0,1].set_xlim(0, xmax["renloc"]+10**(-4))
-axes[0,1].legend(loc=1)
+axes[0,1].legend(loc=1, fontsize=10)
 axes[0,0].set_xlim(0, xmax["rentails"]+10**(-5))
-axes[0,0].legend(loc=3)
-axes[0,0].set_ylabel(r"$\mathcal{E}_0/L$")
+axes[0,0].legend(loc=3, fontsize=10)
+axes[0,0].set_ylabel(r"$\mathcal{E}_0/L$", fontsize=12)
 ymargin = (ymax[1]-ymin[1])/100
 axes[0,0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 axes[0,0].invert_xaxis()
 
 axes[1,0].set_ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
-axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]))
-axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]))
+axes[1,0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]), fontsize=12)
+axes[1,1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]), fontsize=12)
 axes[1,0].set_ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$")
 
 # Remove common tick

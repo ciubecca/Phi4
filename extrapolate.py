@@ -165,11 +165,11 @@ fmassStr2 = r"$m_{ph}(1 + b  K_1(m_{ph} L))$"
 
 def Lambdafun(L, a, m, b):
     return a - m/(pi*L)*kn(1, m*L) - b*sqrt(m/L**3)*exp(-2*m*L)
-fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)-\frac{b*m_{ph}}{L} K_1(2 m_{ph} L)$"
+fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)-b*\sqrt{\frac{m_{ph}}{L}} e^{-2 m_{ph} L}$"
 
 def Lambdafun2(L, a, m):
     return a - m/(pi*L)*kn(1, m*L)
-fvacStr = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
+fvacStr2 = r"$\Lambda - \frac{m_{ph}}{\pi L} K_1(m_{ph} L)$"
 
 method = 'trf'
 
