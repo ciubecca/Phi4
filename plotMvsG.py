@@ -68,13 +68,13 @@ def plotvsG(Llist, axes):
 
     # Plot extrapolated data
     axes[0].errorbar(glist, MassInf, MassErr, label=r"$L=\infty$",
-            ls='none')
+            capthick=1.5, ls='none')
     axes[0].errorbar(glistTot, MassFiniteL, MassErrFiniteL,
-            label=r"$L = 10$", color="green", ls='none')
+            label=r"$L = 10$", color="green", ls='none', capthick=1.5)
 
 # Plot fitted function imported from Mathematica
     xlist = scipy.linspace(0, gc, 100)
-    axes[0].plot(xlist, fit(xlist), color='blue')
+    axes[0].plot(xlist, fit(xlist), color='blue', label=r"$f(g)$")
 
 
 # Plot residuals, divided by g^2
@@ -109,10 +109,10 @@ plt.rcParams.update(params)
 f, axes = plt.subplots(2, 1, sharex='col', gridspec_kw = {'height_ratios':[3,1]})
 f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
-axes[0].set_ylabel(r"$m_{ph}$")
+axes[0].set_ylabel(r"$m_{ph}$", fontsize=15)
 axes[0].set_ylim(-0.01, 1.01)
-axes[1].set_ylabel(r"residuals$/g^2$")
-axes[1].set_xlabel(r"$g$")
+axes[1].set_ylabel(r"residuals$/g^2$", fontsize=15)
+axes[1].set_xlabel(r"$g$", fontsize=15)
 axes[1].set_xlim(xmin, xmax)
 # axes[1].set_ylim(-0.03, 0.03)
 # axes[1].yaxis.set_ticks(np.arange(-0.001, 0.001, 5))
@@ -120,7 +120,7 @@ axes[1].locator_params(nbins=8, axis='y')
 axes[1].yaxis.set_major_locator(MaxNLocator(prune='upper', nbins=6))
 
 plotvsG(glist, axes)
-axes[0].legend(loc=1)
+axes[0].legend(loc=1, fontsize=12)
 
 fname = ".{0}".format(output)
 

@@ -14,9 +14,7 @@ from extrapolate import Extrapolator
 # Take the (n+1) (subtracted) eigenvalue in each sector.
 # If n=0, the k=1 eigenvalue is not subtracted
 n = 0
-
 xmargin = 10**(-4)
-
 power = 3
 
 Llist = [7, 8, 9, 10]

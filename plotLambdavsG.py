@@ -59,14 +59,14 @@ def plotvsG(glist, axes):
         LambdaErrFiniteL[:,i] = b.asymErr(1)[0]/L
 
     # Plot extrapolated data
-    axes[0].errorbar(glist, LambdaInf, LambdaErr, label=r"$L=\infty$",
-            ls='none')
     axes[0].errorbar(glistTot, LambdaFiniteL, LambdaErrFiniteL,
-            label=r"$L = {}$".format(L), color="green", ls='none')
+            label=r"$L = {}$".format(L), color="green", ls='none', capthick=1.5)
+    axes[0].errorbar(glist, LambdaInf, LambdaErr, label=r"$L=\infty$", ls="--",
+            capthick=1.5)
 
     # Plot just error bars, divided by g^2
     axes[1].errorbar(glist, [0]*len(glist),
-            LambdaErr/glist**2, label=r"$L=\infty$", ls='none')
+            LambdaErr/glist**2, ls='none')
 
     print("glist:", glist)
     print("LambdaInf:")
@@ -94,11 +94,12 @@ f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
 plotvsG(glist, axes)
 
-axes[0].set_ylabel(r"$\mathcal{E}_0/L$")
+axes[0].set_ylabel(r"$\mathcal{E}_0/L$", fontsize=15)
 # axes[0].set_ylim(-0.01, 1.01)
-axes[1].set_ylabel(r"errors$/g^2$")
-axes[1].set_xlabel(r"$g$")
+axes[1].set_ylabel(r"errors$/g^2$", fontsize=15)
+axes[1].set_xlabel(r"$g$", fontsize=15)
 axes[1].set_xlim(xmin, xmax)
+axes[0].legend(fontsize=12)
 # axes[1].set_ylim(-0.03, 0.03)
 # axes[1].yaxis.set_ticks(np.arange(-0.001, 0.001, 5))
 axes[1].locator_params(nbins=8, axis='y')
@@ -109,7 +110,6 @@ fname = ".{0}".format(output)
 
 # LAMBDA
 plt.figure(1, figsize=(4, 2.5), dpi=300)
-plt.legend()
 s = "LambdavsG"
 if nparams==2:
     s += "_p=2"

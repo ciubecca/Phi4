@@ -100,16 +100,16 @@ def plotvsL(Llist, gpair):
 
     plt.axhline(y=1/8, color='k', linestyle='--', dashes=[10,10], linewidth=0.9)
     ax.annotate(r"$\Delta_\sigma$", xy=(1.01,1/8), xycoords=trans, clip_on=False,
-            va='center')
+            va='center', fontsize=15)
 
     plt.axhline(y=2+1/8, color='k', linestyle='--', dashes=[10,10], linewidth=0.9)
-    ax.annotate(r"$\Delta_{\partial^2 \sigma}$",
+    ax.annotate(r"$\Delta_{\partial^2 \sigma}$", fontsize=15,
             xy=(1.01,2+1/8), xycoords=trans, clip_on=False, va='center')
 
 
     plt.axhline(y=1, color='k', linestyle='--', dashes=[10,10], linewidth=0.9)
     ax.annotate(r"$\Delta_\epsilon$", xy=(1.01,1), xycoords=trans, clip_on=False,
-            va='center')
+            va='center', fontsize=15)
 
     # for g in gpair:
     for k in (-1,1):
@@ -159,9 +159,9 @@ plt.savefig("LambdaCritvsL."+fname, bbox_inches='tight')
 # MASS
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
-plt.xlabel(r"$L$")
-plt.ylabel(r"$(\mathcal{E}_I-\mathcal{E}_0) L/(2 \pi)$")
+plt.xlabel(r"$L$", fontsize=15)
+plt.ylabel(r"$(\mathcal{E}_I-\mathcal{E}_0) L/(2 \pi)$", fontsize=15)
 plt.xlim(xmin, xmax)
-plt.legend(loc=1)
+plt.legend(loc=1, fontsize=12)
 
 plt.savefig("SpecCritvsL."+fname, bbox_inches='tight')
