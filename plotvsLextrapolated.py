@@ -13,6 +13,10 @@ from numpy import concatenate as concat
 from extrapolate import *
 
 nparam = 3
+gdratio = 1.618
+figsize = 5
+labelsize=20
+
 
 Llist = {}
 Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
@@ -83,7 +87,7 @@ def plotvsL(Llist):
 
     # Plot fitted function
     xdata = scipy.linspace(xmin, xmax, 100)
-    ax.plot(xdata, a.predict(1, xdata), label=r"$f(L)$")
+    ax.plot(xdata, a.predict(1, xdata), label="fit")
 
     # ax.text(0.7, 0.1, "f(L) = "+fvacStr, horizontalalignment='center',
             # verticalalignment='center', fontsize=12, transform=ax.transAxes)
@@ -106,7 +110,7 @@ def plotvsL(Llist):
 
     # Plot fits
     xdata = scipy.linspace(xmin, xmax, 100)
-    ax.plot(xdata, a.predict(-1, xdata), label=r"$f(L)$")
+    ax.plot(xdata, a.predict(-1, xdata), label="fit")
 
     # Print fitted parameters
     # for i, m in enumerate(a.msg[-1]):
@@ -135,13 +139,16 @@ plotvsL(Llist)
 
 fname = "g={0:.1f}.{1}".format(g, output)
 
+plt.figure(figsize=(figsize*gdratio,figsize))
+
+
 # VACUUM ENERGY DENSITY
 title = r"$g$={:.1f}, \quad f(x)={}".format(g, fvacStr)
 title = r"$g$={:.1f}".format(g)
-plt.figure(1, figsize=(2.5, 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.figure(1, figsize=(figsize*gdratio,figsize), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title, fontsize=15)
-plt.xlabel(r"$L$", fontsize=15)
-plt.ylabel(r"$\mathcal{E}_0/L$", fontsize=15)
+plt.xlabel(r"$L$", fontsize=labelsize)
+plt.ylabel(r"$\mathcal{E}_0/L$", fontsize=labelsize)
 ymargin = 10**(-5)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[1]-ymargin, ymax[1]+ymargin)
@@ -155,10 +162,12 @@ else:
     f = fmassStr
 title = r"$g$={:.1f}, \quad f(x)={}".format(g, f)
 title = r"$g$={:.1f}".format(g)
-plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+fig = plt.figure(2, figsize=(figsize*gdratio,figsize), dpi=300, facecolor='w', edgecolor='w')
+fig.set_figheight(figsize)
+fig.set_figwidth(figsize*gdratio)
 plt.title(title, fontsize=15)
-plt.xlabel(r"$L$", fontsize=15)
-plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$", fontsize=15)
+plt.xlabel(r"$L$", fontsize=labelsize)
+plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$", fontsize=labelsize)
 plt.xlim(xmin, xmax)
 plt.ylim(ymin[-1]-ymargin, ymax[-1]+ymargin)
 plt.legend(loc=1, fontsize=10)
@@ -166,4 +175,5 @@ plt.legend(loc=1, fontsize=10)
 s = "extrMassvsL_"
 if nparam==2:
     s += "p=2_"
-plt.savefig(s+fname, bbox_inches='tight')
+# plt.savefig(s+fname, bbox_inches='tight')
+plt.savefig(s+fname)

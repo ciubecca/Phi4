@@ -19,6 +19,10 @@ output = "pdf"
 # renlist = ("rentails", "renloc")
 renlist = ("rentails", )
 
+gdratio = 1.618
+figsize = 5
+labelsize = 20
+
 nparams = 3
 
 plt.style.use('ggplot')
@@ -106,13 +110,14 @@ if len(argv) < 1:
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-f, axes = plt.subplots(2, 1, sharex='col', gridspec_kw = {'height_ratios':[3,1]})
+f, axes = plt.subplots(2, 1, sharex='col', figsize=(figsize*gdratio,figsize),
+        gridspec_kw = {'height_ratios':[3,1]})
 f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
-axes[0].set_ylabel(r"$m_{ph}$", fontsize=15)
+axes[0].set_ylabel(r"$m_{ph}$", fontsize=labelsize)
 axes[0].set_ylim(-0.01, 1.01)
-axes[1].set_ylabel(r"residuals$/g^2$", fontsize=15)
-axes[1].set_xlabel(r"$g$", fontsize=15)
+axes[1].set_ylabel(r"residuals$/g^2$", fontsize=labelsize)
+axes[1].set_xlabel(r"$g$", fontsize=labelsize)
 axes[1].set_xlim(xmin, xmax)
 # axes[1].set_ylim(-0.03, 0.03)
 # axes[1].yaxis.set_ticks(np.arange(-0.001, 0.001, 5))

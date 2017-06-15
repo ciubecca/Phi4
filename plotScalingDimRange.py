@@ -13,6 +13,10 @@ import numpy as np
 from numpy import concatenate as concat
 from extrapolate import *
 
+gdratio = 1.618
+figsize = 5
+labelsize=20
+
 neigs = 2
 
 Llist = np.array([5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10])
@@ -124,7 +128,7 @@ def plotvsL(Llist, gpair):
                     # color=color[k], label=label)
 
             plt.fill_between(Llist, SpectrumMax[k][n], SpectrumMin[k][n],
-                    color=color[k], label=label)
+                    color="r")
 
 argv = sys.argv
 
@@ -157,11 +161,13 @@ plt.legend(loc=2)
 plt.savefig("LambdaCritvsL."+fname, bbox_inches='tight')
 
 # MASS
-plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+fig = plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+fig.set_figheight(figsize)
+fig.set_figwidth(figsize*gdratio)
 plt.title(title)
-plt.xlabel(r"$L$", fontsize=15)
-plt.ylabel(r"$(\mathcal{E}_I-\mathcal{E}_0) L/(2 \pi)$", fontsize=15)
+plt.xlabel(r"$L$", fontsize=labelsize)
+plt.ylabel(r"$(\mathcal{E}_I-\mathcal{E}_0) L/(2 \pi)$", fontsize=labelsize)
 plt.xlim(xmin, xmax)
-plt.legend(loc=1, fontsize=12)
+# plt.legend(loc=1, fontsize=12)
 
 plt.savefig("SpecCritvsL."+fname, bbox_inches='tight')

@@ -13,6 +13,10 @@ from extrapolate import Extrapolator
 from matplotlib.ticker import MaxNLocator
 from itertools import cycle
 
+gdratio = 1.618
+figsize = 5
+labelsize=20
+
 power = {"raw":2, "renloc":2, "rentails":3}
 labelstr = {"raw":"raw", "renloc":"local LO", "rentails":"NLO"}
 
@@ -133,7 +137,7 @@ title = r"$g$={0:.1f}".format(g)
 fname = "g={0:.1f}.{1}".format(g,output)
 
 
-f, axes = plt.subplots(1, 2, sharey='row')
+f, axes = plt.subplots(1, 2, sharey='row', figsize=(figsize*gdratio,figsize))
 f.subplots_adjust(hspace=0, wspace=0, top=.94, right=1, left=0)
 f.suptitle(r"$g={}$".format(g), fontsize=15)
 
@@ -144,13 +148,13 @@ axes[0].set_xlim(0, xmax["rentails"]+10**(-4))
 axes[0].legend(loc=1, fontsize=10)
 axes[1].set_xlim(0, xmax["renloc"]+10**(-5))
 axes[1].legend(loc=2, fontsize=10)
-axes[0].set_ylabel(r"$\mathcal{E}_0/L$", fontsize=12)
+axes[0].set_ylabel(r"$\mathcal{E}_0/L$", fontsize=labelsize)
 ymargin = (ymax[1]-ymin[1])/100
 axes[0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 axes[0].invert_xaxis()
 
-axes[0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]), fontsize=15)
-axes[1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]), fontsize=15)
+axes[0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]), fontsize=labelsize)
+axes[1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]), fontsize=labelsize)
 
 # Remove common tick
 axes[1].xaxis.set_major_locator(MaxNLocator(prune='lower', nbins=6))
