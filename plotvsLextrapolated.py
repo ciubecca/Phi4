@@ -19,6 +19,7 @@ Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 Llist["renloc"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,10]
 
 label = {"rentails":"NLO", "renloc":"local LO"}
+label = {"rentails":"NLO"}
 
 output = "pdf"
 # renlist = ("rentails", "renloc")

@@ -19,7 +19,7 @@ labelstr = {"raw":"raw", "renloc":"local LO", "rentails":"NLO"}
 Llist = [6, 8, 10]
 
 output = "pdf"
-renlist = ("raw", "rentails")
+renlist = ("raw", "rentails", "renloc")
 
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -39,6 +39,12 @@ sty_cycle = cycler('marker', ['D', 'o', '^'])\
     +cycler('s', [10.,8.,20.])\
     +cycler('color', ['r','b','g'])
 
+sty_cycle_loc = cycler('marker', ['x', '*', 's'])\
+    +cycler('linestyle', ['-', '--', ':'])\
+    +cycler('s', [12.,20.,15.])\
+    +cycler('color', ['k','m','c'])
+
+
 neigs = 6
 
 color = {5:"k", 6:"r", 6.5:"k", 7:"g", 8:"y", 9:"b", 10:"c"}
@@ -55,8 +61,17 @@ def plotvsET(Llist, axes):
 
     global ymin, ymax, xmax
 
-    for j,ren in enumerate(renlist):
-        optIter = cycle(sty_cycle)
+    for ren in renlist:
+
+        if ren=="rentails":
+            j=0
+        else:
+            j=1
+
+        if ren=="renloc":
+            optIter = cycle(sty_cycle_loc)
+        else:
+            optIter = cycle(sty_cycle)
 
         for i,L in enumerate(Llist):
 
@@ -125,17 +140,17 @@ f.suptitle(r"$g={}$".format(g), fontsize=15)
 plotvsET(Llist, axes)
 
 
-axes[1].set_xlim(0, xmax[renlist[1]]+10**(-4))
-axes[1].legend(loc=1, fontsize=10)
-axes[0].set_xlim(0, xmax[renlist[0]]+10**(-5))
-axes[0].legend(loc=3, fontsize=10)
+axes[0].set_xlim(0, xmax["rentails"]+10**(-4))
+axes[0].legend(loc=1, fontsize=10)
+axes[1].set_xlim(0, xmax["renloc"]+10**(-5))
+axes[1].legend(loc=2, fontsize=10)
 axes[0].set_ylabel(r"$\mathcal{E}_0/L$", fontsize=12)
 ymargin = (ymax[1]-ymin[1])/100
 axes[0].set_ylim(ymin[1]-ymargin, ymax[1]+ymargin)
 axes[0].invert_xaxis()
 
-axes[0].set_xlabel(r"$1/E_{{T}}^{}$".format(power[renlist[0]]), fontsize=15)
-axes[1].set_xlabel(r"$1/E_{{T}}^{}$".format(power[renlist[1]]), fontsize=15)
+axes[0].set_xlabel(r"$1/E_{{T}}^{}$".format(power["rentails"]), fontsize=15)
+axes[1].set_xlabel(r"$1/E_{{T}}^{}$".format(power["renloc"]), fontsize=15)
 
 # Remove common tick
 axes[1].xaxis.set_major_locator(MaxNLocator(prune='lower', nbins=6))
