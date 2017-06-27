@@ -18,7 +18,7 @@ power = {"raw":2, "renloc":2, "rentails":3}
 Llist = [6, 8, 10]
 
 output = "pdf"
-renlist = ("raw", "rentails")
+renlist = ("renloc", "rentails")
 
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})

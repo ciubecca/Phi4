@@ -15,7 +15,7 @@ from extrapolate import *
 
 gdratio = 1.618
 figsize = 5
-labelsize=20
+labelsize = 15
 
 neigs = 2
 
@@ -121,14 +121,15 @@ def plotvsL(Llist, gpair):
             if n ==0 and k==1:
                 continue
             elif (n==0 and k==-1) or (n==1 and k==1):
-                label = "k={}".format(k)
+                if k==1:
+                    label = r"$Z_2 = +$"
+                else:
+                    label = r"$Z_2 = -$"
             else:
                 label = None
-            # plt.errorbar(Llist, Spectrum[g][k][n], SpectrumErr[g][k][n],
-                    # color=color[k], label=label)
 
             plt.fill_between(Llist, SpectrumMax[k][n], SpectrumMin[k][n],
-                    color="r")
+                    color=color[k], linewidth=0)
 
 argv = sys.argv
 
@@ -162,12 +163,12 @@ plt.savefig("LambdaCritvsL."+fname, bbox_inches='tight')
 
 # MASS
 fig = plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-fig.set_figheight(figsize)
-fig.set_figwidth(figsize*gdratio)
+# fig.set_figheight(figsize)
+# fig.set_figwidth(figsize*gdratio)
 plt.title(title)
 plt.xlabel(r"$L$", fontsize=labelsize)
 plt.ylabel(r"$(\mathcal{E}_I-\mathcal{E}_0) L/(2 \pi)$", fontsize=labelsize)
 plt.xlim(xmin, xmax)
-# plt.legend(loc=1, fontsize=12)
+plt.legend(loc=1, fontsize=12)
 
 plt.savefig("SpecCritvsL."+fname, bbox_inches='tight')

@@ -19,6 +19,7 @@ output = "pdf"
 # renlist = ("rentails", "renloc")
 renlist = ("rentails", )
 
+labelsize = 20
 nparams = 3
 L = 10
 
@@ -94,10 +95,10 @@ f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
 plotvsG(glist, axes)
 
-axes[0].set_ylabel(r"$\mathcal{E}_0/L$", fontsize=15)
+axes[0].set_ylabel(r"$\mathcal{E}_0/L$", fontsize=labelsize)
 # axes[0].set_ylim(-0.01, 1.01)
-axes[1].set_ylabel(r"errors$/g^2$", fontsize=15)
-axes[1].set_xlabel(r"$g$", fontsize=15)
+axes[1].set_ylabel(r"errors$/g^2$", fontsize=labelsize)
+axes[1].set_xlabel(r"$g$", fontsize=labelsize)
 axes[1].set_xlim(xmin, xmax)
 axes[0].legend(fontsize=12)
 # axes[1].set_ylim(-0.03, 0.03)

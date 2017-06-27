@@ -15,7 +15,7 @@ from extrapolate import *
 nparam = 3
 gdratio = 1.618
 figsize = 5
-labelsize=20
+labelsize = 15
 
 
 Llist = {}
@@ -23,11 +23,10 @@ Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
 Llist["renloc"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,10]
 
 label = {"rentails":"NLO", "renloc":"local LO"}
-label = {"rentails":"NLO"}
 
 output = "pdf"
-# renlist = ("rentails", "renloc")
-renlist = ("rentails", )
+renlist = ("rentails", "renloc")
+# renlist = ("rentails")
 
 marker = '*'
 markersize = 2.5
@@ -145,7 +144,9 @@ plt.figure(figsize=(figsize*gdratio,figsize))
 # VACUUM ENERGY DENSITY
 title = r"$g$={:.1f}, \quad f(x)={}".format(g, fvacStr)
 title = r"$g$={:.1f}".format(g)
-plt.figure(1, figsize=(figsize*gdratio,figsize), dpi=300, facecolor='w', edgecolor='w')
+plt.figure(1,
+        # figsize=(figsize*gdratio,figsize),
+        dpi=300, facecolor='w', edgecolor='w')
 plt.title(title, fontsize=15)
 plt.xlabel(r"$L$", fontsize=labelsize)
 plt.ylabel(r"$\mathcal{E}_0/L$", fontsize=labelsize)
@@ -162,9 +163,11 @@ else:
     f = fmassStr
 title = r"$g$={:.1f}, \quad f(x)={}".format(g, f)
 title = r"$g$={:.1f}".format(g)
-fig = plt.figure(2, figsize=(figsize*gdratio,figsize), dpi=300, facecolor='w', edgecolor='w')
-fig.set_figheight(figsize)
-fig.set_figwidth(figsize*gdratio)
+fig = plt.figure(2,
+        # figsize=(figsize*gdratio,figsize),
+        dpi=300, facecolor='w', edgecolor='w')
+# fig.set_figheight(figsize)
+# fig.set_figwidth(figsize*gdratio)
 plt.title(title, fontsize=15)
 plt.xlabel(r"$L$", fontsize=labelsize)
 plt.ylabel(r"$\mathcal{E}_1-\mathcal{E}_0$", fontsize=labelsize)
@@ -175,5 +178,5 @@ plt.legend(loc=1, fontsize=10)
 s = "extrMassvsL_"
 if nparam==2:
     s += "p=2_"
-# plt.savefig(s+fname, bbox_inches='tight')
-plt.savefig(s+fname)
+plt.savefig(s+fname, bbox_inches='tight')
+# plt.savefig(s+fname)

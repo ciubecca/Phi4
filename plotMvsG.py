@@ -78,7 +78,7 @@ def plotvsG(Llist, axes):
 
 # Plot fitted function imported from Mathematica
     xlist = scipy.linspace(0, gc, 100)
-    axes[0].plot(xlist, fit(xlist), color='blue', label=r"$f(g)$")
+    axes[0].plot(xlist, fit(xlist), color='blue', label="fit")
 
 
 # Plot residuals, divided by g^2
@@ -110,11 +110,13 @@ if len(argv) < 1:
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
-f, axes = plt.subplots(2, 1, sharex='col', figsize=(figsize*gdratio,figsize),
-        gridspec_kw = {'height_ratios':[3,1]})
+f, axes = plt.subplots(2, 1, sharex='col',
+        # figsize=(figsize*gdratio,figsize),
+        gridspec_kw = {'height_ratios':[3,1]}
+        )
 f.subplots_adjust(hspace=0, wspace=0, top=0.94, right=0.95, left=0)
 
-axes[0].set_ylabel(r"$m_{ph}$", fontsize=labelsize)
+axes[0].set_ylabel(r"$m_{\rm ph}$", fontsize=labelsize)
 axes[0].set_ylim(-0.01, 1.01)
 axes[1].set_ylabel(r"residuals$/g^2$", fontsize=labelsize)
 axes[1].set_xlabel(r"$g$", fontsize=labelsize)
