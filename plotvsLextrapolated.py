@@ -17,6 +17,7 @@ gdratio = 1.618
 figsize = 5
 labelsize = 15
 
+plt.rc('axes.formatter', useoffset=False)
 
 Llist = {}
 Llist["rentails"] = [5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10]
@@ -26,7 +27,7 @@ label = {"rentails":"NLO", "renloc":"local LO"}
 
 output = "pdf"
 renlist = ("rentails", "renloc")
-# renlist = ("rentails")
+renlist = ("rentails",)
 
 marker = '*'
 markersize = 2.5

@@ -548,8 +548,8 @@ class Phi4():
 
             for g in glist:
                 self.eigenvalues[g][ren] = \
-                    scipy.sort(scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
-                            which='SA', return_eigenvectors=False))
+                    scipy.sort(scipy.sparse.linalg.eigs(compH[g], neigs, v0=v0,
+                            which='SR', return_eigenvectors=False))
             return
 
 

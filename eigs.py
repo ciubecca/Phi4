@@ -75,7 +75,6 @@ def main():
     epsraw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
     print("Raw vacuum:", epsraw)
 
-
     # Always consider maximal set of tails
     basisl = a.basis
     print("Total number of tails:", basisl.size)

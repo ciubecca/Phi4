@@ -129,7 +129,7 @@ def plotvsL(Llist, gpair):
                 label = None
 
             plt.fill_between(Llist, SpectrumMax[k][n], SpectrumMin[k][n],
-                    color=color[k], linewidth=0)
+                    color=color[k], linewidth=0, label=label)
 
 argv = sys.argv
 
