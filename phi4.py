@@ -547,16 +547,18 @@ class Phi4():
                 v0[i] = 1.
 
             which = 'SM'
-
-            prev = 0.+0.j
+            sigma = 0.+0.j
 
             for g in glist:
-                eigs =  scipy.sparse.linalg.eigs(compH[g], neigs, v0=v0,
-                            which=which, return_eigenvectors=False)
-                sortidx = np.argsort(np.absolute(eigs-prev), axis=None)
+                eigs, eigv =  scipy.sparse.linalg.eigs(compH[g].tocsc(),
+                        k=6, v0=v0, which=which, sigma=None)
 
-                self.eigenvalues[g][ren] = eigs[sortidx]
-                prev = self.eigenvalues[g][ren][0]
+                sortidx = np.argsort(np.absolute(eigs-sigma), axis=None)
+                eigs = eigs[sortidx]
+                eigv = eigv[:,sortidx]
+                sigma = eigs[0]
+                self.eigenvalues[g][ren] = eigs
+                v0 = eigv[:,0]
             return
 
 
@@ -571,8 +573,6 @@ class Phi4():
         v0 = scipy.zeros(self.compSize)
         for i in range(min(10,len(v0))):
             v0[i] = 1.
-
-
 
         if ren=="rentails":
 # We invert the matrices one by one to save memory

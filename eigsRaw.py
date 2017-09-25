@@ -21,7 +21,7 @@ color = {1:["b","g"], -1:["r","c"]}
 
 m = 1
 # Number of eigenvalues to compute per sector
-neigs = 2
+neigs = 1
 
 
 argv = sys.argv
@@ -33,7 +33,7 @@ L = float(argv[1])
 ET = float(argv[2])
 g = float(argv[3])
 
-theta = [pi*x for x in np.linspace(0.,0.8,20.)]
+theta = [pi*x for x in np.linspace(0.,0.95,20.)]
 glist = [g*np.exp(1J*x) for x in theta]
 
 print(glist)
@@ -63,32 +63,22 @@ def main():
     spec[1] = eigs[1][1:,:]-eigs[1][0,:]
     spec[-1] = eigs[-1]-eigs[1][0,:]
 
-    for k in (-1,1):
+    for k in (1,):
         for i in range(neigs):
             if i==0:
-                label1='Re, k={}'.format(k)
-                label2='Im, k={}'.format(k)
+                label1='k={}, Re'.format(k)
+                label2='k={}, Im'.format(k)
             else:
                 label1=None
                 label2=None
-            plt.plot(theta, eigs[k][i].real, label=label1, color='r')
-            plt.plot(theta, eigs[k][i].imag, label=label2, color='b')
+            plt.plot(theta, eigs[k][i].real, label=label1, color=color[k][0])
+            plt.plot(theta, eigs[k][i].imag, label=label2, color=color[k][1])
 
         plt.xlabel(r"$\theta$")
+        plt.ylabel(r"$\mathcal{E}_0$")
         plt.legend()
-        plt.savefig("sp_{}.pdf".format(k))
+        plt.savefig("vacuum.pdf".format(k))
         plt.clf()
-
-    # for k in (-1,1):
-        # for i in range(spec[k].shape[0]):
-            # if i==0:
-                # label1='k={}, Re'.format(k)
-                # label2='k={}, Im'.format(k)
-            # else:
-                # label1=None
-                # label2=None
-            # plt.plot(theta, spec[k][i].real, label=label1, color=color[k][0])
-            # plt.plot(theta, spec[k][i].imag, label=label2, color=color[k][1])
 
     k = -1
     label1='k={}, Re'.format(k)
