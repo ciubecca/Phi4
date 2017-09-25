@@ -546,10 +546,17 @@ class Phi4():
             for i in range(min(10,len(v0))):
                 v0[i] = 1.
 
+            which = 'SM'
+
+            prev = 0.+0.j
+
             for g in glist:
-                self.eigenvalues[g][ren] = \
-                    scipy.sort(scipy.sparse.linalg.eigs(compH[g], neigs, v0=v0,
-                            which='SR', return_eigenvectors=False))
+                eigs =  scipy.sparse.linalg.eigs(compH[g], neigs, v0=v0,
+                            which=which, return_eigenvectors=False)
+                sortidx = np.argsort(np.absolute(eigs-prev), axis=None)
+
+                self.eigenvalues[g][ren] = eigs[sortidx]
+                prev = self.eigenvalues[g][ren][0]
             return
 
 
