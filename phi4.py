@@ -1,5 +1,4 @@
 import scipy
-from profile_support import *
 import scipy.sparse.linalg
 import scipy.sparse
 import math
@@ -167,14 +166,14 @@ class Phi4():
         del c
 
 
-    def computeLEVs(self, basisl, loc3=True):
+    def computeLEVs(self):
 
         ###################################
         # Generate all the "local" matrices on the selected
         # low-energy states
         ###################################
 
-        self.basisl = basisl
+        self.basisl = self.basis
 
         subOp = SubmatrixOperator.fromSubbasis(self.basis, self.basisl)
 
@@ -188,38 +187,6 @@ class Phi4():
         basis = self.basisl
         c = MatrixConstructor(basis, basis)
 
-
-        ###################################
-        # Generate all the "bilocal" matrices on the selected
-        # low-energy states
-        ###################################
-        if loc3:
-            Vlist = V6OpsSelectedFull(basis, basis.Emax)
-            self.Vll[6] = c.buildMatrix(Vlist, ignKeyErr=True,
-                sumTranspose=False)*self.L
-
-
-            basis.helper.calcOscEnergyDict()
-            self.V0V4 = self.Vll[4]*self.L
-
-            print("Computing V2V4")
-
-            Vlist = V2V4Ops(basis)
-            self.V2V4 = c.buildMatrix(Vlist,ignKeyErr=True,
-                    sumTranspose=False)*self.L**2
-
-            print("Computing V4V4")
-
-            sizel = self.basisl.size
-            self.V4V4 = scipy.sparse.csc_matrix((sizel, sizel))
-
-            for nd1 in (0,1,2,3,4):
-                for nd2 in (0,1,2,3,4):
-                    Vlist = V4V4Ops(basis,nd1,nd2)
-                    self.V4V4 += c.buildMatrix(Vlist,ignKeyErr=True,
-                        sumTranspose=False)*self.L**2
-
-            del c
 
     def computeDeltaH(self, ren, ET, eps, loc2=True, loc3=True, loc3mix=True,
             nonloc3mix=True, EL=None, ELp=None, ELpp=None, subbasisl=None,
@@ -270,7 +237,10 @@ class Phi4():
 
             for g in glist:
                 # Dictionary of local renormalization coefficients for the g^2 term
+
                 VV2 = renorm.renVV2(g4=g, g2=self.g[2][g], EL=ET, eps=eps[g]).VV2
+
+
 
                 ret[g] = VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 

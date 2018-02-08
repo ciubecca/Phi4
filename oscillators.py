@@ -1,4 +1,3 @@
-from profile_support import *
 import gc
 from sys import getsizeof as sizeof
 import scipy
