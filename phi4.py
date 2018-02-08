@@ -26,6 +26,8 @@ class Phi4():
 # Maximum dimension of the chunks for computing Vhh
         self.chunklen = 20000
 
+# VEV of phi^2self.vev = {}
+
         self.basis = None
         self.h0 = None
         self.V = {}
@@ -239,8 +241,6 @@ class Phi4():
                 # Dictionary of local renormalization coefficients for the g^2 term
 
                 VV2 = renorm.renVV2(g4=g, g2=self.g[2][g], EL=ET, eps=eps[g]).VV2
-
-
 
                 ret[g] = VV2[0]*VLL[0] + VV2[2]*VLL[2] + VV2[4]*VLL[4]
 
@@ -469,6 +469,7 @@ class Phi4():
         self.g[2] = {g : g2(g,L) for g in glist}
         self.g[4] = {g : g for g in glist}
 
+        self.vev = {g:{} for g in glist}
         self.eigenvalues = {g: {"raw":None, "renloc":None, "rentails":None}
                 for g in glist}
         self.eigenvectors = {g: {"raw":None, "renloc":None, "rentails":None}
@@ -500,9 +501,22 @@ class Phi4():
                 v0[i] = 1.
 
             for g in glist:
-                self.eigenvalues[g][ren] = \
-                    scipy.sort(scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
-                            which='SA', return_eigenvectors=False))
+                self.eigenvalues[g][ren], eigenvectorstranspose = \
+                    scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
+                            which='SA', return_eigenvectors=True)
+                    # scipy.sort(scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
+                            # which='SA', return_eigenvectors=False))
+
+                self.eigenvectors[g][ren] = eigenvectorstranspose.T
+
+                v = self.eigenvectors[g][ren][0]
+
+                if self.k == 1:
+                    v = self.eigenvectors[g][ren][0]
+                    v2 = (self.V[2]/self.L).dot(v)
+                    s = np.inner(v2,v)
+                    self.vev[g][ren] = s
+
             return
 
 
@@ -517,9 +531,19 @@ class Phi4():
                 v0[i] = 1.
 
             for g in glist:
-                self.eigenvalues[g][ren] = \
-                    scipy.sort(scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
-                            which='SA', return_eigenvectors=False))
+                (self.eigenvalues[g][ren], eigenvectorstranspose) = \
+                    scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0, which='SA', return_eigenvectors=True)
+                    # scipy.sort(scipy.sparse.linalg.eigsh(compH[g], neigs, v0=v0,
+                            # which='SA', return_eigenvectors=True))
+
+                self.eigenvectors[g][ren] = eigenvectorstranspose.T
+
+                if self.k == 1:
+                    v = self.eigenvectors[g][ren][0]
+                    v2 = (self.V[2]/self.L).dot(v)
+                    s = np.inner(v2,v)
+                    self.vev[g][ren] = s
+
             return
 
 
@@ -576,3 +600,12 @@ class Phi4():
                         which='SA', return_eigenvectors=True)
 
             self.eigenvectors[g][ren] = eigenvectorstranspose.T
+
+            v = self.eigenvectors[g][ren][0]
+
+            # if self.k == 1:
+                # v = self.eigenvectors[g][ren][0]
+                # v2 = (self.V[2]/self.L).dot(v)
+                # s = np.inner(v2,v)
+                # self.vev[g][ren] = s
+
