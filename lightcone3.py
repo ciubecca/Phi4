@@ -123,13 +123,14 @@ def main():
     # plt.xlim(xmin, xmax)
 
     plt.figure(1)
-    # plt.ylim(0.8,1)
+    plt.xlim(0.01,0.6)
+    plt.ylim(0.8,1.01)
     plt.xlabel(r"$g_{LC}$")
     plt.ylabel(r"$M$")
     plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
     plt.legend()
     fname = ".{0}".format(output)
-    s = "LC_ET={}_L={}".format(ET,L)
+    s = "LC_ET={}_L={}_v3".format(ET,L)
     # plt.savefig(s+fname, bbox_inches='tight')
     plt.savefig(s+fname)
 
