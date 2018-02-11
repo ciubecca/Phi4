@@ -45,135 +45,122 @@ def mpert(g):
     return np.sqrt(1-1.5*g**2 + 2.86460*g**3)
 
 argv = sys.argv
-if len(argv) < 3:
-    print(argv[0], " <L> <ET>")
+if len(argv) < 2:
+    print(argv[0], " <L>")
     sys.exit(-1)
 
 L = float(argv[1])
-ET = float(argv[2])
 
+ETlist = np.linspace(10,20,6)
+print("ETlist: ", ETlist)
 
-print("L, ET", L, ET)
-
-glist = np.linspace(0.1, 1, 20)
+# glist = np.array([0.5, 1, 2])
+glist = np.array([0.5, 1])
 print("glist", glist)
 
 xmax = max(glist)+0.03
 xmin = 0
 
 
-def main():
+# a = phi4.Phi4(m, L, 1)
+# a.buildBasis(Emax=max(ETlist))
+# a.computePotential()
+# a.setglist(glist=glist)
+
+
+# b = phi4.Phi4(m, L, -1)
+# b.buildBasis(Emax=max(ETlist))
+# b.computePotential()
+# b.setglist(glist=glist)
+
+vevren = {g:[] for g in glist}
+vevraw = {g:[] for g in glist}
+vacren = {g:[] for g in glist}
+vacraw = {g:[] for g in glist}
+
+for ET in ETlist:
 
     a = phi4.Phi4(m, L, 1)
     a.buildBasis(Emax=ET)
     a.computePotential()
     a.setglist(glist=glist)
 
-    b = phi4.Phi4(m, L, -1)
-    b.buildBasis(Emax=ET)
-    b.computePotential()
-    b.setglist(glist=glist)
-
-    # a.computeLEVs()
-    # b.computeLEVs()
-
 
     a.computeEigval(ET, "raw", neigs=neigs)
-    b.computeEigval(ET, "raw", neigs=neigs)
+    # b.computeEigval(ET, "raw", neigs=neigs)
     E0raw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
-    E1raw = {g: b.eigenvalues[g]["raw"][0] for g in glist}
-    massraw = {g:E1raw[g] - E0raw[g] for g in glist}
-    vevraw = {g: a.vev[g]["raw"] for g in glist}
-    # print("Raw vacuum:", E0raw)
-    # print("Raw mass", massraw)
-    # print("raw vev:", vevraw)
+    # E1raw = {g: b.eigenvalues[g]["raw"][0] for g in glist}
+    for g in glist:
+        vacraw[g].append(E0raw[g])
+        vevraw[g].append(a.vev[g]["raw"])
 
     a.computeEigval(ET, "renloc", neigs=neigs, eps=E0raw)
-    b.computeEigval(ET, "renloc", neigs=neigs, eps=E1raw)
+    # b.computeEigval(ET, "renloc", neigs=neigs, eps=E1raw)
     E0ren = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
-    E1ren = {g: b.eigenvalues[g]["renloc"][0] for g in glist}
-    massren = {g:E1ren[g] - E0ren[g] for g in glist}
-    vevren = {g: a.vev[g]["renloc"] for g in glist}
-    # print("ren vacuum:", E0ren)
-    # print("ren mass", massren)
-    # print("ren vev:", vevren)
+    # E1ren = {g: b.eigenvalues[g]["renloc"][0] for g in glist}
+    for g in glist:
+        vacren[g].append(E0ren[g])
+        vevren[g].append(a.vev[g]["renloc"])
 
+# for g in glist:
+    # vevren[g] = np.array(vevraw[g])
+    # vevraw[g] = np.array(vevren[g])
+    # vacraw[g] = np.array(vevraw[g])
+    # vacren[g] = np.array(vevraw[g])
 
 # Effective light cone mass squared
-    LCmassSqEff = np.array([1+12*g*vevren[g] for g in glist])
+    # LCmassSqEff = np.array([1+12*g*vevren[g] for g in glist])
 # Effective light cone mass
-    LCmassEff = np.sqrt(LCmassSqEff)
+    # LCmassEff = np.sqrt(LCmassSqEff)
 # Effective Light cone coupling with mass normalized to one
-    gLCeffNorm = glist/LCmassSqEff
+    # gLCeffNorm = glist/LCmassSqEff
 
 
 # Naive lightcone gap
-    gapLCnaive = np.sqrt(np.interp(glist, gLClist, msqLClist2))
+    # gapLCnaive = np.sqrt(np.interp(glist, gLClist, msqLClist2))
 
 # Physical light cone gap in units meff=1
-    gapLC = np.sqrt(np.interp(gLCeffNorm, gLClist, msqLClist2))
+    # gapLC = np.sqrt(np.interp(gLCeffNorm, gLClist, msqLClist2))
 # Physical light cone gap in units mbare=1
-    gapLCrescaled = gapLC*LCmassEff
+    # gapLCrescaled = gapLC*LCmassEff
 
-    plt.figure(1)
-    massrawlist = np.array([massraw[g] for g in glist])
-    massrenlist = np.array([massren[g] for g in glist])
-    plt.plot(glist, massrawlist, label="ET raw")
-    plt.plot(glist, massrenlist, label="ET ren")
-    plt.plot(glist, gapLCrescaled, label="LC")
-    plt.plot(glist, gapLCnaive, label="LC naive")
-    plt.plot(glist, mpert(glist), label=r"$o(g^3)$", color='y', linestyle="--", marker='o', markersize=1)
-    plt.xlim(xmin, xmax)
-    # plt.ylim(0,1)
-
-    plt.figure(2)
-    plt.plot(glist, gLCeffNorm, label="LC eff coupling")
-    plt.xlim(xmin, xmax)
-
-    plt.figure(3)
-    vevrawlist = np.array([vevraw[g] for g in glist])
-    vevrenlist = np.array([vevren[g] for g in glist])
-    plt.plot(glist, vevrenlist, label="VEV ren")
-    plt.plot(glist, vevrawlist, label="VEV raw")
+plt.figure(1)
+for g in glist:
+    plt.plot(ETlist, vevraw[g], label="raw, g={}".format(g))
+    plt.plot(ETlist, vevren[g], label="ren, g={}".format(g))
+# plt.xlim(xmin, xmax)
+# plt.ylim(0,1)
 
 
-    plt.figure(1)
-    plt.ylim(0.8,1)
-    plt.xlabel("g")
-    plt.ylabel(r"$m$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "LC_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
-
-    plt.figure(2)
-    plt.xlim(0.1,1.01)
-    plt.ylim(0.1,0.7)
-    plt.xlabel("g")
-    # plt.ylabel(r"$\langle\phi^2\rangle$")
-    plt.ylabel(r"$g_{\rm eff}$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "gLCvsG_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
-
-    plt.figure(3)
-    plt.xlim(0.1,1.01)
-    plt.ylim(0.1,0.358)
-    plt.xlabel("g")
-    # plt.ylabel(r"$\langle\phi^2\rangle$")
-    plt.ylabel(r"$\langle \phi^2 \rangle$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "VEVvsG_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
+plt.figure(2)
+for g in glist:
+    plt.plot(ETlist, vacraw[g], label="raw, g={}".format(g))
+    plt.plot(ETlist, vacren[g], label="ren, g={}".format(g))
+# plt.xlim(xmin, xmax)
+# plt.ylim(0,1)
 
 
 
-main()
+plt.figure(1)
+# plt.ylim(0.8,1)
+plt.xlabel(r"$E_{\rm max}$")
+plt.ylabel(r"$\langle \phi^2 \rangle$")
+plt.title(r"$L$ = {}".format(L))
+plt.legend()
+fname = ".{0}".format(output)
+s = "VEVvsET_L={}".format(L)
+# plt.savefig(s+fname, bbox_inches='tight')
+plt.savefig(s+fname)
+
+
+
+plt.figure(2)
+# plt.ylim(0.8,1)
+plt.xlabel(r"$E_{\rm max}$")
+plt.ylabel(r"$E_0$")
+plt.title(r"$L$ = {}".format(L))
+plt.legend()
+fname = ".{0}".format(output)
+s = "E0vsET_L={}".format(L)
+# plt.savefig(s+fname, bbox_inches='tight')
+plt.savefig(s+fname)
