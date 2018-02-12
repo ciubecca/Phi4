@@ -1,4 +1,5 @@
 import statefuncs
+from sklearn.linear_model import LinearRegression
 import phi4
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -8,6 +9,7 @@ import sys
 import scipy
 import math
 import numpy as np
+from numpy import log, sqrt, exp
 
 # Normal prescription for comparing ET and LC data
 
@@ -150,6 +152,21 @@ def main():
     plt.plot(glist, vevrenlist, label="VEV ren")
     plt.plot(glist, vevrawlist, label="VEV raw")
 
+    # Log log Plot of deviation between ET and LC
+    # Fit power law deviation
+    f = LinearRegression(fit_intercept=True)
+    X = glist[10:].reshape(-1, 1)
+    y = (gapLCrescaledExtr-massrenlist)[10:]
+    print(log(X))
+    print(log(y))
+    f.fit(log(X),log(y))
+    plt.figure(4)
+    plt.loglog(glist, gapLCrescaledExtr-massrenlist)
+    x = scipy.linspace(0.1,1,100).reshape(-1, 1)
+    plt.loglog(x, exp(f.predict(log(x))), label=r"$\log y = {} \log x + {}$".format(f.coef_[0],f.intercept_))
+    plt.xlim(0.4, 1)
+    plt.ylim(0.00001,0.11)
+
 
     plt.figure(1)
     plt.ylim(0.8,1)
@@ -185,6 +202,19 @@ def main():
     plt.legend()
     fname = ".{0}".format(output)
     s = "VEVvsG_ET={}_L={}".format(ET,L)
+    # plt.savefig(s+fname, bbox_inches='tight')
+    plt.savefig(s+fname)
+
+    plt.figure(4)
+    # plt.xlim(0.1,1.01)
+    # plt.ylim(0.1,0.358)
+    plt.xlabel("g")
+    # plt.ylabel(r"$\langle\phi^2\rangle$")
+    plt.ylabel(r"$M_{\rm LC} - M_{\rm ET}$")
+    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
+    plt.legend()
+    fname = ".{0}".format(output)
+    s = "GapDiffvsG_ET={}_L={}".format(ET,L)
     # plt.savefig(s+fname, bbox_inches='tight')
     plt.savefig(s+fname)
 
