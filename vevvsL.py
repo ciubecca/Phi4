@@ -8,6 +8,7 @@ import sys
 import scipy
 import math
 import numpy as np
+from sklearn import LinearRegression
 
 gLClist = np.array([0., 0.0120368, 0.0240735, 0.0361103, 0.048147, 0.0601838, 0.0722205, 0.0842573, 0.096294, 0.108331, 0.120368, 0.132404, 0.144441, 0.156478, 0.168515, 0.180551, 0.192588, 0.204625, 0.216662, 0.228698, 0.240735, 0.252772, 0.264809, 0.276845, 0.288882, 0.300919, 0.312956, 0.324992, 0.337029, 0.349066, 0.361103, 0.373139, 0.385176, 0.397213, 0.40925, 0.421286, 0.433323, 0.44536, 0.457397, 0.469433, 0.48147, 0.493507, 0.505544, 0.51758, 0.529617, 0.541654, 0.553691, 0.565727, 0.577764,
 0.589801, 0.601838, 0.613874, 0.625911, 0.637948, 0.649985, 0.662021, 0.674058, 0.686095, 0.698132, 0.710168, 0.722205, 0.734242, 0.746279, 0.758315, 0.770352, 0.782389, 0.794426, 0.806462, 0.818499, 0.830536, 0.842573, 0.854609, 0.866646, 0.878683, 0.89072, 0.902757, 0.914793, 0.92683, 0.938867, 0.950904, 0.96294, 0.974977, 0.987014, 0.999051, 1.01109, 1.02312, 1.03516, 1.0472, 1.05923, 1.07127, 1.08331, 1.09534, 1.10738, 1.11942, 1.13145, 1.14349, 1.15553, 1.16757, 1.1796, 1.19164, 1.20368,
@@ -40,97 +41,57 @@ plt.rc('axes', prop_cycle=(
 m = 1
 neigs = 2
 
-# Perturbative mass to order g^3
-def mpert(g):
-    return np.sqrt(1-1.5*g**2 + 2.86460*g**3)
-
 argv = sys.argv
 if len(argv) < 2:
-    print(argv[0], " <ET>")
+    print(argv[0], " <g>")
     sys.exit(-1)
 
-ET = float(argv[1])
+g = float(argv[1])
 
 Llist = np.linspace(5,12,8)
 print("Llist: ", Llist)
 
-# glist = np.array([0.5, 1, 2])
-glist = np.array([0.5, 1])
-print("glist", glist)
+glist = np.array([g])
 
-xmax = max(glist)+0.03
-xmin = 0
+ETlist = np.array([15,18,20])
+# ETlist = np.array([18])
 
-
-# a = phi4.Phi4(m, L, 1)
-# a.buildBasis(Emax=max(ETlist))
-# a.computePotential()
-# a.setglist(glist=glist)
-
-
-# b = phi4.Phi4(m, L, -1)
-# b.buildBasis(Emax=max(ETlist))
-# b.computePotential()
-# b.setglist(glist=glist)
-
-vevren = {g:[] for g in glist}
-vevraw = {g:[] for g in glist}
-vacren = {g:[] for g in glist}
-vacraw = {g:[] for g in glist}
+vevren = {ET:[] for ET in ETlist}
+vevraw = {ET:[] for ET in ETlist}
+vacren = {ET:[] for ET in ETlist}
+vacraw = {ET:[] for ET in ETlist}
 
 for L in Llist:
+    for ET in ETlist:
 
-    a = phi4.Phi4(m, L, 1)
-    a.buildBasis(Emax=ET)
-    a.computePotential()
-    a.setglist(glist=glist)
+        a = phi4.Phi4(m, L, 1)
+        a.buildBasis(Emax=ET)
+        a.computePotential()
+        a.setglist(glist=glist)
 
+        a.computeEigval(ET, "raw", neigs=neigs)
+        E0raw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
+        vacraw[ET].append(E0raw[glist[0]])
+        vevraw[ET].append(a.vev[glist[0]]["raw"])
 
-    a.computeEigval(ET, "raw", neigs=neigs)
-    # b.computeEigval(ET, "raw", neigs=neigs)
-    E0raw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
-    # E1raw = {g: b.eigenvalues[g]["raw"][0] for g in glist}
-    for g in glist:
-        vacraw[g].append(E0raw[g])
-        vevraw[g].append(a.vev[g]["raw"])
+        a.computeEigval(ET, "renloc", neigs=neigs, eps=E0raw)
+        E0ren = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
+        vacren[ET].append(E0ren[glist[0]])
+        vevren[ET].append(a.vev[glist[0]]["renloc"])
 
-    a.computeEigval(ET, "renloc", neigs=neigs, eps=E0raw)
-    # b.computeEigval(ET, "renloc", neigs=neigs, eps=E1raw)
-    E0ren = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
-    # E1ren = {g: b.eigenvalues[g]["renloc"][0] for g in glist}
-    for g in glist:
-        vacren[g].append(E0ren[g])
-        vevren[g].append(a.vev[g]["renloc"])
-
-
-# Effective light cone mass squared
-    # LCmassSqEff = np.array([1+12*g*vevren[g] for g in glist])
-# Effective light cone mass
-    # LCmassEff = np.sqrt(LCmassSqEff)
-# Effective Light cone coupling with mass normalized to one
-    # gLCeffNorm = glist/LCmassSqEff
-
-
-# Naive lightcone gap
-    # gapLCnaive = np.sqrt(np.interp(glist, gLClist, msqLClist2))
-
-# Physical light cone gap in units meff=1
-    # gapLC = np.sqrt(np.interp(gLCeffNorm, gLClist, msqLClist2))
-# Physical light cone gap in units mbare=1
-    # gapLCrescaled = gapLC*LCmassEff
 
 plt.figure(1)
-for g in glist:
-    plt.plot(Llist, vevraw[g], label="raw, g={}".format(g))
-    plt.plot(Llist, vevren[g], label="ren, g={}".format(g))
+for ET in ETlist:
+    # plt.plot(Llist, vevraw[g], label="raw, g={}".format(g))
+    plt.plot(1/Llist**2, vevren[ET], label="Emax={}".format(ET))
 # plt.xlim(xmin, xmax)
 # plt.ylim(0,1)
 
 
-plt.figure(2)
-for g in glist:
-    plt.plot(Llist, vacraw[g], label="raw, g={}".format(g))
-    plt.plot(Llist, vacren[g], label="ren, g={}".format(g))
+# plt.figure(2)
+# for g in glist:
+    # plt.plot(Llist, vacraw[g], label="raw, g={}".format(g))
+    # plt.plot(Llist, vacren[g], label="ren, g={}".format(g))
 # plt.xlim(xmin, xmax)
 # plt.ylim(0,1)
 
@@ -138,24 +99,25 @@ for g in glist:
 
 plt.figure(1)
 # plt.ylim(0.8,1)
-plt.xlabel(r"$L$")
+plt.xlim(0, max(1/Llist**2))
+plt.xlabel(r"$1/L^2$")
 plt.ylabel(r"$\langle \phi^2 \rangle$")
-plt.title(r"$E_T$= {}".format(ET))
+plt.title(r"$g$={}".format(g))
 plt.legend()
 fname = ".{0}".format(output)
-s = "VEVvsL_Emax={}".format(ET)
+s = "VEVvsL_g={}".format(g)
 # plt.savefig(s+fname, bbox_inches='tight')
 plt.savefig(s+fname)
 
 
 
-plt.figure(2)
-# plt.ylim(0.8,1)
-plt.xlabel(r"$L$")
-plt.ylabel(r"$E_0$")
-plt.title(r"$E_T$= {}".format(ET))
-plt.legend()
-fname = ".{0}".format(output)
-s = "E0vsL_Emax={}".format(ET)
-# plt.savefig(s+fname, bbox_inches='tight')
-plt.savefig(s+fname)
+# plt.figure(2)
+# # plt.ylim(0.8,1)
+# plt.xlabel(r"$L$")
+# plt.ylabel(r"$E_0$")
+# plt.title(r"$g$={}, $E_T$= {}".format(g,ET))
+# plt.legend()
+# fname = ".{0}".format(output)
+# s = "E0vsL_g={}_Emax={}".format(g,ET)
+# # plt.savefig(s+fname, bbox_inches='tight')
+# plt.savefig(s+fname)
