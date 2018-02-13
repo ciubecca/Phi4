@@ -8,7 +8,7 @@ import sys
 import scipy
 import math
 import numpy as np
-from sklearn import LinearRegression
+from sklearn.linear_model import LinearRegression
 
 gLClist = np.array([0., 0.0120368, 0.0240735, 0.0361103, 0.048147, 0.0601838, 0.0722205, 0.0842573, 0.096294, 0.108331, 0.120368, 0.132404, 0.144441, 0.156478, 0.168515, 0.180551, 0.192588, 0.204625, 0.216662, 0.228698, 0.240735, 0.252772, 0.264809, 0.276845, 0.288882, 0.300919, 0.312956, 0.324992, 0.337029, 0.349066, 0.361103, 0.373139, 0.385176, 0.397213, 0.40925, 0.421286, 0.433323, 0.44536, 0.457397, 0.469433, 0.48147, 0.493507, 0.505544, 0.51758, 0.529617, 0.541654, 0.553691, 0.565727, 0.577764,
 0.589801, 0.601838, 0.613874, 0.625911, 0.637948, 0.649985, 0.662021, 0.674058, 0.686095, 0.698132, 0.710168, 0.722205, 0.734242, 0.746279, 0.758315, 0.770352, 0.782389, 0.794426, 0.806462, 0.818499, 0.830536, 0.842573, 0.854609, 0.866646, 0.878683, 0.89072, 0.902757, 0.914793, 0.92683, 0.938867, 0.950904, 0.96294, 0.974977, 0.987014, 0.999051, 1.01109, 1.02312, 1.03516, 1.0472, 1.05923, 1.07127, 1.08331, 1.09534, 1.10738, 1.11942, 1.13145, 1.14349, 1.15553, 1.16757, 1.1796, 1.19164, 1.20368,
@@ -80,12 +80,21 @@ for L in Llist:
         vevren[ET].append(a.vev[glist[0]]["renloc"])
 
 
+f = LinearRegression()
+X = (1/Llist**2).reshape(-1, 1)
+y = vevren[max(ETlist)]
+f.fit(X, y)
+
 plt.figure(1)
+
 for ET in ETlist:
     # plt.plot(Llist, vevraw[g], label="raw, g={}".format(g))
     plt.plot(1/Llist**2, vevren[ET], label="Emax={}".format(ET))
 # plt.xlim(xmin, xmax)
 # plt.ylim(0,1)
+
+X = np.linspace(0, max(1/Llist**2), 100).reshape(-1, 1)
+plt.plot(X, f.predict(X), label = "fit", marker=None)
 
 
 # plt.figure(2)
@@ -108,7 +117,6 @@ fname = ".{0}".format(output)
 s = "VEVvsL_g={}".format(g)
 # plt.savefig(s+fname, bbox_inches='tight')
 plt.savefig(s+fname)
-
 
 
 # plt.figure(2)

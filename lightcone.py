@@ -11,6 +11,9 @@ import math
 import numpy as np
 from numpy import log, sqrt, exp
 
+
+extrVevg1 = 0.0365
+
 # Normal prescription for comparing ET and LC data
 
 gLClist = np.array([0., 0.0120368, 0.0240735, 0.0361103, 0.048147, 0.0601838, 0.0722205, 0.0842573, 0.096294, 0.108331, 0.120368, 0.132404, 0.144441, 0.156478, 0.168515, 0.180551, 0.192588, 0.204625, 0.216662, 0.228698, 0.240735, 0.252772, 0.264809, 0.276845, 0.288882, 0.300919, 0.312956, 0.324992, 0.337029, 0.349066, 0.361103, 0.373139, 0.385176, 0.397213, 0.40925, 0.421286, 0.433323, 0.44536, 0.457397, 0.469433, 0.48147, 0.493507, 0.505544, 0.51758, 0.529617, 0.541654, 0.553691, 0.565727, 0.577764,
@@ -116,6 +119,8 @@ def main():
     gLCeffNorm = glist/LCmassSqEff
 
 
+
+
 # Naive lightcone gap
     gapLCnaive = np.sqrt(np.interp(glist, gLClist, msqLClist))
 
@@ -130,6 +135,13 @@ def main():
     gapLCrescaledExtr = gapLCExtr*LCmassEff
 
 
+# Effective light cone squared mass at g=1 with extrapolated VEV
+    LCmassSqEffExtrg1 = np.array([1+12*1*extrVevg1])
+    gLCeffNormExtrVEVg1 = 1/LCmassSqEffExtrg1
+    gapLCvevextrg1Resc = np.sqrt(np.interp(gLCeffNormExtrVEVg1, gLClist, msqLClistExtr))*np.sqrt(LCmassSqEffExtrg1)
+    print(gapLCvevextrg1Resc)
+
+
     plt.figure(1)
     massrawlist = np.array([massraw[g] for g in glist])
     massrenlist = np.array([massren[g] for g in glist])
@@ -139,7 +151,10 @@ def main():
     plt.plot(glist, gapLCrescaledExtr, label=r"$LC, \Delta_{\rm max}=\infty$")
     plt.plot(glist, gapLCnaive, label="LC naive")
     plt.plot(glist, mpert(glist), label=r"$o(g^3)$", color='y', linestyle="--", marker='o', markersize=1)
-    plt.xlim(xmin, xmax)
+
+    plt.plot([1], gapLCvevextrg1Resc, 'ok')
+
+    plt.xlim(xmin, xmax+0.01)
     # plt.ylim(0,1)
 
     plt.figure(2)
@@ -157,8 +172,6 @@ def main():
     f = LinearRegression(fit_intercept=True)
     X = glist[10:].reshape(-1, 1)
     y = (gapLCrescaledExtr-massrenlist)[10:]
-    print(log(X))
-    print(log(y))
     f.fit(log(X),log(y))
     plt.figure(4)
     plt.loglog(glist, gapLCrescaledExtr-massrenlist)
