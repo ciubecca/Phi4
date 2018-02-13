@@ -514,6 +514,8 @@ class Phi4():
                 if self.k == 1:
                     v = self.eigenvectors[g][ren][0]
                     v2 = (self.V[2]/self.L).dot(v)
+                    norm = np.inner(v,v)
+                    np.testing.assert_almost_equal(1,norm)
                     s = np.inner(v2,v)
                     self.vev[g][ren] = s
 
@@ -541,6 +543,8 @@ class Phi4():
                 if self.k == 1:
                     v = self.eigenvectors[g][ren][0]
                     v2 = (self.V[2]/self.L).dot(v)
+                    norm = np.inner(v,v)
+                    np.testing.assert_almost_equal(1,norm)
                     s = np.inner(v2,v)
                     self.vev[g][ren] = s
 
