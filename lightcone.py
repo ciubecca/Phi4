@@ -67,7 +67,7 @@ ET = float(argv[2])
 
 print("L, ET", L, ET)
 
-glist = np.linspace(0.1, 1, 20)
+glist = np.linspace(0.1, 3, 30)
 print("glist", glist)
 
 xmax = max(glist)+0.03
@@ -179,6 +179,11 @@ def main():
     plt.loglog(x, exp(f.predict(log(x))), label=r"$\log y = {} \log x + {}$".format(f.coef_[0],f.intercept_))
     plt.xlim(0.4, 1)
     plt.ylim(0.00001,0.11)
+
+
+    print(glist)
+    print(massrenlist)
+    print(vevrenlist)
 
 
     plt.figure(1)
