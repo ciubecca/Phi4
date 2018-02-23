@@ -1,4 +1,5 @@
 import statefuncs
+from scipy import stats
 import phi4
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -22,17 +23,20 @@ params = {'legend.fontsize': 8, 'lines.markersize':2.5, 'lines.marker':"o"}
 plt.rcParams.update(params)
 
 plt.rc('axes', prop_cycle=(
-    cycler('marker', ['x', 'o', 'v','x'])
-    +cycler('linestyle', ['-', '--', ':','-'])
-    +cycler('markersize', [4.,2.,2.,2.])
-    +cycler('color', ['r','b','g','k'])
+    cycler('marker', ['x', 'o', 'v','x','o'])
+    +cycler('linestyle', ['-', '--', ':','-','--'])
+    +cycler('markersize', [4.,2.,2.,2.,2.])
+    +cycler('color', ['r','b','g','k','c'])
     ))
 
+def VEVpert(g):
+    return 0.101766*g**2 - 0.263774*g**3
 
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 2
 
+rescale = True
 
 argv = sys.argv
 if len(argv) < 2:
@@ -43,14 +47,14 @@ L = float(argv[1])
 
 print("L", L)
 
-glist = np.linspace(1, 1.5, 30)
-# glist = np.linspace(0.01, 0.1, 30)
+# glist = np.linspace(1, 1.5, 30)
+glist = np.linspace(0.01, 0.1, 30)
 print("glist", glist)
 
 xmax = max(glist)+0.03
 xmin = 0
 
-ETlist = [10, 15, 20]
+ETlist = [15,20, 24]
 
 vevrawlist = {ET:[] for ET in ETlist}
 vevrenlist = {ET:[] for ET in ETlist}
@@ -83,7 +87,7 @@ for ET in ETlist:
     E1ren = {g: b.eigenvalues[g]["renloc"][0] for g in glist}
     massren = {g:E1ren[g] - E0ren[g] for g in glist}
     Lambda[ET] = np.array([E0ren[g] for g in glist])/L
-    vevrenlist[ET] = [a.vev[g]["renloc"] for g in glist]
+    vevrenlist[ET] = np.array([a.vev[g]["renloc"] for g in glist])
 
 
 # Estimate of VEV taking derivative of vacuum energy density.
@@ -94,18 +98,41 @@ for ET in ETlist:
 
 plt.figure(1)
 for ET in ETlist:
-    plt.plot(glist, vevrenlist[ET], label=r"$\langle \phi^2 \rangle$ , Emax={}".format(ET))
-    plt.plot(glist, vev2[ET], label=r"$\mathcal{{E}}'$ , Emax={}".format(ET))
+    if rescale:
+        plt.plot(glist, vevrenlist[ET]/glist**2, label=r"$\langle \phi^2 \rangle$ , Emax={}".format(ET))
+        # plt.plot(glist, vev2[ET]/glist**2, label=r"$\mathcal{{E}}'$ , Emax={}".format(ET))
+
+        # Fit linear function in proper range
+        idx = [i for i,g in enumerate(glist) if g>=0.03 and g<=0.1]
+        glistFit = glist[idx]
+
+        c, b, r_value, p_value, std_err = stats.linregress(glistFit, vevrenlist[ET][idx]/glistFit**2)
+        x = scipy.linspace(0.,max(glist),100).reshape(-1, 1)
+        plt.plot(x, b+c*x, label=r"$b= {}, m={}$".format(b, c))
+
+    else:
+        plt.plot(glist, vevrenlist[ET], label=r"$\langle \phi^2 \rangle$ , Emax={}".format(ET))
+        # plt.plot(glist, vev2[ET], label=r"$\mathcal{{E}}'$ , Emax={}".format(ET))
+
+label=r"$0.102 - 0.2638 g$"
+if rescale:
+    plt.plot(glist, VEVpert(glist)/glist**2, label=label)
+else:
+    plt.plot(glist, VEVpert(glist), label=r"$o(g^3)$")
 
 
 plt.figure(1)
-# plt.ylim(0,0.12)
+plt.xlim(0,max(glist))
 plt.xlabel("g")
-plt.ylabel(r"$\langle\phi^2\rangle$")
+if rescale:
+    plt.ylabel(r"$\langle\phi^2\rangle/g^2$")
+    s = "VEVvsG_resc_L={}".format(L)
+else:
+    plt.ylabel(r"$\langle\phi^2\rangle$")
+    s = "VEVvsG_L={}".format(L)
 plt.title(r"$L$ = {}".format(L))
 plt.legend()
 fname = ".{0}".format(output)
-s = "VEVvsG_L={}".format(L)
 # plt.savefig(s+fname, bbox_inches='tight')
 plt.savefig(s+fname)
 

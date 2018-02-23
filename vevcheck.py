@@ -82,6 +82,12 @@ def main():
     a.computePotential()
     a.setglist(glist=glist)
 
+    print(a.basis.stateList[0])
+    print(a.basis.stateList[1])
+
+    # This should not be zero
+    print(a.V[2].todense()[0,1])
+
     b = phi4.Phi4(m, L, -1)
     b.buildBasis(Emax=ET)
     b.computePotential()
@@ -110,153 +116,6 @@ def main():
     # print("ren vacuum:", E0ren)
     # print("ren mass", massren)
     # print("ren vev:", vevren)
-
-
-# Effective light cone mass squared
-    LCmassSqEff = np.array([1+12*g*vevren[g] for g in glist])
-# Effective light cone mass
-    LCmassEff = np.sqrt(LCmassSqEff)
-# Effective Light cone coupling with mass normalized to one
-    gLCeffNorm = glist/LCmassSqEff
-
-
-
-
-# Naive lightcone gap
-    gapLCnaive = np.sqrt(np.interp(glist, gLClist, msqLClist))
-
-# Physical light cone gap in units meff=1
-    gapLC = np.sqrt(np.interp(gLCeffNorm, gLClist, msqLClist))
-# Physical light cone gap in units meff=1
-    gapLCExtr = np.sqrt(np.interp(gLCeffNorm, gLClist, msqLClistExtr))
-
-# Physical light cone gap in units mbare=1
-    gapLCrescaled = gapLC*LCmassEff
-# Physical light cone gap in units mbare=1
-    gapLCrescaledExtr = gapLCExtr*LCmassEff
-
-
-# Effective light cone squared mass at g=1 with extrapolated VEV
-    LCmassSqEffExtrg1 = np.array([1+12*1*extrVevg1])
-    gLCeffNormExtrVEVg1 = 1/LCmassSqEffExtrg1
-    gapLCvevextrg1Resc = np.sqrt(np.interp(gLCeffNormExtrVEVg1, gLClist, msqLClistExtr))*np.sqrt(LCmassSqEffExtrg1)
-    print(gapLCvevextrg1Resc)
-
-
-    plt.figure(1)
-    massrawlist = np.array([massraw[g] for g in glist])
-    massrenlist = np.array([massren[g] for g in glist])
-    plt.plot(glist, massrawlist, label="ET raw")
-    plt.plot(glist, massrenlist, label="ET ren")
-    plt.plot(glist, gapLCrescaled, label=r"$LC, \Delta_{\rm max}=34$")
-    plt.plot(glist, gapLCrescaledExtr, label=r"$LC, \Delta_{\rm max}=\infty$")
-    plt.plot(glist, gapLCnaive, label="LC naive")
-    plt.plot(glist, mpert(glist), label=r"$o(g^3)$", color='y', linestyle="--", marker='o', markersize=1)
-
-    plt.plot([1], gapLCvevextrg1Resc, 'ok')
-
-    plt.xlim(xmin, xmax+0.01)
-    # plt.ylim(0,1)
-
-    plt.figure(2)
-    plt.plot(glist, gLCeffNorm, label="LC eff coupling")
-    plt.xlim(xmin, xmax)
-
-    plt.figure(3)
-    vevrawlist = np.array([vevraw[g] for g in glist])
-    vevrenlist = np.array([vevren[g] for g in glist])
-    plt.plot(glist, vevrenlist, label="VEV ren")
-    plt.plot(glist, vevrawlist, label="VEV raw")
-
-
-
-    plt.figure(4)
-    y = (gapLCrescaledExtr-massrenlist)[10:]
-    X = glist[10:]
-    c, b, r_value, p_value, std_err = stats.linregress(log(X), log(y))
-    plt.loglog(glist, gapLCrescaledExtr-massrenlist)
-    x = scipy.linspace(0.1,1,100).reshape(-1, 1)
-    plt.loglog(x, exp(c*log(x)+b), label=r"$m = {} \pm {}$".format(c,std_err))
-    plt.xlim(0.4, 1)
-    plt.ylim(0.00001,0.11)
-
-
-    plt.figure(5)
-    f = LinearRegression(fit_intercept=True)
-    X = glist[10:].reshape(-1, 1)
-    y = (gapLCrescaledExtr-massrenlist)[10:]
-    f.fit(log(X),log(y))
-    print("f.coef_", f.coef_)
-    plt.loglog(glist, gapLCrescaledExtr-massrenlist)
-    x = scipy.linspace(0.1,1,100).reshape(-1, 1)
-    plt.loglog(x, exp(f.predict(log(x))), label=r"$\log y = {} \log x + {}$".format(f.coef_[0],f.intercept_))
-    plt.xlim(0.4, 1)
-    plt.ylim(0.00001,0.11)
-
-
-
-    plt.figure(1)
-    plt.ylim(0.8,1)
-    plt.xlabel("g")
-    plt.ylabel(r"$m$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "gapvsG_prescr1_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
-
-    plt.figure(2)
-    plt.xlim(0.1,1.01)
-    plt.ylim(0.1,0.7)
-    plt.xlabel("g")
-    # plt.ylabel(r"$\langle\phi^2\rangle$")
-    plt.ylabel(r"$g_{\rm eff}$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "geffvsG_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
-
-    plt.figure(3)
-    plt.xlim(0.1,1.01)
-    plt.ylim(0.1,0.358)
-    plt.xlabel("g")
-    # plt.ylabel(r"$\langle\phi^2\rangle$")
-    plt.ylabel(r"$\langle \phi^2 \rangle$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "VEVvsG_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
-
-    plt.figure(4)
-    # plt.xlim(0.1,1.01)
-    # plt.ylim(0.1,0.358)
-    plt.xlabel("g")
-    # plt.ylabel(r"$\langle\phi^2\rangle$")
-    plt.ylabel(r"$M_{\rm LC} - M_{\rm ET}$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "GapDiffvsG_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
-
-    plt.figure(5)
-    # plt.xlim(0.1,1.01)
-    # plt.ylim(0.1,0.358)
-    plt.xlabel("g")
-    # plt.ylabel(r"$\langle\phi^2\rangle$")
-    plt.ylabel(r"$M_{\rm LC} - M_{\rm ET}$")
-    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
-    plt.legend()
-    fname = ".{0}".format(output)
-    s = "GapDiffvsG2_ET={}_L={}".format(ET,L)
-    # plt.savefig(s+fname, bbox_inches='tight')
-    plt.savefig(s+fname)
 
 
 

@@ -1,3 +1,5 @@
+from sklearn.linear_model import LinearRegression
+from scipy import stats
 import statefuncs
 import phi4
 import matplotlib.pyplot as plt
@@ -8,6 +10,7 @@ import sys
 import scipy
 import math
 import numpy as np
+from numpy import log, sqrt, exp
 
 
 # Chabysheva prescription for comparing LC and ET data
@@ -124,7 +127,38 @@ def main():
     plt.plot(gETeff, gapLCnaive, label="LC naive")
     plt.plot(gETeff, mpert(gETeff), label=r"$o(g^3)$", color='y', linestyle="--", marker='o', markersize=1)
 
-    # plt.figure(2)
+
+# Log log Plot of deviation between ET and LC using stats library
+    # Fit power law deviation
+    plt.figure(2)
+    f = LinearRegression(fit_intercept=True)
+    X = gETeff[10:]
+    y = (-gapLCnormExtr+gapETren)[10:]
+    c, b, r_value, p_value, std_err = stats.linregress(log(X), log(y))
+    plt.loglog(gETeff, -gapLCnormExtr+gapETren, label=r"$M_{\rm ET} - M_{\rm LC} (\infty)$")
+    plt.loglog(gETeff, -gapLCnorm+gapETren, label=r"$M_{\rm ET} - M_{\rm LC} (\Delta_{\rm max} = 34)$")
+    x = scipy.linspace(0.1,1,100).reshape(-1, 1)
+    plt.loglog(x, exp(c*log(x)+b), label=r"$m = {} \pm {}$".format(c, std_err))
+    plt.xlim(0.4, 1)
+    plt.ylim(0.00001,0.11)
+
+
+# Log log Plot of deviation between ET and LC using sklearn library
+    # Fit power law deviation
+    plt.figure(3)
+    f = LinearRegression(fit_intercept=True)
+    X = gETeff[10:].reshape(-1, 1)
+    y = (-gapLCnormExtr+gapETren)[10:]
+    f.fit(log(X),log(y))
+    plt.loglog(gETeff, -gapLCnormExtr+gapETren, label=r"$M_{\rm ET} - M_{\rm LC} (\infty)$")
+    plt.loglog(gETeff, -gapLCnorm+gapETren, label=r"$M_{\rm ET} - M_{\rm LC} (\Delta_{\rm max} = 34)$")
+    x = scipy.linspace(0.1,1,100).reshape(-1, 1)
+    plt.loglog(x, exp(f.predict(log(x))), label=r"$\log y = {} \log x + {}$".format(f.coef_[0],f.intercept_))
+    plt.xlim(0.4, 1)
+    plt.ylim(0.00001,0.11)
+
+
+    # plt.figure(3)
     # vevrawlist = np.array([vevraw[g] for g in glist])
     # vevrenlist = np.array([vevren[g] for g in glist])
     # plt.plot(glist, gLCeffNorm, label="LC eff coupling")
@@ -143,7 +177,35 @@ def main():
     # plt.savefig(s+fname, bbox_inches='tight')
     plt.savefig(s+fname)
 
-    # plt.figure(2)
+    plt.figure(2)
+    # plt.xlim(0.1,1.01)
+    # plt.ylim(0.1,0.358)
+    plt.xlabel("g")
+    # plt.ylabel(r"$\langle\phi^2\rangle$")
+    plt.ylabel(r"$M_{\rm LC} - M_{\rm ET}$")
+    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
+    plt.legend()
+    fname = ".{0}".format(output)
+    s = "GapDiffvsG_prescr2_ET={}_L={}".format(ET,L)
+    # plt.savefig(s+fname, bbox_inches='tight')
+    plt.savefig(s+fname)
+
+
+    plt.figure(3)
+    # plt.xlim(0.1,1.01)
+    # plt.ylim(0.1,0.358)
+    plt.xlabel("g")
+    # plt.ylabel(r"$\langle\phi^2\rangle$")
+    plt.ylabel(r"$M_{\rm LC} - M_{\rm ET}$")
+    plt.title(r"$E_T$ = {} , $L$ = {}".format(ET, L))
+    plt.legend()
+    fname = ".{0}".format(output)
+    s = "GapDiffvsG2_prescr2_ET={}_L={}".format(ET,L)
+    # plt.savefig(s+fname, bbox_inches='tight')
+    plt.savefig(s+fname)
+
+
+    # plt.figure(3)
     # plt.xlim(0.1,1.01)
     # plt.ylim(0.1,0.7)
     # plt.xlabel("g")
