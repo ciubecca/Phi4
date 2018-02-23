@@ -48,9 +48,9 @@ class Phi4():
         scipy.set_printoptions(precision=15)
 
 
-    def buildBasis(self, Emax):
+    def buildBasis(self, Emax, occmax):
         """ Builds the full Hilbert space basis up to cutoff Emax """
-        self.basis = Basis.fromScratch(m=self.m, L=self.L, k=self.k, Emax=Emax)
+        self.basis = Basis.fromScratch(m=self.m, L=self.L, k=self.k, Emax=Emax, occmax=occmax)
 
     def computePotential(self):
         """

@@ -42,9 +42,16 @@ def gendlists(state, nd, ntot, nmax):
     x = itertools.chain.from_iterable(([n]*Zn for n,Zn in state))
 
     dlists = set(tuple(y) for y in combinations(x,nd))
+    # try:
+        # return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
+    # except KeyError:
+        # print(dlists, nd, ntot, nmax)
+        # raise KeyError
+
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
 
 
+### XXX Should be modified to account for occmax
 def computeME(basis, i, lookupbasis, helper, statePos, Erange,
     ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator

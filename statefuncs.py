@@ -164,7 +164,7 @@ class Basis():
         return scipy.sparse.spdiags(v, 0, self.size, self.size).tocsc()
 
     @classmethod
-    def fromScratch(self, m, L, k, Emax):
+    def fromScratch(self, m, L, k, Emax, occmax=None):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch
         m: mass
         L: size of the cylinder
@@ -176,7 +176,11 @@ class Basis():
         self.Emax = Emax
         m = helper.m
 
-        self._occmax = int(floor(Emax/m))
+        self.occmax = occmax
+        if occmax ==None:
+            self._occmax = int(floor(Emax/m))
+        else:
+            self._occmax = occmax
 
         # self.nmax is the actual maximum occupied wavenumber of the states
         self.nmax = helper.nmax

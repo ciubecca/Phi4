@@ -2,6 +2,10 @@ import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 
+def occn(state):
+    """ Computes the occupation number of a state"""
+    return sum(Zn for n,Zn in state)
+
 def buildStatePos(basis, helper=None, Erange=None):
     # Dictionary of positions of states
     # Contains also the P-reversed states
@@ -97,6 +101,11 @@ class MatrixConstructor():
 
         for V in Vlist:
             for i in idxList:
+
+                # XXX Check added to avoid generating states with higher occupation number than cutoff
+                if lookupbasis.occmax!=None and V.nc-V.nd+occn(basis.stateList[i]) > lookupbasis.occmax:
+                    continue
+
                 colpart, datapart = \
                     V.computeMatrixElements(basis,i,lookupbasis, Erange=Erange,
                             statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)

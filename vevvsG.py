@@ -10,6 +10,7 @@ import scipy
 import math
 import numpy as np
 from numpy import pi, sqrt, log, exp
+import gc
 
 
 output = "pdf"
@@ -32,6 +33,8 @@ plt.rc('axes', prop_cycle=(
 def VEVpert(g):
     return 0.101766*g**2 - 0.263774*g**3
 
+occmax = {1:6,-1:7}
+
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 2
@@ -48,13 +51,17 @@ L = float(argv[1])
 print("L", L)
 
 # glist = np.linspace(1, 1.5, 30)
-glist = np.linspace(0.01, 0.1, 30)
+glist = np.linspace(0.005, 0.05, 20)
 print("glist", glist)
 
 xmax = max(glist)+0.03
 xmin = 0
 
-ETlist = [15,20, 24]
+# if L == 8:
+    # ETlist = [15,20, 24]
+# else:
+    # ETlist = [15,20,22]
+ETlist = [20, 25, 30]
 
 vevrawlist = {ET:[] for ET in ETlist}
 vevrenlist = {ET:[] for ET in ETlist}
@@ -63,31 +70,34 @@ Lambda = {ET:[] for ET in ETlist}
 for ET in ETlist:
 
     a = phi4.Phi4(m, L, 1)
-    a.buildBasis(Emax=ET)
+    a.buildBasis(Emax=ET, occmax=occmax[1])
     a.computePotential()
     a.setglist(glist=glist)
 
-    b = phi4.Phi4(m, L, -1)
-    b.buildBasis(Emax=ET)
-    b.computePotential()
-    b.setglist(glist=glist)
+    print("Basis size:", len(a.basis.stateList))
+
+    # b = phi4.Phi4(m, L, -1)
+    # b.buildBasis(Emax=ET, occmax=occmax[-1])
+    # b.computePotential()
+    # b.setglist(glist=glist)
 
 
     a.computeEigval(ET, "raw", neigs=neigs)
-    b.computeEigval(ET, "raw", neigs=neigs)
+    # b.computeEigval(ET, "raw", neigs=neigs)
     E0raw = {g: a.eigenvalues[g]["raw"][0] for g in glist}
-    E1raw = {g: b.eigenvalues[g]["raw"][0] for g in glist}
-    massraw = {g:E1raw[g] - E0raw[g] for g in glist}
-    massraw = {g:E1raw[g] - E0raw[g] for g in glist}
+    # E1raw = {g: b.eigenvalues[g]["raw"][0] for g in glist}
+    # massraw = {g:E1raw[g] - E0raw[g] for g in glist}
     vevrawlist[ET] = [a.vev[g]["raw"] for g in glist]
 
     a.computeEigval(ET, "renloc", neigs=neigs, eps=E0raw)
-    b.computeEigval(ET, "renloc", neigs=neigs, eps=E1raw)
+    # b.computeEigval(ET, "renloc", neigs=neigs, eps=E1raw)
     E0ren = {g: a.eigenvalues[g]["renloc"][0] for g in glist}
-    E1ren = {g: b.eigenvalues[g]["renloc"][0] for g in glist}
-    massren = {g:E1ren[g] - E0ren[g] for g in glist}
+    # E1ren = {g: b.eigenvalues[g]["renloc"][0] for g in glist}
+    # massren = {g:E1ren[g] - E0ren[g] for g in glist}
     Lambda[ET] = np.array([E0ren[g] for g in glist])/L
     vevrenlist[ET] = np.array([a.vev[g]["renloc"] for g in glist])
+
+    gc.collect()
 
 
 # Estimate of VEV taking derivative of vacuum energy density.
@@ -103,7 +113,7 @@ for ET in ETlist:
         # plt.plot(glist, vev2[ET]/glist**2, label=r"$\mathcal{{E}}'$ , Emax={}".format(ET))
 
         # Fit linear function in proper range
-        idx = [i for i,g in enumerate(glist) if g>=0.03 and g<=0.1]
+        idx = [i for i,g in enumerate(glist) if g>=0.01 and g<=0.03]
         glistFit = glist[idx]
 
         c, b, r_value, p_value, std_err = stats.linregress(glistFit, vevrenlist[ET][idx]/glistFit**2)
