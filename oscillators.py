@@ -355,12 +355,13 @@ def V2OpsSelectedFull(basis, Emax, idxList=None):
     return opsList
 
 
-def V4OpsSelectedFull(basis, Emax, idxList=None):
+def V4OpsSelectedFull(basis, Emax, idxList=None, ndmax=4):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
     Emin: minimum energy of the states to be generated
     Emax: maximal energy of states to be generated
     idxList: subset of indices of the basis which is acted upon
+    ndmax: maximum number of annihilation operators
     """
 
     helper = Helper(basis.helper.m, basis.helper.L, max(Emax,basis.Emax))
@@ -372,7 +373,7 @@ def V4OpsSelectedFull(basis, Emax, idxList=None):
 
     opsList = []
 
-    for nd in (0,1,2,3,4):
+    for nd in range(ndmax+1):
         nc = 4-nd
 
         dlists = gendlistsfromBasis(basis, idxList, nmax, nd, 4)

@@ -53,13 +53,14 @@ basis4 = Basis.fromScratch(m=m, L=L, k=1, Emax=max(ETlist), occmax=4, occmin=4)
 
 # Generate partial 8-particle basis states by acting on all 4-particle states
 print("Generating 8 particle basis")
-Vlist = V4OpsSelectedFull(basis4, max(ETlist))
+Vlist = V4OpsSelectedFull(basis4, max(ETlist), ndmax=3)
 vectorset = set()
 
 for V in Vlist:
     for v in V.yieldBasis(basis4, max(ETlist)):
 # Do not add the vacuum
         if sum(v)==0:
+            print("Error")
             continue
         # Don't add twice states connected by parity inversion
         if v not in vectorset and v[::-1] not in vectorset:
