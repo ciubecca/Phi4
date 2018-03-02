@@ -50,8 +50,25 @@ print("L", L)
 basis0 = Basis.fromScratch(m=m, L=L, k=1, Emax=max(ETlist), occmax=0)
 # Basis of states with 4 particles
 basis4 = Basis.fromScratch(m=m, L=L, k=1, Emax=max(ETlist), occmax=4, occmin=4)
-# Basis of states with up to 8 particles
-basis8 = Basis.fromScratch(m=m, L=L, k=1, Emax=max(ETlist), occmax=8)
+
+# Generate partial 8-particle basis states by acting on all 4-particle states
+print("Generating 8 particle basis")
+Vlist = V4OpsSelectedFull(basis4, max(ETlist))
+vectorset = set()
+
+for V in Vlist:
+    for v in V.yieldBasis(basis4, max(ETlist)):
+# Do not add the vacuum
+        if sum(v)==0:
+            continue
+        # Don't add twice states connected by parity inversion
+        if v not in vectorset and v[::-1] not in vectorset:
+            vectorset.add(v)
+
+
+helper = Vlist[0].helper
+basis8 = Basis(1, vectorset, helper, repr1=False, repr1Emax=0)
+print("Basis size:", basis8.size)
 
 c1 = MatrixConstructor(basis0, basis4)
 Vlist = V4OpsSelectedFull(basis0, max(ETlist))
@@ -61,15 +78,17 @@ c2 = MatrixConstructor(basis4, basis4)
 Vlist = V4OpsSelectedHalf(basis4, max(ETlist))
 V44 = c2.buildMatrix(Vlist, sumTranspose=True)*L
 
+print("Constructing the matrix")
 c3 = MatrixConstructor(basis4, basis8)
 Vlist = V4OpsSelectedFull(basis4, max(ETlist))
 V48 = c3.buildMatrix(Vlist, sumTranspose=False)*L
 
-print("Basis size:", basis8.size)
 
 Delta2 = []
 Delta3 = []
 Delta4 = []
+
+print("Computing corrections")
 
 ###### SECOND ORDER #############
 for ET in ETlist:
@@ -83,7 +102,7 @@ for ET in ETlist:
 
 ###### FOURTH ORDER #############
     prop8 = basis8.propagator(0,0,ET)
-    M = V04*prop4*V48*prop8*V48.transpose()*prop4*V04.transpose()/L
+    M = (V04*prop4*V48*prop8*V48.transpose()*prop4*V04.transpose()-L*Delta2[-1]*V04*(prop4**2)*V04.transpose())/L
     Delta4.append(M.todense()[0,0])
 
 
@@ -112,11 +131,12 @@ plt.savefig("E0pert3.pdf")
 plt.clf()
 
 
-xlist = ETlist
+xlist = 1/ETlist**2
 plt.plot(xlist, Delta4, label="L={}".format(L))
 # plt.plot(ETlist, Delta2, label="L={}".format(L))
 plt.xlim(0, max(xlist))
-plt.xlabel(r"$E_T$")
+plt.title("L={}".format(L))
+plt.xlabel(r"$1/E_T^2$")
 plt.ylabel(r"$\Lambda$")
-plt.savefig("E0pert4.pdf")
+plt.savefig("E0pert4_L={}.pdf".format(L))
 plt.clf()

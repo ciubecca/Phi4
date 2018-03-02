@@ -143,9 +143,6 @@ class LocOperator():
 
 
 
-
-
-
 def V4OpsHalf(basis):
     """ Generate half of the oscillators () of the V4 operator
     basis: basis of all the low-energy states below ET """

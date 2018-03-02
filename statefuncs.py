@@ -145,6 +145,7 @@ class Basis():
         self.size = len(self.energyList)
         self.Emax = max(self.energyList)
         self.Emin = min(self.energyList)
+        self.occmin = min(self.occnList)
 
     def irange(self, Erange):
         """ Return the min and max indices for states with energy between
