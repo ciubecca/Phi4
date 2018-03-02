@@ -106,6 +106,9 @@ class MatrixConstructor():
                 if lookupbasis.occmax!=None and V.nc-V.nd+occn(basis.stateList[i]) > lookupbasis.occmax:
                     continue
 
+                if V.nc-V.nd+occn(basis.stateList[i]) < lookupbasis.occmin:
+                    continue
+
                 colpart, datapart = \
                     V.computeMatrixElements(basis,i,lookupbasis, Erange=Erange,
                             statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
