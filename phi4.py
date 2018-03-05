@@ -48,13 +48,14 @@ class Phi4():
         scipy.set_printoptions(precision=15)
 
 
-    def buildBasis(self, Emax, occmax):
+    def buildBasis(self, Emax, occmax=None):
         """ Builds the full Hilbert space basis up to cutoff Emax """
         self.basis = Basis.fromScratch(m=self.m, L=self.L, k=self.k, Emax=Emax, occmax=occmax)
 
-    def computePotential(self):
+    def computePotential(self, other=None):
         """
         Builds the potential matrices and the free Hamiltonian. In the low-energy sector
+        other: basis of the opposite basis used to compute the V = \phi matrix element
         """
 
         basis = self.basis
@@ -66,6 +67,11 @@ class Phi4():
         for n in (2,4):
             self.V[n] = c.buildMatrix(Vlist[n], sumTranspose=True)*self.L
         del c
+
+        if other!=None:
+            c = MatrixConstructor(self.basis, other)
+            Vlist = V1Ops(basis)
+            self.V[1] = c.buildMatrix(Vlist, sumTranspose=False)*self.L
 
         # Construct the identity potential matrix
         self.V[0] = scipy.sparse.eye(basis.size)*self.L

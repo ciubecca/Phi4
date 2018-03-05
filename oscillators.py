@@ -215,6 +215,20 @@ def V4OpsHalf(basis):
     return V40, V31, V22
 
 
+# \phi operator. It connects parity odd and parity even sectors
+def V1Ops(basis):
+    Emax = basis.Emax
+    helper = basis.helper
+
+    dlist = ()
+    V10 = [((),[(0,)])]
+    V10 = LocOperator(V10, 0, 1, helper)
+
+    V01 = [((0,),[])]
+    V01 = LocOperator(V01, 1, 0, helper)
+
+    return (V10,V01)
+
 
 def V2OpsHalf(basis):
     """ Generate half of the oscillators () of the V2 operator
