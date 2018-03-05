@@ -70,7 +70,7 @@ class Phi4():
 
         if other!=None:
             c = MatrixConstructor(self.basis, other)
-            Vlist = V1Ops(basis)
+            Vlist = V1Ops(self.basis)
             self.V[1] = c.buildMatrix(Vlist, sumTranspose=False)*self.L
 
         # Construct the identity potential matrix
