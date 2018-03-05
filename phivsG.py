@@ -46,7 +46,8 @@ L = float(argv[1])
 print("L", L)
 
 # glist = np.linspace(1, 1.5, 30)
-glist = np.linspace(0.1, 1, 10)
+glist = np.linspace(0.1, 2, 20)
+# glist = np.linspace(0, 0.1, 2)
 print("glist", glist)
 
 xmax = max(glist)+0.03
@@ -91,7 +92,7 @@ for ET in ETlist:
 
     # print([(a.V[1]/a.L).dot(b.eigenvectors[g]["renloc"][0]) for g in glist])
 
-    phi01[ET] = np.array([np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/a.L).dot(b.eigenvectors[g]["renloc"][0]))**2
+    phi01[ET] = np.array([(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))*sqrt(2*L*massren[g]))**2
         for g in glist])
 
     gc.collect()
