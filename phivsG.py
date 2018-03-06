@@ -64,6 +64,7 @@ phi01 = {ET:[] for ET in ETlist}
 commutator = {ET:[] for ET in ETlist}
 intSpec = {ET:[] for ET in ETlist}
 
+Gap = {}
 
 for ET in ETlist:
 
@@ -104,6 +105,8 @@ for ET in ETlist:
     # print(b.eigenvectors[glist[10]]["renloc"][0])
     # print(b.basis.stateList[0])
 
+    Gap[ET] = np.array([massren[g] for g in glist])
+
     phi01[ET] = 2/L*np.array([massren[g]*np.inner(a.eigenvectors[g]["renloc"][0], a.V[1].dot(b.eigenvectors[g]["renloc"][0]))**2 for g in glist])
 
     v1 = {g: a.eigenvectors[g]["renloc"][0] for g in glist}
@@ -132,6 +135,12 @@ for ET in ETlist:
     plt.plot(glist, intSpec[ET], label=r"$I(5 \mu) - I(3 \mu)$, Emax={}".format(ET))
     plt.figure(3)
     plt.plot(glist, commutator[ET], label=r"Emax={}".format(ET))
+    plt.figure(4)
+    plt.plot(glist/(Gap[ET]**2), phi01[ET], label=r"Emax={}".format(ET))
+
+# plt.figure(4)
+# plt.show()
+
 
 plt.figure(1)
 plt.xlim(0,max(glist))
@@ -161,6 +170,18 @@ plt.xlim(0,max(glist))
 plt.xlabel("g")
 plt.ylabel(r"$\langle 0 | [\phi, \pi ] | 0 \rangle$")
 s = "CommutatorvsG_L={}".format(L)
+plt.title(r"$L$ = {}".format(L))
+plt.legend()
+fname = ".{0}".format(output)
+# plt.savefig(s+fname, bbox_inches='tight')
+plt.savefig(s+fname)
+
+
+plt.figure(4)
+plt.xlim(0,max(glist))
+plt.xlabel("g")
+plt.ylabel(r"$\langle 0 | [\phi, \pi ] | 0 \rangle$")
+s = "Matt_L={}".format(L)
 plt.title(r"$L$ = {}".format(L))
 plt.legend()
 fname = ".{0}".format(output)
