@@ -98,15 +98,16 @@ for ET in ETlist:
         for g in glist]))
 
     for g in glist:
+        print(b.eigenvalues[g]["renloc"])
+
         x = 0
         for e, v in zip(b.eigenvalues[g]["renloc"], b.eigenvectors[g]["renloc"]):
             gap = e - E0ren[g]
             if gap > 5*massren[g] or gap < 3*massren[g]:
                 continue
-            x +=  np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))**2)
-        intSpec[ET].append(sum(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))**2)
-        intSpec[ET] = sqrt(np.array([(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))*sqrt(2*L*massren[g]))**2
-        for g in glist]))
+            x +=  2*gap*np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]).dot(v))**2
+
+        intSpec[ET].append(x)
 
     gc.collect()
 
@@ -114,6 +115,10 @@ for ET in ETlist:
 plt.figure(1)
 for ET in ETlist:
     plt.plot(glist, phi01[ET], label=r"$\langle 0 \mid \phi \mid 1 \rangle$ , Emax={}".format(ET))
+
+plt.figure(2)
+for ET in ETlist:
+    plt.plot(glist, intSpec[ET], label=r"$I(5 \mu) - I(3 \mu)$, Emax={}".format(ET))
 
 
 plt.figure(1)
@@ -127,3 +132,13 @@ fname = ".{0}".format(output)
 # plt.savefig(s+fname, bbox_inches='tight')
 plt.savefig(s+fname)
 
+plt.figure(2)
+plt.xlim(0,max(glist))
+plt.xlabel("g")
+plt.ylabel(r"$I(5 \mu) - I(3 \mu)$")
+s = "SpecDensityvsG_L={}".format(L)
+plt.title(r"$L$ = {}".format(L))
+plt.legend()
+fname = ".{0}".format(output)
+# plt.savefig(s+fname, bbox_inches='tight')
+plt.savefig(s+fname)
