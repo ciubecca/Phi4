@@ -26,7 +26,6 @@ class Phi4():
 # Maximum dimension of the chunks for computing Vhh
         self.chunklen = 20000
 
-# VEV of phi^2self.vev = {}
 
         self.basis = None
         self.h0 = None
@@ -71,7 +70,11 @@ class Phi4():
         if other!=None:
             c = MatrixConstructor(self.basis, other)
             Vlist = V1Ops(self.basis)
-            self.V[1] = c.buildMatrix(Vlist, sumTranspose=False)*self.L
+            self.V[1] = c.buildMatrix(Vlist, sumTranspose=False, debug=False)*self.L
+
+            self.P = {}
+            Vlist = PI1Ops(self.basis)
+            self.P[1] = c.buildMatrix(Vlist, sumTranspose=False, debug=False)*self.L
 
         # Construct the identity potential matrix
         self.V[0] = scipy.sparse.eye(basis.size)*self.L

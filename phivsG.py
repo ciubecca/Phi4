@@ -34,6 +34,7 @@ plt.rc('axes', prop_cycle=(
 m = 1
 # Number of eigenvalues to compute per sector
 neigs = 20
+neigs = 2
 
 
 argv = sys.argv
@@ -53,12 +54,14 @@ print("glist", glist)
 xmax = max(glist)+0.03
 xmin = 0
 
-ETlist = [15, 20, 24]
+ETlist = [15, 20, 22]
+# ETlist = [10]
 
 vevrawlist = {ET:[] for ET in ETlist}
 vevrenlist = {ET:[] for ET in ETlist}
 Lambda = {ET:[] for ET in ETlist}
 phi01 = {ET:[] for ET in ETlist}
+commutator = {ET:[] for ET in ETlist}
 intSpec = {ET:[] for ET in ETlist}
 
 
@@ -71,6 +74,9 @@ for ET in ETlist:
     a.buildBasis(Emax=ET)
     b.buildBasis(Emax=ET)
     a.computePotential(other=b.basis)
+
+    # print(a.V[1])
+
     b.computePotential()
     a.setglist(glist=glist)
     b.setglist(glist=glist)
@@ -94,32 +100,38 @@ for ET in ETlist:
 
     # print([(a.V[1]/a.L).dot(b.eigenvectors[g]["renloc"][0]) for g in glist])
 
-    phi01[ET] = sqrt(np.array([(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))*sqrt(2*L*massren[g]))**2
-        for g in glist]))
+    # print(massren[glist[10]])
+    # print(b.eigenvectors[glist[10]]["renloc"][0])
+    # print(b.basis.stateList[0])
+
+    phi01[ET] = 2/L*np.array([massren[g]*np.inner(a.eigenvectors[g]["renloc"][0], a.V[1].dot(b.eigenvectors[g]["renloc"][0]))**2 for g in glist])
+
+    v1 = {g: a.eigenvectors[g]["renloc"][0] for g in glist}
+    v2 = {g: b.eigenvectors[g]["renloc"][0] for g in glist}
+
+    commutator[ET] = 2/L**2*np.array([massren[g]*np.inner(v1[g], a.V[1].dot(v2[g]))*np.inner(v1[g], a.P[1].dot(v2[g]))
+              for g in glist])
 
     for g in glist:
-        print(b.eigenvalues[g]["renloc"])
-
         x = 0
         for e, v in zip(b.eigenvalues[g]["renloc"], b.eigenvectors[g]["renloc"]):
             gap = e - E0ren[g]
             if gap > 5*massren[g] or gap < 3*massren[g]:
                 continue
-            x +=  2*gap*np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]).dot(v))**2
+            x +=  2*np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]).dot(v))**2
 
         intSpec[ET].append(x)
 
     gc.collect()
 
 
-plt.figure(1)
 for ET in ETlist:
+    plt.figure(1)
     plt.plot(glist, phi01[ET], label=r"$\langle 0 \mid \phi \mid 1 \rangle$ , Emax={}".format(ET))
-
-plt.figure(2)
-for ET in ETlist:
+    plt.figure(2)
     plt.plot(glist, intSpec[ET], label=r"$I(5 \mu) - I(3 \mu)$, Emax={}".format(ET))
-
+    plt.figure(3)
+    plt.plot(glist, commutator[ET], label=r"Emax={}".format(ET))
 
 plt.figure(1)
 plt.xlim(0,max(glist))
@@ -137,6 +149,18 @@ plt.xlim(0,max(glist))
 plt.xlabel("g")
 plt.ylabel(r"$I(5 \mu) - I(3 \mu)$")
 s = "SpecDensityvsG_L={}".format(L)
+plt.title(r"$L$ = {}".format(L))
+plt.legend()
+fname = ".{0}".format(output)
+# plt.savefig(s+fname, bbox_inches='tight')
+plt.savefig(s+fname)
+
+
+plt.figure(3)
+plt.xlim(0,max(glist))
+plt.xlabel("g")
+plt.ylabel(r"$\langle 0 | [\phi, \pi ] | 0 \rangle$")
+s = "CommutatorvsG_L={}".format(L)
 plt.title(r"$L$ = {}".format(L))
 plt.legend()
 fname = ".{0}".format(output)

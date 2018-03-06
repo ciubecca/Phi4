@@ -51,9 +51,9 @@ def gendlists(state, nd, ntot, nmax):
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
 
 
-### XXX Should be modified to account for occmax
+### XXX Should be modified to account for occmax?
 def computeME(basis, i, lookupbasis, helper, statePos, Erange,
-    ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
+    ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies, debug=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -87,6 +87,9 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         p = basis.parityList[i]
         state = basis.stateList[i]
 
+        if debug:
+            print("State:", state)
+
         statevec = array.array('b', helper.torepr2(state))
         cstatevec = statevec.data.as_chars
         
@@ -98,6 +101,9 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
         # cycle over all the sets of momenta that can be annihilated
 # XXX Check: we replaced lookupbasis.helper.nmax with helper.nmax
         for dlist in gendlists(state, nd, nd+nc, nmax):
+
+            if debug:
+                print("dlist", dlist)
 
             k = dlistPos[dlist]
 
@@ -115,6 +121,10 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
             for z in range(len(oscListSub)):
                 osc = oscListSub[z]
 
+                if debug:
+                    # print("clist", array(osc))
+                    print("clist", numpy.asarray(osc))
+
                 newstatevec = array.copy(statevec)
                 cnewstatevec = newstatevec.data.as_chars
 
@@ -127,6 +137,7 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
                     cnewstatevec[jj] += Zc-Zd
                     x *= normFactors[Zc, Zd, cstatevec[jj]]
 
+
                 if ignKeyErr:
                     try:
                         j = statePos[bytes(newstatevec)]
@@ -134,6 +145,9 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
                         continue
                 else:
                     j = statePos[bytes(newstatevec)]
+
+                if debug:
+                    print("New state: ", lookupbasis.stateList[j])
 
                 x *= parityFactors[p][parityList[j]]
                 data.append(x)

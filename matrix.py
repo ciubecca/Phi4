@@ -75,7 +75,7 @@ class MatrixConstructor():
 
         self.statePos = buildStatePos(lookupbasis, self.helper, Erange)
 
-    def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False):
+    def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False, debug=False):
         """
         Vlist: list of oscillators
         ignKeyErr: whether LookupError when generating a state should be ignored (to be used
@@ -111,7 +111,7 @@ class MatrixConstructor():
 
                 colpart, datapart = \
                     V.computeMatrixElements(basis,i,lookupbasis, Erange=Erange,
-                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
+                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr, debug=debug)
                 data += datapart
                 col += colpart
                 row += [i]*len(colpart)

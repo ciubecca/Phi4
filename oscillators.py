@@ -31,7 +31,7 @@ class LocOperator():
     from a set of tails
     """
 
-    def __init__(self, oscillators, nd, nc, helper):
+    def __init__(self, oscillators, nd, nc, helper, isMomentum=False):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
         wavenumbers of annihilation operators, and the second element a list of
@@ -75,9 +75,14 @@ class LocOperator():
             self.oscEnergies.append([helper.oscEnergy(clist)-helper.oscEnergy(dlist)
                 for clist in clists])
 
-            self.oscFactors.append([bose(clist)*bose(dlist)*binom(nc+nd,nc)\
-                    *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
+            if isMomentum:
+                self.oscFactors.append([(-1)**nd*bose(clist)*bose(dlist)*binom(nc+nd,nc)\
+                    *scipy.prod([sqrt(omega(n)*L)/sqrt(2) for n in clist+dlist])
                     for clist in clists])
+            else:
+                self.oscFactors.append([bose(clist)*bose(dlist)*binom(nc+nd,nc)\
+                        *scipy.prod([1/sqrt(2*omega(n)*L) for n in clist+dlist])
+                        for clist in clists])
 
     def torepr1(self, clist, dlist):
         """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
@@ -95,7 +100,7 @@ class LocOperator():
 
     # @profile
     def computeMatrixElements(self, basis, i, lookupbasis, helper, statePos, Erange,
-            ignKeyErr=False):
+            ignKeyErr=False, debug=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -111,7 +116,7 @@ class LocOperator():
 
         return me.computeME(basis, i, lookupbasis, helper, statePos, Erange,
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors,
-                self.oscList, self.oscEnergies)
+                self.oscList, self.oscEnergies, debug=debug)
 
 
     # Generate high energy Hilbert space Hh from low energy Hilbert space Hl
@@ -140,6 +145,7 @@ class LocOperator():
                     for n,Zc,Zd in osc:
                         newstatevec[n+nmax] += Zc-Zd
                     yield bytes(newstatevec)
+
 
 
 
@@ -215,19 +221,33 @@ def V4OpsHalf(basis):
     return V40, V31, V22
 
 
-# \phi operator. It connects parity odd and parity even sectors
+# \phi operator. it connects parity odd and parity even sectors
 def V1Ops(basis):
     Emax = basis.Emax
     helper = basis.helper
 
     dlist = ()
-    V10 = [((),[(0,)])]
-    V10 = LocOperator(V10, 0, 1, helper)
+    v10 = [((),[(0,)])]
+    v10 = LocOperator(v10, 0, 1, helper)
 
-    V01 = [((0,),[])]
-    V01 = LocOperator(V01, 1, 0, helper)
+    v01 = [((0,),[()])]
+    v01 = LocOperator(v01, 1, 0, helper)
 
-    return (V10,V01)
+    return (v10,v01)
+
+# \Pi operator. it connects parity odd and parity even sectors
+def PI1Ops(basis):
+    Emax = basis.Emax
+    helper = basis.helper
+
+    dlist = ()
+    v10 = [((),[(0,)])]
+    v10 = LocOperator(v10, 0, 1, helper, isMomentum=True)
+
+    v01 = [((0,),[()])]
+    v01 = LocOperator(v01, 1, 0, helper, isMomentum=True)
+
+    return (v10,v01)
 
 
 def V2OpsHalf(basis):
