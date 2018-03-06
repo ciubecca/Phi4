@@ -33,7 +33,7 @@ plt.rc('axes', prop_cycle=(
 
 m = 1
 # Number of eigenvalues to compute per sector
-neigs = 2
+neigs = 20
 
 
 argv = sys.argv
@@ -59,6 +59,8 @@ vevrawlist = {ET:[] for ET in ETlist}
 vevrenlist = {ET:[] for ET in ETlist}
 Lambda = {ET:[] for ET in ETlist}
 phi01 = {ET:[] for ET in ETlist}
+intSpec = {ET:[] for ET in ETlist}
+
 
 for ET in ETlist:
 
@@ -92,8 +94,19 @@ for ET in ETlist:
 
     # print([(a.V[1]/a.L).dot(b.eigenvectors[g]["renloc"][0]) for g in glist])
 
-    phi01[ET] = np.array([(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))*sqrt(2*L*massren[g]))**2
-        for g in glist])
+    phi01[ET] = sqrt(np.array([(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))*sqrt(2*L*massren[g]))**2
+        for g in glist]))
+
+    for g in glist:
+        x = 0
+        for e, v in zip(b.eigenvalues[g]["renloc"], b.eigenvectors[g]["renloc"]):
+            gap = e - E0ren[g]
+            if gap > 5*massren[g] or gap < 3*massren[g]:
+                continue
+            x +=  np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))**2)
+        intSpec[ET].append(sum(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))**2)
+        intSpec[ET] = sqrt(np.array([(np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]/L).dot(b.eigenvectors[g]["renloc"][0]))*sqrt(2*L*massren[g]))**2
+        for g in glist]))
 
     gc.collect()
 
