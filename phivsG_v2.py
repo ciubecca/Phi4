@@ -13,9 +13,6 @@ from numpy import pi, sqrt, log, exp
 import gc
 
 
-def pertphi10Sq(g):
-    return 1. - 0.0809453264*g**2+0.341795*g**3
-
 output = "pdf"
 
 plt.style.use('ggplot')
@@ -50,7 +47,7 @@ L = float(argv[1])
 print("L", L)
 
 # glist = np.linspace(1, 1.5, 30)
-glist = np.linspace(0.001, 0.01, 20)
+glist = np.linspace(0.1, 1, 20)
 # glist = np.linspace(0, 0.1, 2)
 print("glist", glist)
 
@@ -110,7 +107,7 @@ for ET in ETlist:
 
     Gap[ET] = np.array([massren[g] for g in glist])
 
-    phi01[ET] = 2/L*np.array([massren[g]*np.inner(a.eigenvectors[g]["renloc"][0], a.V[1].dot(b.eigenvectors[g]["renloc"][0]))**2 for g in glist])
+    phi01[ET] = 2/L*np.array([np.inner(a.eigenvectors[g]["renloc"][0], a.V[1].dot(b.eigenvectors[g]["renloc"][0]))**2 for g in glist])
 
     v1 = {g: a.eigenvectors[g]["renloc"][0] for g in glist}
     v2 = {g: b.eigenvectors[g]["renloc"][0] for g in glist}
@@ -141,9 +138,6 @@ for ET in ETlist:
     plt.figure(4)
     plt.plot(glist/(Gap[ET]**2), phi01[ET], label=r"Emax={}".format(ET))
 
-plt.figure(1)
-plt.plot(glist, pertphi10Sq(glist), label=r"$o(g^3)$")
-
 # plt.figure(4)
 # plt.show()
 
@@ -152,7 +146,7 @@ plt.figure(1)
 plt.xlim(0,max(glist))
 plt.xlabel("g")
 plt.ylabel(r"$\langle 0 \mid \phi \mid 1 \rangle^2$")
-s = "phi01vsG_L={}".format(L)
+s = "phi01vsG_L={}_v2".format(L)
 plt.title(r"$L$ = {}".format(L))
 plt.legend()
 fname = ".{0}".format(output)
@@ -163,7 +157,7 @@ plt.figure(2)
 plt.xlim(0,max(glist))
 plt.xlabel("g")
 plt.ylabel(r"$I(5 \mu) - I(3 \mu)$")
-s = "SpecDensityvsG_L={}".format(L)
+s = "SpecDensityvsG_L={}_v2".format(L)
 plt.title(r"$L$ = {}".format(L))
 plt.legend()
 fname = ".{0}".format(output)
@@ -175,7 +169,7 @@ plt.figure(3)
 plt.xlim(0,max(glist))
 plt.xlabel("g")
 plt.ylabel(r"$\langle 0 | [\phi, \pi ] | 0 \rangle^2$")
-s = "CommutatorvsG_L={}".format(L)
+s = "CommutatorvsG_L={}_v2".format(L)
 plt.title(r"$L$ = {}".format(L))
 plt.legend()
 fname = ".{0}".format(output)
@@ -188,7 +182,7 @@ plt.figure(4)
 # plt.xlim(0,max(glist/Gap**2))
 plt.xlabel(r"$g/m_{\rm gap}^2$")
 plt.ylabel(r"$\langle 0 | \phi | 1 \rangle^2$")
-s = "Matt_L={}".format(L)
+s = "Matt_L={}_v2".format(L)
 plt.title(r"$L$ = {}".format(L))
 plt.legend()
 fname = ".{0}".format(output)
