@@ -50,9 +50,9 @@ L = float(argv[1])
 print("L", L)
 
 # glist = np.linspace(1, 1.5, 30)
-glist = np.linspace(0.001, 0.01, 20)
+glist = np.linspace(0.1, 2, 20)
 # glist = np.linspace(0, 0.1, 2)
-print("glist", glist)
+print("g", glist)
 
 xmax = max(glist)+0.03
 xmin = 0
@@ -71,7 +71,7 @@ Gap = {}
 
 for ET in ETlist:
 
-    print("ET: ", ET)
+    # print("ET: ", ET)
 
     a = phi4.Phi4(m, L, 1)
     b = phi4.Phi4(m, L, -1)
@@ -85,8 +85,8 @@ for ET in ETlist:
     a.setglist(glist=glist)
     b.setglist(glist=glist)
 
-    print("Basis size even:", len(a.basis.stateList))
-    print("Basis size odd:", len(b.basis.stateList))
+    # print("Basis size even:", len(a.basis.stateList))
+    # print("Basis size odd:", len(b.basis.stateList))
 
 
     a.computeEigval(ET, "raw", neigs=neigs)
@@ -115,31 +115,33 @@ for ET in ETlist:
     v1 = {g: a.eigenvectors[g]["renloc"][0] for g in glist}
     v2 = {g: b.eigenvectors[g]["renloc"][0] for g in glist}
 
-    commutator[ET] = 2/L**2*np.array([massren[g]*np.inner(v1[g], a.V[1].dot(v2[g]))*np.inner(v1[g], a.P[1].dot(v2[g]))
-              for g in glist])
+    # commutator[ET] = 2/L**2*np.array([massren[g]*np.inner(v1[g], a.V[1].dot(v2[g]))*np.inner(v1[g], a.P[1].dot(v2[g]))
+              # for g in glist])
 
-    for g in glist:
-        x = 0
-        for e, v in zip(b.eigenvalues[g]["renloc"], b.eigenvectors[g]["renloc"]):
-            gap = e - E0ren[g]
-            if gap > 5*massren[g] or gap < 3*massren[g]:
-                continue
-            x +=  2*np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]).dot(v))**2
+    # for g in glist:
+        # x = 0
+        # for e, v in zip(b.eigenvalues[g]["renloc"], b.eigenvectors[g]["renloc"]):
+            # gap = e - E0ren[g]
+            # if gap > 5*massren[g] or gap < 3*massren[g]:
+                # continue
+            # x +=  2*np.inner(a.eigenvectors[g]["renloc"][0],(a.V[1]).dot(v))**2
 
-        intSpec[ET].append(x)
+        # intSpec[ET].append(x)
 
     gc.collect()
 
 
 for ET in ETlist:
     plt.figure(1)
-    plt.plot(glist, phi01[ET], label=r"$\langle 0 \mid \phi \mid 1 \rangle$ , Emax={}".format(ET))
-    plt.figure(2)
-    plt.plot(glist, intSpec[ET], label=r"$I(5 \mu) - I(3 \mu)$, Emax={}".format(ET))
-    plt.figure(3)
-    plt.plot(glist, commutator[ET], label=r"Emax={}".format(ET))
-    plt.figure(4)
-    plt.plot(glist/(Gap[ET]**2), phi01[ET], label=r"Emax={}".format(ET))
+    plt.plot(glist, phi01[ET], label=r"$\langle 0 \mid \phi \mid 1 \rangle^2$ , Emax={}".format(ET))
+    print("Emax={}, Z={}".format(ET, phi01[ET]))
+    # plt.figure(2)
+    # plt.plot(glist, intSpec[ET], label=r"$I(5 \mu) - I(3 \mu)$, Emax={}".format(ET))
+    # plt.figure(3)
+    # plt.plot(glist, commutator[ET], label=r"Emax={}".format(ET))
+    # plt.figure(4)
+    # plt.plot(glist/(Gap[ET]**2), phi01[ET], label=r"Emax={}".format(ET))
+    print("Emax={}, Mgap={}".format(ET, Gap[ET]))
 
 plt.figure(1)
 plt.plot(glist, pertphi10Sq(glist), label=r"$o(g^3)$")
@@ -159,38 +161,38 @@ fname = ".{0}".format(output)
 # plt.savefig(s+fname, bbox_inches='tight')
 plt.savefig(s+fname)
 
-plt.figure(2)
-plt.xlim(0,max(glist))
-plt.xlabel("g")
-plt.ylabel(r"$I(5 \mu) - I(3 \mu)$")
-s = "SpecDensityvsG_L={}".format(L)
-plt.title(r"$L$ = {}".format(L))
-plt.legend()
-fname = ".{0}".format(output)
-# plt.savefig(s+fname, bbox_inches='tight')
-plt.savefig(s+fname)
+# plt.figure(2)
+# plt.xlim(0,max(glist))
+# plt.xlabel("g")
+# plt.ylabel(r"$I(5 \mu) - I(3 \mu)$")
+# s = "SpecDensityvsG_L={}".format(L)
+# plt.title(r"$L$ = {}".format(L))
+# plt.legend()
+# fname = ".{0}".format(output)
+# # plt.savefig(s+fname, bbox_inches='tight')
+# plt.savefig(s+fname)
 
 
-plt.figure(3)
-plt.xlim(0,max(glist))
-plt.xlabel("g")
-plt.ylabel(r"$\langle 0 | [\phi, \pi ] | 0 \rangle^2$")
-s = "CommutatorvsG_L={}".format(L)
-plt.title(r"$L$ = {}".format(L))
-plt.legend()
-fname = ".{0}".format(output)
-# plt.savefig(s+fname, bbox_inches='tight')
-plt.savefig(s+fname)
+# plt.figure(3)
+# plt.xlim(0,max(glist))
+# plt.xlabel("g")
+# plt.ylabel(r"$\langle 0 | [\phi, \pi ] | 0 \rangle^2$")
+# s = "CommutatorvsG_L={}".format(L)
+# plt.title(r"$L$ = {}".format(L))
+# plt.legend()
+# fname = ".{0}".format(output)
+# # plt.savefig(s+fname, bbox_inches='tight')
+# plt.savefig(s+fname)
 
 
-plt.figure(4)
-# plt.ylim(0.980,1)
-# plt.xlim(0,max(glist/Gap**2))
-plt.xlabel(r"$g/m_{\rm gap}^2$")
-plt.ylabel(r"$\langle 0 | \phi | 1 \rangle^2$")
-s = "Matt_L={}".format(L)
-plt.title(r"$L$ = {}".format(L))
-plt.legend()
-fname = ".{0}".format(output)
-# plt.savefig(s+fname, bbox_inches='tight')
-plt.savefig(s+fname)
+# plt.figure(4)
+# # plt.ylim(0.980,1)
+# # plt.xlim(0,max(glist/Gap**2))
+# plt.xlabel(r"$g/m_{\rm gap}^2$")
+# plt.ylabel(r"$\langle 0 | \phi | 1 \rangle^2$")
+# s = "Matt_L={}".format(L)
+# plt.title(r"$L$ = {}".format(L))
+# plt.legend()
+# fname = ".{0}".format(output)
+# # plt.savefig(s+fname, bbox_inches='tight')
+# plt.savefig(s+fname)
