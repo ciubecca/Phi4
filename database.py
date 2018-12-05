@@ -29,8 +29,8 @@ class Database():
         datadict["spec"] = spec.tostring()
         self.table.insert(datadict)
 
-    # Get a list of all objects satisfying the query
     def getObjList(self, obj, exactQuery={}, approxQuery={}, orderBy="date"):
+        """ Get a list of all objects satisfying the query """
 
         listRes = []
 
