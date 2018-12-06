@@ -165,7 +165,7 @@ class Basis():
 
     @classmethod
     def fromScratch(self, m, L, k, Emax):
-        """ Builds the truncated Hilbert space up to cutoff Emax from scratch
+        """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
         L: size of the cylinder
         Emax: maximal energy of the states
@@ -198,7 +198,8 @@ class Basis():
     def genRMlist(self, RMstate=[], n=1):
         """ Recursive function generating all the states starting from RMstate, by adding
         any number of particles with wavenumber n.
-        It starts from the seed state with 0 particles and wavenumber 1 """
+        It starts from the seed state with 0 particles and wavenumber 1
+        Uses repr1 representation """
 
         if n > self.nmax:
             return [RMstate]
@@ -217,7 +218,7 @@ class Basis():
 
 
     def buildBasis(self):
-        """ Generates the basis starting from the list of RM states """
+        """ Generates the basis starting from the list of RM states, in repr1 """
 
         omega = self.helper.omega
         m = self.helper.m
