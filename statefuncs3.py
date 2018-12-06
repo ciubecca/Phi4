@@ -190,6 +190,9 @@ class Basis():
         allowedWn = helper.allowedWn
         occn = helper.occn
 
+
+        # XXX Possible optimization: sort first by total wave number, and then by energy?
+
         NEsl1 = self.NEstatelist
         NEsl2 = [self.rotate(s) for s in NEsl1]
         NEsl3 = [self.rotate(s) for s in NEsl2]
@@ -240,9 +243,10 @@ class Basis():
                     # NEstatelist is ordered in energy
                     if E3>Emax:
                         break
-                    # We need to add at least another particle to have 0 total momentum. Also, we cannot add anymore
-                    # negative x momentum in step 4
-                    if tuple(WN3) not in allowedWn or E3+omega(WN3)>Emax or WN3[0]>0:
+                    # We need to add at least another particle to have 0 total momentum.
+                    # Also, we cannot add anymore negative x momentum or positive y momentum in step 4
+                    # XXX omega here is called many times, and it takes a long time in total
+                    if WN3[0]>0 or WN3[1]<0 or tuple(WN3) not in allowedWn or E3+omega(WN3)>Emax:
                         continue
 
                     # There is no states that can cancel the total momentum
@@ -258,9 +262,6 @@ class Basis():
                         if E4 > Emax:
                             break
 
-                        # TODO We could use a dict in this step to select only states with appropriate momentum,
-                        # instead of cycling through all of them
-                        # if (WN4**2).sum() != 0:
                         if WN4[0]!=0 or WN4[1]!=0:
                             raise RuntimeError("Total momentum should be zero")
 
