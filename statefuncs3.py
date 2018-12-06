@@ -33,6 +33,7 @@ class Helper():
                     self.allowedWn.add((nx,ny))
 
 
+    # XXX This is slow
     def energy(self, state):
         """ Computes energy of state in Repr1 """
         return sum(Zn*self.omega(n) for n,Zn in state)
@@ -133,6 +134,7 @@ class Basis():
         raise RuntimeError("Shouldn't get here")
 
 
+    @profile
     def _genNEstatelist(self, NEstate=[], idx=0):
         """ Recursive function generating all North-East moving states in Repr 1 starting from NEstate, by adding
         any number of particles with momentum self.NEwnlist[idx] """
@@ -177,7 +179,7 @@ class Basis():
         """ Rotate state counterclockwise by pi/2 """
         return [(np.dot(rot,n),Zn) for n,Zn in s]
 
-    # @profile
+    @profile
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
