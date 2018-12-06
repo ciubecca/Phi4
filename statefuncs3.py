@@ -24,7 +24,13 @@ class Helper():
         nmax = floor(L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2)))
         self.nmax = nmax
 
-        self.omegaMat = array([[self._omega(array([nx,ny])) for nx in range(-nmax,nmax+1)] for ny in range(-nmax,nmax+1)])
+        # self.omegaMat = array([[self._omega(array([nx,ny])) for nx in range(-nmax,nmax+1)] for ny in range(-nmax,nmax+1)])
+
+        # Do not shift indices, but use negative indices for slight optimization, which avoids some operations in omega()
+        self.omegaMat = np.zeros(shape=(2*self.nmax+1,2*self.nmax+1))
+        for nx in range(-nmax,nmax+1):
+            for ny in range(-nmax,nmax+1):
+                self.omegaMat[nx][ny] = self._omega(array([nx,ny]))
 
         self.allowedWn = set()
         for nx in range(-nmax, nmax+1):
@@ -41,7 +47,7 @@ class Helper():
     def totwn(self, state):
         if state==[]:
             return array([0,0])
-        return sum([Zn*n for n,Zn in state])
+        return sum(Zn*n for n,Zn in state)
 
     def _omega(self, n):
         """ Energy corresponding to wavenumber n"""
@@ -50,7 +56,8 @@ class Helper():
 
     def omega(self, n):
         """ Energy corresponding to wavenumber n"""
-        return self.omegaMat[n[0]+self.nmax][n[1]+self.nmax]
+        return self.omegaMat[n[0]][n[1]]
+        # return self.omegaMat[n[0]+self.nmax][n[1]+self.nmax]
 
     def kSq(self, n):
         """ Squared momentum corresponding to wave number n """
@@ -134,7 +141,7 @@ class Basis():
         raise RuntimeError("Shouldn't get here")
 
 
-    @profile
+    # @profile
     def _genNEstatelist(self, NEstate=[], idx=0):
         """ Recursive function generating all North-East moving states in Repr 1 starting from NEstate, by adding
         any number of particles with momentum self.NEwnlist[idx] """
@@ -179,7 +186,7 @@ class Basis():
         """ Rotate state counterclockwise by pi/2 """
         return [(np.dot(rot,n),Zn) for n,Zn in s]
 
-    @profile
+    # @profile
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
