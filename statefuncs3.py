@@ -15,22 +15,37 @@ class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
     oscillators and states and so on"""
 
-    def __init__(self, m, L):
+    def __init__(self, m, L, Emax, Lambda=np.inf):
         self.L = L
         self.m = m
+        # Maximum wavenumber along x or y axis
+        self.nmax = floor(L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2)))
+        nmax = self.nmax
+        # print("nmax", self.nmax)
+
+        self.omegaMat = array([[self._omega(array([nx,ny])) for nx in range(-nmax,nmax+1)] for ny in range(-nmax,nmax+1)])
 
     def energy(self, state):
         """ Computes energy of state in Repr1 """
-        return sum(Zn*self.omega(n) for n,Zn in state)
+        return sum([Zn*self.omega(n) for n,Zn in state])
 
     def totwn(self, state):
         if state==[]:
             return array([0,0])
         return sum([Zn*n for n,Zn in state])
 
-    def omega(self, n):
+    def _omega(self, n):
+        """ Energy corresponding to wavenumber n"""
         m = self.m
         return sqrt(m**2 + self.kSq(n))
+
+    def omega(self, n):
+        """ Energy corresponding to wavenumber n"""
+        return self.omegaMat[n[0]+self.nmax][n[1]+self.nmax]
+
+    def allowedWn(self, n):
+        """ Is wavenumber allowed at all by energy constraints? """
+        return sum(n**2) < self.nmax**2
 
     def kSq(self, n):
         """ Squared momentum corresponding to wave number n """
@@ -52,7 +67,7 @@ class Basis():
         Emax: maximal energy of the states
         """
 
-        self.helper = Helper(m, L)
+        self.helper = Helper(m, L, Emax, Lambda)
         helper = self.helper
         energy = helper.energy
         totwn = helper.totwn
@@ -93,6 +108,7 @@ class Basis():
         helper = self.helper
         omega = helper.omega
         kSq = helper.kSq
+        allowedWn = helper.allowedWn
 
         ret = []
 
@@ -101,7 +117,7 @@ class Basis():
 
                 n = array([nx,ny])
 
-                if omega(n)>Emax/2 or kSq(n)>Lambda**2:
+                if allowedWn(n)==False:
                     if nx==1:
                         ret.sort(key=lambda n: omega(n))
                         return ret
@@ -121,6 +137,7 @@ class Basis():
         m = helper.m
         Emax = self.Emax
         omega = helper.omega
+        allowedWn = helper.allowedWn
 
         if idx == len(self.NEwnlist):
             # TODO Sort oscillators inside state !
@@ -144,7 +161,7 @@ class Basis():
                 E += omega(n)
                 WN += n
                 # We need to add at least another particle to have 0 total momentum.
-                if E + omega(WN) > Emax:
+                if allowedWn(WN)==False or E+omega(WN)>Emax:
                     break
                 newstate.append(mode)
 
@@ -165,6 +182,7 @@ class Basis():
         energy = helper.energy
         totwn = helper.totwn
         Emax = self.Emax
+        allowedWn = helper.allowedWn
         occn = helper.occn
 
         NEsl1 = self.NEstatelist
@@ -172,48 +190,57 @@ class Basis():
         NEsl3 = [self.rotate(s) for s in NEsl2]
         NEsl4 = [self.rotate(s) for s in NEsl3]
 
+        NEelist = [energy(s) for s in NEsl1]
+        NEwntotlist1 = [totwn(s) for s in NEsl1]
+        NEwntotlist2 = [np.dot(rot,wntot) for wntot in NEwntotlist1]
+        NEwntotlist3 = [np.dot(rot,wntot) for wntot in NEwntotlist2]
+        NEwntotlist4 = [np.dot(rot,wntot) for wntot in NEwntotlist3]
+
+
         ret = []
 
         # Rotate and join NE moving states counterclockwise
-        for s1 in NEsl1:
+        for i1,s1 in enumerate(NEsl1):
 
             # Keep track of total energy
-            E1 = energy(s1)
+            E1 = NEelist[i1]
             # Keep track of total wave number
-            WN1 = totwn(s1)
+            WN1 = NEwntotlist1[i1]
 
-            for s2 in NEsl2:
-                E2 = E1+energy(s2)
-                WN2 = WN1+totwn(s2)
+            for i2,s2 in enumerate(NEsl2):
+                E2 = E1 + NEelist[i2]
+                WN2 = WN1 + NEwntotlist2[i2]
 
                 # NEstatelist is ordered in energy
                 if E2 > Emax:
                     break
                 # We need to add at least another particle to have 0 total momentum.
-                if E2+omega(WN2) > Emax:
+                if allowedWn(WN2)==False or E2+omega(WN2)>Emax:
                     continue
 
-                for s3 in NEsl3:
-                    E3 = E2+energy(s3)
-                    WN3 = WN2+totwn(s3)
+                for i3,s3 in enumerate(NEsl3):
+                    E3 = E2 + NEelist[i3]
+                    WN3 = WN2 + NEwntotlist3[i3]
 
                     # NEstatelist is ordered in energy
-                    if E3 > Emax:
+                    if E3>Emax:
                         break
                     # We need to add at least another particle to have 0 total momentum. Also, we cannot add anymore
                     # negative x momentum in step 4
-                    if E3+omega(WN3)>Emax or WN3[0]>0:
+                    if allowedWn(WN3)==False or E3+omega(WN3)>Emax or WN3[0]>0:
                         continue
 
-                    for s4 in NEsl4:
-                        E4 = E3+energy(s4)
-                        WN4 = WN3+totwn(s4)
+                    for i4,s4 in enumerate(NEsl4):
+                        E4 = E3 + NEelist[i4]
+                        WN4 = WN3 + NEwntotlist4[i4]
 
                         if E4 > Emax:
                             break
+
                         # TODO We could use a dict in this step to select only states with appropriate momentum,
                         # instead of cycling through all of them
-                        if (WN4**2).sum() != 0:
+                        # if (WN4**2).sum() != 0:
+                        if WN4[0]!=0 or WN4[1]!=0:
                             continue
 
                         # Add zero modes
