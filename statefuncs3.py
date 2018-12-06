@@ -35,7 +35,7 @@ class Helper():
 
     def energy(self, state):
         """ Computes energy of state in Repr1 """
-        return sum([Zn*self.omega(n) for n,Zn in state])
+        return sum(Zn*self.omega(n) for n,Zn in state)
 
     def totwn(self, state):
         if state==[]:
@@ -183,6 +183,7 @@ class Basis():
 
         helper = self.helper
         omega = helper.omega
+
         m = helper.m
         energy = helper.energy
         totwn = helper.totwn
@@ -236,6 +237,7 @@ class Basis():
                 if tuple(WN2) not in allowedWn or E2+omega(WN2)>Emax:
                     continue
 
+                # XXX Entering this inner cycle is the most expensive part
                 for i3,s3 in enumerate(NEsl3):
                     E3 = E2 + NEelist[i3]
                     WN3 = WN2 + NEwntotlist3[i3]
@@ -243,6 +245,7 @@ class Basis():
                     # NEstatelist is ordered in energy
                     if E3>Emax:
                         break
+
                     # We need to add at least another particle to have 0 total momentum.
                     # Also, we cannot add anymore negative x momentum or positive y momentum in step 4
                     # XXX omega here is called many times, and it takes a long time in total
