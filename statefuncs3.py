@@ -18,12 +18,20 @@ class Helper():
     def __init__(self, m, L, Emax, Lambda=np.inf):
         self.L = L
         self.m = m
-        # Maximum wavenumber along x or y axis
-        self.nmax = floor(L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2)))
-        nmax = self.nmax
-        # print("nmax", self.nmax)
+
+
+        # Maximum sqrt(nx^2 + ny^2)
+        nmax = floor(L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2)))
+        self.nmax = nmax
 
         self.omegaMat = array([[self._omega(array([nx,ny])) for nx in range(-nmax,nmax+1)] for ny in range(-nmax,nmax+1)])
+
+        self.allowedWn = set()
+        for nx in range(-nmax, nmax+1):
+            for ny in range(-nmax, nmax+1):
+                if sqrt(nx**2+ny**2)<=nmax:
+                    self.allowedWn.add((nx,ny))
+
 
     def energy(self, state):
         """ Computes energy of state in Repr1 """
@@ -42,10 +50,6 @@ class Helper():
     def omega(self, n):
         """ Energy corresponding to wavenumber n"""
         return self.omegaMat[n[0]+self.nmax][n[1]+self.nmax]
-
-    def allowedWn(self, n):
-        """ Is wavenumber allowed at all by energy constraints? """
-        return sum(n**2) < self.nmax**2
 
     def kSq(self, n):
         """ Squared momentum corresponding to wave number n """
@@ -117,7 +121,7 @@ class Basis():
 
                 n = array([nx,ny])
 
-                if allowedWn(n)==False:
+                if tuple(n) not in allowedWn:
                     if nx==1:
                         ret.sort(key=lambda n: omega(n))
                         return ret
@@ -161,7 +165,7 @@ class Basis():
                 E += omega(n)
                 WN += n
                 # We need to add at least another particle to have 0 total momentum.
-                if allowedWn(WN)==False or E+omega(WN)>Emax:
+                if tuple(WN) not in allowedWn or E+omega(WN)>Emax:
                     break
                 newstate.append(mode)
 
@@ -173,6 +177,7 @@ class Basis():
         """ Rotate state counterclockwise by pi/2 """
         return [(np.dot(rot,n),Zn) for n,Zn in s]
 
+    # @profile
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
@@ -190,12 +195,22 @@ class Basis():
         NEsl3 = [self.rotate(s) for s in NEsl2]
         NEsl4 = [self.rotate(s) for s in NEsl3]
 
+        # List of energies of the states in quadrants
         NEelist = [energy(s) for s in NEsl1]
+
+        # Lists of total wavenumbers for states in quadrants
         NEwntotlist1 = [totwn(s) for s in NEsl1]
         NEwntotlist2 = [np.dot(rot,wntot) for wntot in NEwntotlist1]
         NEwntotlist3 = [np.dot(rot,wntot) for wntot in NEwntotlist2]
         NEwntotlist4 = [np.dot(rot,wntot) for wntot in NEwntotlist3]
 
+        # Generate dictionary (kx,ky) -> ([idx]) , where idx is an index for the states in the South-East moving quadrant
+        SEwnidx = dict()
+        for idx, wn in enumerate(NEwntotlist4):
+            if tuple(wn) not in SEwnidx.keys():
+                SEwnidx[tuple(wn)] = [idx]
+            else:
+                SEwnidx[tuple(wn)].append(idx)
 
         ret = []
 
@@ -215,7 +230,7 @@ class Basis():
                 if E2 > Emax:
                     break
                 # We need to add at least another particle to have 0 total momentum.
-                if allowedWn(WN2)==False or E2+omega(WN2)>Emax:
+                if tuple(WN2) not in allowedWn or E2+omega(WN2)>Emax:
                     continue
 
                 for i3,s3 in enumerate(NEsl3):
@@ -227,12 +242,18 @@ class Basis():
                         break
                     # We need to add at least another particle to have 0 total momentum. Also, we cannot add anymore
                     # negative x momentum in step 4
-                    if allowedWn(WN3)==False or E3+omega(WN3)>Emax or WN3[0]>0:
+                    if tuple(WN3) not in allowedWn or E3+omega(WN3)>Emax or WN3[0]>0:
                         continue
 
-                    for i4,s4 in enumerate(NEsl4):
+                    # There is no states that can cancel the total momentum
+                    # XXX is this redundant?
+                    if tuple(-WN3) not in SEwnidx.keys():
+                        continue
+
+                    for i4 in SEwnidx[tuple(-WN3)]:
                         E4 = E3 + NEelist[i4]
                         WN4 = WN3 + NEwntotlist4[i4]
+                        s4 = NEsl4[i4]
 
                         if E4 > Emax:
                             break
@@ -241,7 +262,7 @@ class Basis():
                         # instead of cycling through all of them
                         # if (WN4**2).sum() != 0:
                         if WN4[0]!=0 or WN4[1]!=0:
-                            continue
+                            raise RuntimeError("Total momentum should be zero")
 
                         # Add zero modes
                         for Z0 in itertools.count():
