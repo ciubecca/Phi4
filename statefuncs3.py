@@ -12,6 +12,8 @@ tol = 10**-8
 
 # Counter clockwise rotation by 90 degrees
 rot = array([[0,-1],[1,0]])
+# Reflection wrt x axis
+refl = array([[-1,0],[0,1]])
 
 class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
@@ -70,6 +72,7 @@ class Helper():
         """ Occupation number of state """
         return sum([Zn for n,Zn in s])
 
+
 def reprState(state):
     return [(tuple(n), Zn) for n,Zn in state]
 
@@ -121,7 +124,7 @@ class Basis():
 
 
     def __repr__(self):
-        return str([self.reprState(s) for s in self.stateList])
+        return str([reprState(s) for s in self.stateList])
 
     def _genNEwnlist(self, Emax, Lambda):
         """ Generate list of North-East moving wave numbers momenta, nx > ny >= 0,
@@ -195,6 +198,10 @@ class Basis():
     def rotate(self, s):
         """ Rotate state counterclockwise by pi/2 """
         return [(np.dot(rot,n),Zn) for n,Zn in s]
+
+    def reflect(self, s)
+        """ Reflect on state wrt x axis """
+        return [(np.dot(refl,n),Zn) for n,Zn in s]
 
     # @profile
     def buildBasis(self):
