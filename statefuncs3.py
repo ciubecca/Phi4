@@ -8,6 +8,8 @@ from itertools import combinations
 import itertools
 import numpy as np
 
+tol = 10**-8
+
 # Counter clockwise rotation by 90 degrees
 rot = array([[0,-1],[1,0]])
 
@@ -68,6 +70,9 @@ class Helper():
         """ Occupation number of state """
         return sum([Zn for n,Zn in s])
 
+def reprState(state):
+    return [(tuple(n), Zn) for n,Zn in state]
+
 
 class Basis():
     """ Class used to store and compute a basis of states"""
@@ -94,21 +99,26 @@ class Basis():
         self.NEstatelist.sort(key=lambda s: energy(s))
 
         self.stateList = self.buildBasis()
+        # Make the representation of each state unique by sorting the oscillators
+        self.stateList = [self._sortOsc(s) for s in self.stateList]
+
         self.elist = [energy(s) for s in self.stateList]
 
         # Check assumptions
         el = self.elist
-        assert  all(el[i] <= el[i+1] for i in range(len(el)-1))
+        assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
         assert (max(el) <= Emax)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
 
 
+    def _sortOsc(self, s):
+        """ Sort modes in a state according to momenta """
+        return list(sorted(s, key=lambda x: tuple(x[0])))
+
     def __len__(self):
         return len(self.stateList)
 
-    def reprState(self, state):
-        return [(tuple(n), Zn) for n,Zn in state]
 
     def __repr__(self):
         return str([self.reprState(s) for s in self.stateList])

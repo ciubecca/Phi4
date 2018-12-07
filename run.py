@@ -13,3 +13,6 @@ L = float(argv[2])
 
 basis = Basis(m, L, k, Emax)
 print(len(basis))
+
+for s in basis.stateList:
+    print(reprState(s))
