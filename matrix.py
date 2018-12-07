@@ -21,54 +21,17 @@ def buildStatePos(basis):
     return statePos
 
 
-class SubmatrixOperator():
-
-    def __init__(self, idxList):
-        self.idxList = scipy.array(idxList)
-
-    @classmethod
-    def fromSubbasis(self, basis, subbasis):
-        statePos = buildStatePos(basis)
-        idxList = [statePos[state] for state in subbasis.repr2List]
-        return self(idxList)
-
-    @classmethod
-    def fromErange(self, basis, Erange):
-        return self(basis.irange(Erange))
-
-    def subrows(self, m):
-        return m.tocsr()[self.idxList,]
-
-    def subcolumns(self, m):
-        return m.tocsc()[:,self.idxList]
-
-    def sub(self, m):
-        return self.subrows(self.subcolumns(m))
-
 
 class MatrixConstructor():
-    def __init__(self, basis, lookupbasis, Erange=None):
+    def __init__(self, basis):
         """
-        basis: basis for the row elements
-        lookupbasis: basis for the columns elements
-        Emin: minimal energy of the states to be generated
-        Emax: maximal energy of the states to be generated
+        basis: basis for the row and column elements
         """
         self.basis = basis
-        self.lookupbasis = lookupbasis
+        self.statePos = buildStatePos(basis)
 
-        if basis.helper.nmax > lookupbasis.helper.nmax:
-            self.helper = basis.helper
-        else:
-            self.helper = lookupbasis.helper
 
-        if Erange==None:
-            Erange = (lookupbasis.Emin, lookupbasis.Emax)
-        self.Erange = Erange
-
-        self.statePos = buildStatePos(lookupbasis, self.helper, Erange)
-
-    def buildMatrix(self, Vlist, ignKeyErr=False, idxList=None, sumTranspose=False):
+    def buildMatrix(self, Vlist, ignKeyErr=False, sumTranspose=True):
         """
         Vlist: list of oscillators
         ignKeyErr: whether LookupError when generating a state should be ignored (to be used
@@ -79,13 +42,10 @@ class MatrixConstructor():
         """
 
         basis = self.basis
-        lookupbasis = self.lookupbasis
-        Erange = self.Erange
         statePos = self.statePos
-        helper = self.helper
+        helper = self.basis.helper
 
-        if idxList==None:
-            idxList = range(basis.size)
+        idxList = range(basis.size)
 
         # Will construct the sparse matrix in the COO format and then convert it to CSC
         data = []
@@ -95,14 +55,13 @@ class MatrixConstructor():
         for V in Vlist:
             for i in idxList:
                 colpart, datapart = \
-                    V.computeMatrixElements(basis,i,lookupbasis, Erange=Erange,
-                            statePos=statePos, helper=helper, ignKeyErr=ignKeyErr)
+                    V.computeMatrixElements(basis, i, statePos=statePos, ignKeyErr=ignKeyErr)
                 data += datapart
                 col += colpart
                 row += [i]*len(colpart)
 
         # XXX Does this sum duplicate entries?
-        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,lookupbasis.size))
+        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
 
         if sumTranspose:
             # Add the matrix to its transpose and subtract the diagonal

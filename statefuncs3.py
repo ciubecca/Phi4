@@ -15,6 +15,9 @@ rot = array([[0,-1],[1,0]])
 # Reflection wrt x axis
 refl = array([[-1,0],[0,1]])
 
+
+
+
 class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
     oscillators and states and so on"""
@@ -39,7 +42,8 @@ class Helper():
             for ny in range(-nmax,nmax+1):
                 self.omegaMat[nx][ny] = self._omega(array([nx,ny]))
 
-        # Set of allowed momenta
+        # TODO
+        # Dictionary of allowed momenta
         self.allowedWn = set()
         for nx in range(-nmax, nmax+1):
             for ny in range(-nmax, nmax+1):
@@ -53,6 +57,10 @@ class Helper():
                 if sqrt(nx**2+ny**2) <= self.nmaxFloat:
                     self.allowedWn12.add((nx,ny))
 
+    def torepr2(self, s):
+        # XXX Represent the state as sparse vector?
+        ret = array([])
+        return
 
     def oscEnergy(self, wnlist):
         """ Energy of an oscillator (ordered tuple of momenta) """
@@ -332,6 +340,7 @@ class Basis():
                     continue
 
                 # XXX Entering this inner cycle is the most expensive part
+                # Maybe the checks can be performed in a particular order (do not compute both WN3 and Emax?)
                 for i3,s3 in enumerate(NEsl3):
                     E3 = E2 + NEelist[i3]
                     WN3 = WN2 + NEwntotlist3[i3]

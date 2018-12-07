@@ -15,9 +15,11 @@ cimport cython
 from cpython cimport array as array
 import array
 
-cdef double tol = 0.000000001
+cdef double tol = 10**(-10)
 
-parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
+# TODO
+# parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
+
 
 def filterDlist(dlist, nd, ntot, nmax):
     # TODO This can be sped up with the n-SUM algorithm
@@ -45,8 +47,7 @@ def gendlists(state, nd, ntot, nmax):
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, nmax))
 
 
-def computeME(basis, i, lookupbasis, helper, statePos, Erange,
-    ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
+def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -77,16 +78,18 @@ def computeME(basis, i, lookupbasis, helper, statePos, Erange,
 
         # I define these local variables outside the loops for performance reasons
         e = basis.energyList[i]
-        p = basis.parityList[i]
+        # TODO
+        # p = basis.parityList[i]
         state = basis.stateList[i]
 
         statevec = array.array('b', helper.torepr2(state))
         cstatevec = statevec.data.as_chars
         
-        parityList = lookupbasis.parityList
+        # TODO
+        # parityList = lookupbasis.parityList
         nmax = helper.nmax
         normFactors = helper.normFactors
-        Emin, Emax = Erange
+        Emax = helper.Emax
 
         # cycle over all the sets of momenta that can be annihilated
 # XXX Check: we replaced lookupbasis.helper.nmax with helper.nmax
