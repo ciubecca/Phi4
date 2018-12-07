@@ -66,6 +66,14 @@ class Helper():
         return self.omegaMat[n[0]][n[1]]
         # return self.omegaMat[n[0]+self.nmax][n[1]+self.nmax]
 
+    def minEnergy(self, wn):
+        """ Minimal energy to add to a state with total wavenumber WN in order to create a state with total zero momentum """
+        if wn[0]==0 and wn[1]==0:
+            return 0
+        else:
+            return self.omega(wn)
+
+
     def kSq(self, n):
         """ Squared momentum corresponding to wave number n """
         L = self.L
@@ -209,6 +217,7 @@ class Basis():
 
 
 
+
     # @profile
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
@@ -221,14 +230,10 @@ class Basis():
         totwn = helper.totwn
         Emax = self.Emax
         allowedWn = helper.allowedWn
+        minEnergy = helper.minEnergy
         occn = helper.occn
 
-        def minEnergy(WN):
-            """ Minimal energy to add to a state with total wavenumber WN in order to create a state with total zero momentum """
-            if WN[0]==0 and WN[1]==0:
-                return 0
-            else:
-                return omega(WN3)
+
 
         # XXX Possible optimization: sort first by total wave number, and then by energy?
 
@@ -271,17 +276,43 @@ class Basis():
                 E2 = E1 + NEelist[i2]
                 WN2 = WN1 + NEwntotlist2[i2]
 
+                debug = False
+
+                # if E2<3.574 and E2>3.5739:
+                    # debug = True
+                    # print("E2: ", E2)
+                    # print("WN2: ", WN2)
+                    # print(tuple(WN2) in allowedWn)
+                    # print("minEnergy:", minEnergy(WN2))
+                    # print(E2+minEnergy(WN2)>Emax)
+
+
                 # NEstatelist is ordered in energy
                 if E2 > Emax:
                     break
+
+                if debug:
+                    print("Check 1")
+
                 # We need to add at least another particle to have 0 total momentum.
                 if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
                     continue
+
+                if debug:
+                    print("Check 2")
 
                 # XXX Entering this inner cycle is the most expensive part
                 for i3,s3 in enumerate(NEsl3):
                     E3 = E2 + NEelist[i3]
                     WN3 = WN2 + NEwntotlist3[i3]
+
+                    # if E3<4.079 and E3>4.078:
+                        # print(E3)
+
+                    # if E3>5.79 and E3<5.895 and (occn(s1+s2+s3)%2==1):
+                        # print("step 3", s1+s2+s3)
+                        # print("E3:", E3)
+                        # print("WN3:", WN3)
 
 
                     # NEstatelist is ordered in energy
@@ -306,6 +337,10 @@ class Basis():
                         WN4 = WN3 + NEwntotlist4[i4]
                         s4 = NEsl4[i4]
 
+                        # if E4>5.79 and E4<5.895 and (occn(s1+s2+s3+s4)%2==1):
+                            # print("s4", s1+s2+s3+s4)
+                            # print("E4:", E4)
+                            # print("E3:", E3)
 
                         if E4 > Emax:
                             break
