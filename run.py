@@ -11,8 +11,10 @@ if len(argv) < 3:
 Emax = float(argv[1])
 L = float(argv[2])
 
+print("Emax={}, L={}".format(Emax,L))
+
 basis = Basis(m, L, k, Emax)
-print(len(basis))
+print("Size basis:", len(basis))
 
 for s in basis.stateList:
     print(reprState(s))

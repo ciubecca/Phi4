@@ -25,20 +25,23 @@ class Helper():
 
 
         # Maximum sqrt(nx^2 + ny^2)
-        nmax = floor(L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2)))
+        nmax = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))
+        # Maximum integer wave number
+        nmaxInt = floor(nmax)
         self.nmax = nmax
+        self.nmaxInt = nmaxInt
 
         # self.omegaMat = array([[self._omega(array([nx,ny])) for nx in range(-nmax,nmax+1)] for ny in range(-nmax,nmax+1)])
 
         # Do not shift indices, but use negative indices for slight optimization, which avoids some operations in omega()
-        self.omegaMat = np.zeros(shape=(2*self.nmax+1,2*self.nmax+1))
-        for nx in range(-nmax,nmax+1):
-            for ny in range(-nmax,nmax+1):
+        self.omegaMat = np.zeros(shape=(2*nmaxInt+1,2*nmaxInt+1))
+        for nx in range(-nmaxInt,nmaxInt+1):
+            for ny in range(-nmaxInt,nmaxInt+1):
                 self.omegaMat[nx][ny] = self._omega(array([nx,ny]))
 
         self.allowedWn = set()
-        for nx in range(-nmax, nmax+1):
-            for ny in range(-nmax, nmax+1):
+        for nx in range(-nmaxInt, nmaxInt+1):
+            for ny in range(-nmaxInt, nmaxInt+1):
                 if sqrt(nx**2+ny**2)<=nmax:
                     self.allowedWn.add((nx,ny))
 
@@ -98,6 +101,7 @@ class Basis():
 
         self.NEwnlist = self._genNEwnlist(Emax, Lambda)
 
+
         self.NEstatelist = self._genNEstatelist()
         self.NEstatelist.sort(key=lambda s: energy(s))
 
@@ -132,7 +136,6 @@ class Basis():
 
         helper = self.helper
         omega = helper.omega
-        kSq = helper.kSq
         allowedWn = helper.allowedWn
 
         ret = []
@@ -143,6 +146,7 @@ class Basis():
                 n = array([nx,ny])
 
                 if tuple(n) not in allowedWn:
+
                     if nx==1:
                         ret.sort(key=lambda n: omega(n))
                         return ret
@@ -199,9 +203,11 @@ class Basis():
         """ Rotate state counterclockwise by pi/2 """
         return [(np.dot(rot,n),Zn) for n,Zn in s]
 
-    def reflect(self, s)
+    def reflect(self, s):
         """ Reflect on state wrt x axis """
         return [(np.dot(refl,n),Zn) for n,Zn in s]
+
+
 
     # @profile
     def buildBasis(self):
@@ -217,6 +223,12 @@ class Basis():
         allowedWn = helper.allowedWn
         occn = helper.occn
 
+        def minEnergy(WN):
+            """ Minimal energy to add to a state with total wavenumber WN in order to create a state with total zero momentum """
+            if WN[0]==0 and WN[1]==0:
+                return 0
+            else:
+                return omega(WN3)
 
         # XXX Possible optimization: sort first by total wave number, and then by energy?
 
@@ -224,6 +236,7 @@ class Basis():
         NEsl2 = [self.rotate(s) for s in NEsl1]
         NEsl3 = [self.rotate(s) for s in NEsl2]
         NEsl4 = [self.rotate(s) for s in NEsl3]
+
 
         # List of energies of the states in quadrants
         NEelist = [energy(s) for s in NEsl1]
@@ -262,7 +275,7 @@ class Basis():
                 if E2 > Emax:
                     break
                 # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN2) not in allowedWn or E2+omega(WN2)>Emax:
+                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
                     continue
 
                 # XXX Entering this inner cycle is the most expensive part
@@ -270,15 +283,18 @@ class Basis():
                     E3 = E2 + NEelist[i3]
                     WN3 = WN2 + NEwntotlist3[i3]
 
+
                     # NEstatelist is ordered in energy
                     if E3>Emax:
                         break
 
+
                     # We need to add at least another particle to have 0 total momentum.
                     # Also, we cannot add anymore negative x momentum or positive y momentum in step 4
                     # XXX omega here is called many times, and it takes a long time in total
-                    if WN3[0]>0 or WN3[1]<0 or tuple(WN3) not in allowedWn or E3+omega(WN3)>Emax:
+                    if WN3[0]>0 or WN3[1]<0 or tuple(WN3) not in allowedWn or E3+minEnergy(WN3)>Emax:
                         continue
+
 
                     # There is no states that can cancel the total momentum
                     # XXX is this redundant?
@@ -289,6 +305,7 @@ class Basis():
                         E4 = E3 + NEelist[i4]
                         WN4 = WN3 + NEwntotlist4[i4]
                         s4 = NEsl4[i4]
+
 
                         if E4 > Emax:
                             break
