@@ -252,6 +252,8 @@ class Basis():
             # Keep track of total wave number
             WN1 = NEwntotlist1[i1]
 
+            # XXX Probably here we can use X (or S) and eliminate some redundancy by choosing i2 >= i1
+
             for i2,s2 in enumerate(NEsl2):
                 E2 = E1 + NEelist[i2]
                 WN2 = WN1 + NEwntotlist2[i2]
