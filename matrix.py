@@ -2,24 +2,21 @@ import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 
-def buildStatePos(basis, helper=None, Erange=None):
+def buildStatePos(basis):
     # Dictionary of positions of states
-    # Contains also the P-reversed states
+    # TODO Contains also the P-reversed states
     # NOTE: using arrays is much less efficient!
 
     statePos = {}
-    if helper==None:
-        helper = basis.helper
-
-    if Erange == None:
-        irange = range(basis.size)
-    else:
-        irange = basis.irange(Erange)
+    helper = basis.helper
+    irange = range(basis.size)
 
     for i in irange:
         state = basis.repr2List[i]
         statePos[state] = i
-        statePos[state[::-1]] = i
+
+        # XXX To implement
+        # statePos[state[::-1]] = i
 
     return statePos
 

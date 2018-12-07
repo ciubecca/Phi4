@@ -12,7 +12,7 @@ k = int(argv[1])
 Emax = float(argv[2])
 L = float(argv[3])
 
-basis = Basis(m, L, k, Emax)
+bases = Basis.fromScratch(m, L, k, Emax)
 
 # for s in basis.stateList:
     # print(reprState(s))
@@ -20,5 +20,5 @@ basis = Basis(m, L, k, Emax)
 # for i,e in enumerate(basis.elist):
     # print("{}: {}".format(i,e))
 
-
-print("k={}, Emax={}, L={}, size={}".format(k, Emax,L,len(basis)))
+for k in (-1,1):
+    print("k={}, Emax={}, L={}, size={}".format(k, Emax, L, len(bases[k])))

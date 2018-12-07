@@ -22,29 +22,39 @@ class Helper():
     def __init__(self, m, L, Emax, Lambda=np.inf):
         self.L = L
         self.m = m
+        self.Emax = Emax
+        self.Lambda = Lambda
 
-
-        # Maximum sqrt(nx^2 + ny^2)
-        nmax = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))
+        # Maximum of sqrt(nx^2 + ny^2)
+        self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))
         # Maximum integer wave number
-        nmaxInt = floor(nmax)
+        nmax = floor(self.nmaxFloat)
         self.nmax = nmax
-        self.nmaxInt = nmaxInt
-
-        # self.omegaMat = array([[self._omega(array([nx,ny])) for nx in range(-nmax,nmax+1)] for ny in range(-nmax,nmax+1)])
 
         # Do not shift indices, but use negative indices for slight optimization, which avoids some operations in omega()
-        self.omegaMat = np.zeros(shape=(2*nmaxInt+1,2*nmaxInt+1))
-        for nx in range(-nmaxInt,nmaxInt+1):
-            for ny in range(-nmaxInt,nmaxInt+1):
+        self.omegaMat = np.zeros(shape=(2*nmax+1,2*nmax+1))
+        for nx in range(-nmax,nmax+1):
+            for ny in range(-nmax,nmax+1):
                 self.omegaMat[nx][ny] = self._omega(array([nx,ny]))
 
+        # Set of allowed momenta
         self.allowedWn = set()
-        for nx in range(-nmaxInt, nmaxInt+1):
-            for ny in range(-nmaxInt, nmaxInt+1):
-                if sqrt(nx**2+ny**2)<=nmax:
+        for nx in range(-nmax, nmax+1):
+            for ny in range(-nmax, nmax+1):
+                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
                     self.allowedWn.add((nx,ny))
 
+        # Set of allowed momenta in first and second quadrants, plus zero momentum
+        self.allowedWn12 = set()
+        for nx in range(0, nmax+1):
+            for ny in range(0, nmax+1):
+                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
+                    self.allowedWn12.add((nx,ny))
+
+
+    def oscEnergy(self, wnlist):
+        """ Energy of an oscillator (ordered tuple of momenta) """
+        return sum(self.omega(n) for n in wnlist)
 
     # XXX This is slow
     def energy(self, state):
@@ -64,8 +74,9 @@ class Helper():
     def omega(self, n):
         """ Energy corresponding to wavenumber n"""
         return self.omegaMat[n[0]][n[1]]
-        # return self.omegaMat[n[0]+self.nmax][n[1]+self.nmax]
 
+    # XXX The use of this function is incorrect in presence of a momentum cutoff. Should replace by a function that
+    # finds the minimal energy of state with given total momentum, and single particle momenta smaller than the cutoff
     def minEnergy(self, wn):
         """ Minimal energy to add to a state with total wavenumber WN in order to create a state with total zero momentum """
         if wn[0]==0 and wn[1]==0:
@@ -87,11 +98,63 @@ class Helper():
 def reprState(state):
     return [(tuple(n), Zn) for n,Zn in state]
 
+def sortOsc(self, s):
+    """ Sort modes in a state according to momenta """
+    return list(sorted(s, key=lambda x: tuple(x[0])))
+
+def rotate(self, s):
+    """ Rotate state counterclockwise by pi/2 """
+    return [(np.dot(rot,n),Zn) for n,Zn in s]
+
+def reflect(self, s):
+    """ Reflect on state wrt x axis """
+    return [(np.dot(refl,n),Zn) for n,Zn in s]
+
 
 class Basis():
     """ Class used to store and compute a basis of states"""
 
-    def __init__(self, m, L, k, Emax, Lambda=np.inf):
+
+    def __init__(self, k, stateset, helper):
+        """ Standard constructor
+        k: parity quantum number
+        stateset: set or list of states in representation 1
+        helper: Helper object
+        """
+        self.k = k
+        self.helper = helper
+        totwn = helper.totwn
+
+        self.stateList = sorted(stateset, key=energy)
+        self.energyList = [energy(state) for state in self.stateList]
+
+        self.occnList = [occn(state) for state in self.stateList]
+
+        # TODO To implement
+        # self.parityList = [int(state==reverse(state)) for state in self.stateList]
+
+        self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
+
+        self.size = len(self.energyList)
+        self.Emax = max(self.energyList)
+
+        # Check assumptions
+        el = self.energyList
+        assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
+        assert (max(el) <= Emax)
+        assert all(sum(totwn(s)**2)==0 for s in self.stateList)
+        assert all(1-2*(occn(state)%2)==k for state in self.stateList)
+
+
+    def irange(self, Emax):
+        """ Return max index for states with energy below Emax """
+        Emax = Emax + tol
+        imax = bisect.bisect_left(self.energyList, Emax)
+        return range(imax)
+
+
+    @classmethod
+    def fromScratch(self, m, L, Emax, Lambda=np.inf):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
         L: side of the torus
@@ -100,40 +163,22 @@ class Basis():
 
         self.helper = Helper(m, L, Emax, Lambda)
         helper = self.helper
-        energy = helper.energy
-        totwn = helper.totwn
         occn = helper.occn
-        self.Emax = Emax
         m = helper.m
-        self.k = k
+        energy = helper.energy
 
-        self.NEwnlist = self._genNEwnlist(Emax, Lambda)
+        self._occmax = int(floor(Emax/m))
 
-
-        self.NEstatelist = self._genNEstatelist()
-        self.NEstatelist.sort(key=lambda s: energy(s))
-
-        self.stateList = self.buildBasis()
+        bases = self.buildBasis(self)
         # Make the representation of each state unique by sorting the oscillators
-        self.stateList = [self._sortOsc(s) for s in self.stateList]
+        for k in (-1,1):
+            bases[k] = (self.sortOsc(s) for s in self.bases[k])
 
-        self.elist = [energy(s) for s in self.stateList]
+        return {k:self(k,bases[k],helper) for k in (-1,1)}
 
-        # Check assumptions
-        el = self.elist
-        assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
-        assert (max(el) <= Emax)
-        assert all(sum(totwn(s)**2)==0 for s in self.stateList)
-        assert all(1-2*(occn(state)%2)==k for state in self.stateList)
-
-
-    def _sortOsc(self, s):
-        """ Sort modes in a state according to momenta """
-        return list(sorted(s, key=lambda x: tuple(x[0])))
 
     def __len__(self):
         return len(self.stateList)
-
 
     def __repr__(self):
         return str([reprState(s) for s in self.stateList])
@@ -146,7 +191,7 @@ class Basis():
         omega = helper.omega
         allowedWn = helper.allowedWn
 
-        ret = []
+        self.NEwnlist = []
 
         for ny in itertools.count():
             for nx in itertools.count(1):
@@ -156,12 +201,12 @@ class Basis():
                 if tuple(n) not in allowedWn:
 
                     if nx==1:
-                        ret.sort(key=lambda n: omega(n))
-                        return ret
+                        self.NEwnlist.sort(key=lambda n: omega(n))
+                        return
                     else:
                         break
 
-                ret.append(n)
+                self.NEwnlist.append(n)
 
         raise RuntimeError("Shouldn't get here")
 
@@ -173,21 +218,24 @@ class Basis():
 
         helper = self.helper
         m = helper.m
-        Emax = self.Emax
+        Emax = helper.Emax
         omega = helper.omega
         allowedWn = helper.allowedWn
+        energy = helper.energy
+        totwn = helper.totwn
+        minEnergy = helper.minEnergy
 
         if idx == len(self.NEwnlist):
-            # TODO Sort oscillators inside state !
+            # TODO Could Sort oscillators inside state here
             return [NEstate]
 
         # Two-dimensional NE-moving wave number
         n = self.NEwnlist[idx]
 
         # Keep track of current energy
-        E = helper.energy(NEstate)
+        E = energy(NEstate)
         # Keep track of current total wave number
-        WN = helper.totwn(NEstate)
+        WN = totwn(NEstate)
 
         ret = []
 
@@ -199,7 +247,8 @@ class Basis():
                 E += omega(n)
                 WN += n
                 # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN) not in allowedWn or E+omega(WN)>Emax:
+                # XXX Check
+                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax:
                     break
                 newstate.append(mode)
 
@@ -207,18 +256,8 @@ class Basis():
 
         return ret
 
-    def rotate(self, s):
-        """ Rotate state counterclockwise by pi/2 """
-        return [(np.dot(rot,n),Zn) for n,Zn in s]
-
-    def reflect(self, s):
-        """ Reflect on state wrt x axis """
-        return [(np.dot(refl,n),Zn) for n,Zn in s]
 
 
-
-
-    # @profile
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
@@ -228,16 +267,20 @@ class Basis():
         m = helper.m
         energy = helper.energy
         totwn = helper.totwn
-        Emax = self.Emax
+        Emax = helper.Emax
+        Lambda = helper.Lambda
         allowedWn = helper.allowedWn
         minEnergy = helper.minEnergy
         occn = helper.occn
 
+        # Generate list of all NE moving momenta
+        self._genNEwnlist(self, Emax, Lambda)
 
+        # Generate list of all NE moving states, and sort them by energy
+        NEstatelist = self._genNEstatelist(self).sort(key=lambda s: energy(s))
 
         # XXX Possible optimization: sort first by total wave number, and then by energy?
-
-        NEsl1 = self.NEstatelist
+        NEsl1 = NEstatelist
         NEsl2 = [self.rotate(s) for s in NEsl1]
         NEsl3 = [self.rotate(s) for s in NEsl2]
         NEsl4 = [self.rotate(s) for s in NEsl3]
@@ -260,7 +303,7 @@ class Basis():
             else:
                 SEwnidx[tuple(wn)].append(idx)
 
-        ret = []
+        ret = {k:[] for k in (-1,1)}
 
         # Rotate and join NE moving states counterclockwise
         for i1,s1 in enumerate(NEsl1):
@@ -276,56 +319,29 @@ class Basis():
                 E2 = E1 + NEelist[i2]
                 WN2 = WN1 + NEwntotlist2[i2]
 
-                debug = False
-
-                # if E2<3.574 and E2>3.5739:
-                    # debug = True
-                    # print("E2: ", E2)
-                    # print("WN2: ", WN2)
-                    # print(tuple(WN2) in allowedWn)
-                    # print("minEnergy:", minEnergy(WN2))
-                    # print(E2+minEnergy(WN2)>Emax)
-
 
                 # NEstatelist is ordered in energy
                 if E2 > Emax:
                     break
 
-                if debug:
-                    print("Check 1")
-
                 # We need to add at least another particle to have 0 total momentum.
                 if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
                     continue
-
-                if debug:
-                    print("Check 2")
 
                 # XXX Entering this inner cycle is the most expensive part
                 for i3,s3 in enumerate(NEsl3):
                     E3 = E2 + NEelist[i3]
                     WN3 = WN2 + NEwntotlist3[i3]
 
-                    # if E3<4.079 and E3>4.078:
-                        # print(E3)
-
-                    # if E3>5.79 and E3<5.895 and (occn(s1+s2+s3)%2==1):
-                        # print("step 3", s1+s2+s3)
-                        # print("E3:", E3)
-                        # print("WN3:", WN3)
-
-
                     # NEstatelist is ordered in energy
                     if E3>Emax:
                         break
-
 
                     # We need to add at least another particle to have 0 total momentum.
                     # Also, we cannot add anymore negative x momentum or positive y momentum in step 4
                     # XXX omega here is called many times, and it takes a long time in total
                     if WN3[0]>0 or WN3[1]<0 or tuple(WN3) not in allowedWn or E3+minEnergy(WN3)>Emax:
                         continue
-
 
                     # There is no states that can cancel the total momentum
                     # XXX is this redundant?
@@ -336,11 +352,6 @@ class Basis():
                         E4 = E3 + NEelist[i4]
                         WN4 = WN3 + NEwntotlist4[i4]
                         s4 = NEsl4[i4]
-
-                        # if E4>5.79 and E4<5.895 and (occn(s1+s2+s3+s4)%2==1):
-                            # print("s4", s1+s2+s3+s4)
-                            # print("E4:", E4)
-                            # print("E3:", E3)
 
                         if E4 > Emax:
                             break
@@ -358,7 +369,7 @@ class Basis():
                             if Z0>0:
                                 state += [(array([0,0]),Z0)]
 
-                            if self.k == 1-2*(occn(state)%2):
-                                ret.append(state)
+                            k = 1-2*(occn(state)%2)
+                            ret[k].append(state)
 
-        return sorted(ret, key=energy)
+        return {k: ret[k] for k in (-1,1)}
