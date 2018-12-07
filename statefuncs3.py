@@ -25,6 +25,8 @@ class Helper():
         self.Emax = Emax
         self.Lambda = Lambda
 
+        print(m, L, Emax, Lambda)
+
         # Maximum of sqrt(nx^2 + ny^2)
         self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))
         # Maximum integer wave number
@@ -98,11 +100,11 @@ class Helper():
 def reprState(state):
     return [(tuple(n), Zn) for n,Zn in state]
 
-def sortOsc(self, s):
+def sortOsc(s):
     """ Sort modes in a state according to momenta """
     return list(sorted(s, key=lambda x: tuple(x[0])))
 
-def rotate(self, s):
+def rotate(s):
     """ Rotate state counterclockwise by pi/2 """
     return [(np.dot(rot,n),Zn) for n,Zn in s]
 
@@ -124,6 +126,8 @@ class Basis():
         self.k = k
         self.helper = helper
         totwn = helper.totwn
+        energy = helper.energy
+        occn = helper.occn
 
         self.stateList = sorted(stateset, key=energy)
         self.energyList = [energy(state) for state in self.stateList]
@@ -133,7 +137,7 @@ class Basis():
         # TODO To implement
         # self.parityList = [int(state==reverse(state)) for state in self.stateList]
 
-        self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
+        # self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
 
         self.size = len(self.energyList)
         self.Emax = max(self.energyList)
@@ -141,7 +145,7 @@ class Basis():
         # Check assumptions
         el = self.energyList
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
-        assert (max(el) <= Emax)
+        # assert (max(el) <= Emax)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
 
@@ -171,10 +175,9 @@ class Basis():
 
         bases = self.buildBasis(self)
         # Make the representation of each state unique by sorting the oscillators
-        for k in (-1,1):
-            bases[k] = (self.sortOsc(s) for s in self.bases[k])
+        bases = {k: [sortOsc(s) for s in bases[k]] for k in (-1,1)}
 
-        return {k:self(k,bases[k],helper) for k in (-1,1)}
+        return {k: self(k,bases[k],helper) for k in (-1,1)}
 
 
     def __len__(self):
@@ -211,7 +214,6 @@ class Basis():
         raise RuntimeError("Shouldn't get here")
 
 
-    # @profile
     def _genNEstatelist(self, NEstate=[], idx=0):
         """ Recursive function generating all North-East moving states in Repr 1 starting from NEstate, by adding
         any number of particles with momentum self.NEwnlist[idx] """
@@ -252,7 +254,7 @@ class Basis():
                     break
                 newstate.append(mode)
 
-            ret += self._genNEstatelist(newstate, idx+1)
+            ret += self._genNEstatelist(self, newstate, idx+1)
 
         return ret
 
@@ -277,13 +279,14 @@ class Basis():
         self._genNEwnlist(self, Emax, Lambda)
 
         # Generate list of all NE moving states, and sort them by energy
-        NEstatelist = self._genNEstatelist(self).sort(key=lambda s: energy(s))
+        NEstatelist = self._genNEstatelist(self)
+        NEstatelist.sort(key=lambda s: energy(s))
 
         # XXX Possible optimization: sort first by total wave number, and then by energy?
         NEsl1 = NEstatelist
-        NEsl2 = [self.rotate(s) for s in NEsl1]
-        NEsl3 = [self.rotate(s) for s in NEsl2]
-        NEsl4 = [self.rotate(s) for s in NEsl3]
+        NEsl2 = [rotate(s) for s in NEsl1]
+        NEsl3 = [rotate(s) for s in NEsl2]
+        NEsl4 = [rotate(s) for s in NEsl3]
 
 
         # List of energies of the states in quadrants
