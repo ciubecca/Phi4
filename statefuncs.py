@@ -20,7 +20,9 @@ class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
     oscillators and states and so on"""
 
-    def __init__(self, m, L, Emax, Lambda=np.inf):
+    def __init__(self, m, L, Emax, Lambda=np.inf, noscmax=8):
+        """ noscmax: max number of oscillators """
+
         self.L = L
         self.m = m
         self.Emax = Emax
@@ -55,6 +57,18 @@ class Helper():
             for ny in range(0, nmax+1):
                 if sqrt(nx**2+ny**2) <= self.nmaxFloat:
                     self.allowedWn12.add((nx,ny))
+
+        occmax = floor(Emax/m)
+        self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,occmax+1))
+        for c in range(noscmax+1):
+            for d in range(noscmax+1):
+                for n in range(occmax+1):
+                    if d <= n:
+                        self.normFactors[c,d,n] = \
+                            sqrt(factorial(n)*factorial(n-d+c)/factorial(n-d)**2)
+                    else:
+                        self.normFactors[c,d,n] = scipy.nan
+
 
     def torepr2(self, s):
         # XXX Represent the state as numpy array? Or matrix? Or sparse vector?

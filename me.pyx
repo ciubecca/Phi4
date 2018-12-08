@@ -22,11 +22,11 @@ cdef double tol = 10**(-10)
 
 
 def filterDlist(dlist, nd, ntot, allowedWn):
+
     if nd==ntot:
-        # FIXME To perform the sum we need to convert the tuples of momenta to arrays
-        return tuple(sum(dlist)) == (0,0)
+        return tuple(sum([numpy.array(d) for d in dlist])) == (0,0)
     elif nd==ntot-1:
-        return tuple(sum(dlist)) in allowedWn
+        return tuple(sum([numpy.array(d) for d in dlist])) in allowedWn
     else:
         return True
 
@@ -40,7 +40,7 @@ def gendlists(state, nd, ntot, allowedWn):
     allowedWn: all the allowed wave numbers in the basis
     """
 
-    x = itertools.chain.from_iterable(([n]*Zn for n,Zn in state))
+    x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
     dlists = set(tuple(y) for y in combinations(x,nd))
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, allowedWn))
 
@@ -67,6 +67,8 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         cdef char Zc, Zd, nmax
         cdef int z, ii, jj
         cdef double[:,:,:] normFactors
+
+        helper = basis.helper
 
         # List of columns indices of generated basis elements
         col = []
@@ -105,6 +107,7 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
             oscListSub = oscList[k][imin:imax]
 
             for z in range(len(oscListSub)):
+
                 osc = oscListSub[z]
 
                 newstatevec = array.copy(statevec)
@@ -113,10 +116,10 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 x = oscFactorsSub[z]
 
                 for ii in range(osc.shape[0]):
-                    Zc = osc[ii, 1]
-                    Zd = osc[ii, 2]
                     # Index of momentum in representation 2
-                    jj = allowedWn[osc[ii, 0]]
+                    jj = allowedWn[tuple(osc[ii, 0:2])]
+                    Zc = osc[ii, 2]
+                    Zd = osc[ii, 3]
                     cnewstatevec[jj] += Zc-Zd
                     x *= normFactors[Zc, Zd, cstatevec[jj]]
 

@@ -7,7 +7,6 @@ from math import factorial
 from statefuncs import Basis, Helper
 from oscillators import *
 from operator import attrgetter
-import renorm
 import gc
 from matrix import *
 from scipy.integrate import quad
@@ -36,6 +35,8 @@ class Phi4():
 
         basis = self.basis
         self.h0 = scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size)
+
+        self.V = {}
 
         c = MatrixConstructor(basis)
         # Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}

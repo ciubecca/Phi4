@@ -86,13 +86,15 @@ class LocOperator():
         wavenumber n """
 
         wnlist = set(clist+dlist)
+
         cosc = Counter(clist)
         dosc = Counter(dlist)
 
-        return scipy.array([[n,cosc.get(n,0),dosc.get(n,0)] for n in wnlist], dtype=scipy.int8)
+        # return [[n,cosc.get(n,0),dosc.get(n,0)] for n in wnlist]
+        return scipy.array([[n[0],n[1],cosc.get(n,0),dosc.get(n,0)] for n in wnlist], dtype=scipy.int8)
 
 
-    def computeMatrixElements(self, basis, i, helper, statePos, ignKeyErr=False):
+    def computeMatrixElements(self, basis, i, statePos, ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -105,7 +107,7 @@ class LocOperator():
         Otherwise it should be set to False
         """
 
-        return me.computeME(basis, i, helper, statePos,
+        return me.computeME(basis, i, statePos,
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList, self.oscEnergies)
 
 
@@ -193,10 +195,12 @@ def V2OpsHalf(basis):
     nmax = helper.nmax
     Emax = helper.Emax
     allowedWn12 = helper.allowedWn12
+    allowedWn = helper.allowedWn
 
     dlist = ()
     V20 = [(dlist, [])]
 
+    # Select only in half of phase space
     for k1 in allowedWn12:
         k2 = minus(k1)
         clist = (k1,k2)
@@ -206,6 +210,7 @@ def V2OpsHalf(basis):
     V20 = LocOperator(V20, 0, 2, helper)
 
     V11 = []
+    # Select in all phase space
     for k1 in allowedWn:
         dlist = (k1,)
         V11.append((dlist,[]))
