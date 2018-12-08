@@ -1,4 +1,4 @@
-from statefuncs3 import *
+from phi4 import *
 from sys import argv, exit
 
 m = 1
@@ -11,6 +11,10 @@ Emax = float(argv[1])
 L = float(argv[2])
 
 bases = Basis.fromScratch(m, L, Emax)
+
+a = Phi4(bases[1])
+
+a.computePotential()
 
 # for s in basis.stateList:
     # print(reprState(s))

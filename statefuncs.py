@@ -8,263 +8,380 @@ from itertools import combinations
 import itertools
 import numpy as np
 
-tol = 10**-10
+tol = 10**-8
+
+# Counter clockwise rotation by 90 degrees
+rot = array([[0,-1],[1,0]])
+# Reflection wrt x axis
+refl = array([[-1,0],[0,1]])
+
 
 class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
     oscillators and states and so on"""
-    def __init__(self,m,L,Emax,noscmax=8):
+
+    def __init__(self, m, L, Emax, Lambda=np.inf):
         self.L = L
         self.m = m
-        self.nmax = self.Emaxtonmax(Emax)
-        self.wnList = array(range(-self.nmax,self.nmax+1))
-        occmax = int(floor(Emax/m))
+        self.Emax = Emax
+        self.Lambda = Lambda
 
-        self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,occmax+1))
-        for c in range(noscmax+1):
-            for d in range(noscmax+1):
-                for n in range(occmax+1):
-                    if d <= n:
-                        self.normFactors[c,d,n] = \
-                            sqrt(factorial(n)*factorial(n-d+c)/factorial(n-d)**2)
-                    else:
-                        self.normFactors[c,d,n] = scipy.nan
+        print(m, L, Emax, Lambda)
 
-        self.omegaList = self._omega(self.wnList)
+        # Maximum of sqrt(nx^2 + ny^2)
+        self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))
+        # Maximum integer wave number
+        nmax = floor(self.nmaxFloat)
+        self.nmax = nmax
 
+        # Do not shift indices, but use negative indices for slight optimization, which avoids some operations in omega()
+        self.omegaMat = np.zeros(shape=(2*nmax+1,2*nmax+1))
+        for nx in range(-nmax,nmax+1):
+            for ny in range(-nmax,nmax+1):
+                self.omegaMat[nx][ny] = self._omega(array([nx,ny]))
 
-    def energy(self, state):
-        """ Computes energy of state in Repr1 """
-        return sum(Zn*self.omega(n) for n,Zn in state)
+        # Dictionary of allowed momenta ((kx,ky) -> idx), where idx is used as index of states in representation 2
+        self.allowedWn = dict()
+        idx = 0
+        for nx in range(-nmax, nmax+1):
+            for ny in range(-nmax, nmax+1):
+                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
+                    self.allowedWn[(nx,ny)] = idx
+                    idx += 1
 
-    def energy2(self, state):
-        """ Computes energy of state in Repr2 """
-        return sum(Zn*self.omega(n-self.nmax) for n,Zn in enumerate(state))
+        # Set of allowed momenta in first and second quadrants, plus zero momentum
+        self.allowedWn12 = set()
+        for nx in range(0, nmax+1):
+            for ny in range(0, nmax+1):
+                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
+                    self.allowedWn12.add((nx,ny))
 
-    def totalWN(self, state):
-        return sum(Zn*n for n,Zn in state)
+    def torepr2(self, s):
+        # XXX Represent the state as numpy array? Or matrix? Or sparse vector?
+        ret = [0]*len(self.allowedWn)
+        for n,Zn in s:
+            ret[self.allowedWn[tuple(n)]] = Zn
+        return ret
 
     def oscEnergy(self, wnlist):
         """ Energy of an oscillator (ordered tuple of momenta) """
         return sum(self.omega(n) for n in wnlist)
 
+    # XXX This is slow
+    def energy(self, state):
+        """ Computes energy of state in Repr1 """
+        return sum(Zn*self.omega(n) for n,Zn in state)
 
-
-    def calcOscEnergyDict(self):
-        clists = []
-        nmax = self.nmax
-
-        clists.append(())
-
-        for k1 in range(-nmax,nmax+1):
-            clists.append((k1,))
-
-            for k2 in range(k1,nmax+1):
-                clists.append((k1,k2))
-
-                for k3 in range(k2,nmax+1):
-                    clists.append((k1,k2,k3))
-
-                    for k4 in range(k3,nmax+1):
-                        clists.append((k1,k2,k3,k4))
-
-        self.oscEnergyDict = {clist: self.oscEnergy(clist) for clist in clists}
+    def totwn(self, state):
+        if state==[]:
+            return array([0,0])
+        return sum(Zn*n for n,Zn in state)
 
     def _omega(self, n):
-        return sqrt(self.m**2+((2*pi/self.L)*n)**2)
+        """ Energy corresponding to wavenumber n"""
+        m = self.m
+        return sqrt(m**2 + self.kSq(n))
 
     def omega(self, n):
         """ Energy corresponding to wavenumber n"""
-        return self.omegaList[n+self.nmax]
+        return self.omegaMat[n[0]][n[1]]
 
-    def torepr2(self, state):
-        """ Transform state from repr1 to repr2 """
-        ret = [0]*(2*self.nmax+1)
-        for n,Zn in state:
-            ret[n+self.nmax] = Zn
-        return ret
+    # XXX The use of this function is incorrect in presence of a momentum cutoff. Should replace by a function that
+    # finds the minimal energy of state with given total momentum, and single particle momenta smaller than the cutoff
+    def minEnergy(self, wn):
+        """ Minimal energy to add to a state with total wavenumber WN in order to create a state with total zero momentum """
+        if wn[0]==0 and wn[1]==0:
+            return 0
+        else:
+            return self.omega(wn)
 
-    def torepr1(self, state):
-        """ Transform state from repr2 to repr1 """
-        return [(self.wnList[i],state[i]) for i in range(2*self.nmax+1)
-            if state[i]!= 0]
+    def kSq(self, n):
+        """ Squared momentum corresponding to wave number n """
+        L = self.L
+        return (2*pi/L)**2*np.sum(n**2)
 
-    def Emaxtonmax(self, Emax):
-        """ return nmax corresponding to given Emax """
-        return int(floor(sqrt((Emax/2.)**2.-self.m**2.)*self.L/(2*pi)))
-
-
-# Mantains the ordering of wavenumbers
-def reverse(state):
-    """ Apply the spatial parity transformation to a state in representation 1"""
-    return [(-n,Zn) for n,Zn in state[::-1]]
-
-def occn(state):
-    """ Computes the occupation number of a state"""
-    return sum(Zn for n,Zn in state)
+    def occn(self, s):
+        """ Occupation number of state """
+        return sum([Zn for n,Zn in s])
 
 
-def isSorted(x, key):
-    return all(key(x[i]) <= key(x[i+1]) for i in range(len(x)-1))
+def reprState(state):
+    return [(tuple(n), Zn) for n,Zn in state]
+
+def sortOsc(s):
+    """ Sort modes in a state according to momenta """
+    return list(sorted(s, key=lambda x: tuple(x[0])))
+
+def rotate(s):
+    """ Rotate state counterclockwise by pi/2 """
+    return [(np.dot(rot,n),Zn) for n,Zn in s]
+
+def reflect(self, s):
+    """ Reflect on state wrt x axis """
+    return [(np.dot(refl,n),Zn) for n,Zn in s]
+
 
 class Basis():
     """ Class used to store and compute a basis of states"""
-    def __init__(self, k, stateset, helper, repr1=True, repr1Emax=None):
+
+
+    def __init__(self, k, stateset, helper):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
         helper: Helper object
-        orderEnergy: if True order the list of vectors in energy
-        calcPos: if True construct the dictionary of the positions of the vectors
         """
         self.k = k
         self.helper = helper
-        self.nmax = self.helper.nmax
+        totwn = helper.totwn
+        energy = helper.energy
+        occn = helper.occn
 
-        if repr1:
-            energy = helper.energy
-            self.stateList = sorted(stateset, key=energy)
-            self.energyList = [energy(state) for state in self.stateList]
-            self.occnList = [occn(state) for state in self.stateList]
-            self.parityList = [int(state==reverse(state)) for state in self.stateList]
-            self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
-            self.repr1 = True
-        # We don't transform to repr1 all the states, but only those
-        # we'll cycle over
-        else:
-            energy = helper.energy2
-            self.repr2List = sorted(stateset, key=energy)
-            self.stateList = [helper.torepr1(state) for state in self.repr2List if
-                    energy(state)<=repr1Emax+tol]
-            self.occnList = [sum(state) for state in self.repr2List]
-            self.parityList = [int(state==state[::-1]) for state in self.repr2List]
-            self.energyList = [energy(state) for state in self.repr2List]
-            self.repr1 = False
+        self.stateList = sorted(stateset, key=energy)
+        self.energyList = [energy(state) for state in self.stateList]
 
+        self.occnList = [occn(state) for state in self.stateList]
+
+        # TODO To implement
+        # self.parityList = [int(state==reverse(state)) for state in self.stateList]
+
+        self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
 
         self.size = len(self.energyList)
         self.Emax = max(self.energyList)
-        self.Emin = min(self.energyList)
 
-    def irange(self, Erange):
-        """ Return the min and max indices for states with energy between
-        Emin and Emax """
-        Emin = Erange[0]
-        Emax = Erange[1]+tol
-        imin = bisect.bisect_left(self.energyList, Emin)
+        # Check assumptions
+        el = self.energyList
+        assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
+        # assert (max(el) <= Emax)
+        assert all(sum(totwn(s)**2)==0 for s in self.stateList)
+        assert all(1-2*(occn(state)%2)==k for state in self.stateList)
+
+
+    def irange(self, Emax):
+        """ Return max index for states with energy below Emax """
+        Emax = Emax + tol
         imax = bisect.bisect_left(self.energyList, Emax)
-        return range(imin, imax)
+        return range(imax)
 
-    def propagator(self, eps, Emin, Emax):
-        """ Return the propagator for states between Emin and Emax """
-        v = [1/(eps-e) if Emin<e<=Emax else 0 for e in self.energyList]
-        # print([e for e in self.energyList  if Emin<e<=Emax ][0])
-        # print(eps)
-        # print([1/(eps-e) for e in self.energyList  if Emin<e<=Emax ][0])
-        return scipy.sparse.spdiags(v, 0, self.size, self.size).tocsc()
 
     @classmethod
-    def fromScratch(self, m, L, k, Emax):
+    def fromScratch(self, m, L, Emax, Lambda=np.inf):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
-        L: size of the cylinder
+        L: side of the torus
         Emax: maximal energy of the states
-        occmax: cutoff in occupation number (optional)"""
+        """
 
-        self.helper = Helper(m, L, Emax)
+        self.helper = Helper(m, L, Emax, Lambda)
         helper = self.helper
-        self.Emax = Emax
+        occn = helper.occn
         m = helper.m
+        energy = helper.energy
 
         self._occmax = int(floor(Emax/m))
 
-        # self.nmax is the actual maximum occupied wavenumber of the states
-        self.nmax = helper.nmax
-
         bases = self.buildBasis(self)
-        return self(k,bases[k],helper)
+        # Make the representation of each state unique by sorting the oscillators
+        bases = {k: [sortOsc(s) for s in bases[k]] for k in (-1,1)}
 
-    def MBsize(self):
-        ret = 0
-        """ 64 is the size of a tuple of two ints """
-        ret += sum(64*len(v) for v in self.stateList)/10**6
-        # Add the memory of the auxiliary vectors
-        ret += self.size*32/10**6
-        return ret
+        return {k: self(k,bases[k],helper) for k in (-1,1)}
+
+
+    def __len__(self):
+        return len(self.stateList)
 
     def __repr__(self):
-        return str(self.stateList)
+        return str([reprState(s) for s in self.stateList])
 
-    def genRMlist(self, RMstate=[], n=1):
-        """ Recursive function generating all the states starting from RMstate, by adding
-        any number of particles with wavenumber n.
-        It starts from the seed state with 0 particles and wavenumber 1
-        Uses repr1 representation """
+    def _genNEwnlist(self, Emax, Lambda):
+        """ Generate list of North-East moving wave numbers momenta, nx > ny >= 0,
+        sorted in energy, below cutoffs Emax and Lambda """
 
-        if n > self.nmax:
-            return [RMstate]
+        helper = self.helper
+        omega = helper.omega
+        allowedWn = helper.allowedWn
 
-        maxN = int(floor(min(
-                self._occmax-occn(RMstate),
-                (self.nmax-self.helper.totalWN(RMstate))/n,
-                (self.Emax-self.helper.energy(RMstate))/self.helper.omega(n))))
+        self.NEwnlist = []
+
+        for ny in itertools.count():
+            for nx in itertools.count(1):
+
+                n = array([nx,ny])
+
+                if tuple(n) not in allowedWn:
+
+                    if nx==1:
+                        self.NEwnlist.sort(key=lambda n: omega(n))
+                        return
+                    else:
+                        break
+
+                self.NEwnlist.append(n)
+
+        raise RuntimeError("Shouldn't get here")
+
+
+    def _genNEstatelist(self, NEstate=[], idx=0):
+        """ Recursive function generating all North-East moving states in Repr 1 starting from NEstate, by adding
+        any number of particles with momentum self.NEwnlist[idx] """
+
+        helper = self.helper
+        m = helper.m
+        Emax = helper.Emax
+        omega = helper.omega
+        allowedWn = helper.allowedWn
+        energy = helper.energy
+        totwn = helper.totwn
+        minEnergy = helper.minEnergy
+
+        if idx == len(self.NEwnlist):
+            # TODO Could Sort oscillators inside state here
+            return [NEstate]
+
+        # Two-dimensional NE-moving wave number
+        n = self.NEwnlist[idx]
+
+        # Keep track of current energy
+        E = energy(NEstate)
+        # Keep track of current total wave number
+        WN = totwn(NEstate)
+
         ret = []
-        for Zn in range(maxN+1):
-            newstate = RMstate[:]
+
+        for Zn in itertools.count():
+            newstate = NEstate[:]
+
             if Zn>0:
-                newstate.append((n,Zn))
-            ret += self.genRMlist(self,newstate,n+1)
+                mode = (n, Zn)
+                E += omega(n)
+                WN += n
+                # We need to add at least another particle to have 0 total momentum.
+                # XXX Check
+                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax:
+                    break
+                newstate.append(mode)
+
+            ret += self._genNEstatelist(self, newstate, idx+1)
+
         return ret
+
 
 
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
-        omega = self.helper.omega
-        m = self.helper.m
+        helper = self.helper
+        omega = helper.omega
 
-        RMlist = self.genRMlist(self)
+        m = helper.m
+        energy = helper.energy
+        totwn = helper.totwn
+        Emax = helper.Emax
+        Lambda = helper.Lambda
+        allowedWn = helper.allowedWn
+        minEnergy = helper.minEnergy
+        occn = helper.occn
 
-        # divides the list of RMstates into a list of lists,
-        # so that two states in each list have a fixed total RM wavenumber,
-        # and sort each sublist in energy
-        sortedRMlist = sorted(RMlist, key=self.helper.totalWN)
-        dividedRMlist = [sorted(l, key=self.helper.energy) for wn,l in
-            itertools.groupby(sortedRMlist,key=self.helper.totalWN)]
-        statelist = {1:[], -1:[]}
+        # Generate list of all NE moving momenta
+        self._genNEwnlist(self, Emax, Lambda)
 
-        for RMwn, RMsublist in enumerate(dividedRMlist):
-            for i, RMstate in enumerate(RMsublist):
-                ERM = self.helper.energy(RMstate)
-                ORM = occn(RMstate)
+        # Generate list of all NE moving states, and sort them by energy
+        NEstatelist = self._genNEstatelist(self)
+        NEstatelist.sort(key=lambda s: energy(s))
 
-                # LM part of the state will come from the same sublist.
-                # We take the position of LMState to be greater or equal
-                # to the position of RMstate
-                for LMstate in RMsublist[i:]:
-                    # we will just have to reverse it
-                    ELM = self.helper.energy(LMstate)
-                    OLM = occn(LMstate)
-                    deltaE = self.Emax - ERM - ELM
-                    deltaOcc = self._occmax - ORM - OLM
+        # XXX Possible optimization: sort first by total wave number, and then by energy?
+        NEsl1 = NEstatelist
+        NEsl2 = [rotate(s) for s in NEsl1]
+        NEsl3 = [rotate(s) for s in NEsl2]
+        NEsl4 = [rotate(s) for s in NEsl3]
 
-                    # if this happens, we can break since subsequent LMstates
-                    # have even higher energy (RMsublist is ordered in energy)
-                    if deltaE < 0:
+
+        # List of energies of the states in quadrants
+        NEelist = [energy(s) for s in NEsl1]
+
+        # Lists of total wavenumbers for states in quadrants
+        NEwntotlist1 = [totwn(s) for s in NEsl1]
+        NEwntotlist2 = [np.dot(rot,wntot) for wntot in NEwntotlist1]
+        NEwntotlist3 = [np.dot(rot,wntot) for wntot in NEwntotlist2]
+        NEwntotlist4 = [np.dot(rot,wntot) for wntot in NEwntotlist3]
+
+        # Generate dictionary (kx,ky) -> ([idx]) , where idx is an index for the states in the South-East moving quadrant
+        SEwnidx = dict()
+        for idx, wn in enumerate(NEwntotlist4):
+            if tuple(wn) not in SEwnidx.keys():
+                SEwnidx[tuple(wn)] = [idx]
+            else:
+                SEwnidx[tuple(wn)].append(idx)
+
+        ret = {k:[] for k in (-1,1)}
+
+        # Rotate and join NE moving states counterclockwise
+        for i1,s1 in enumerate(NEsl1):
+
+            # Keep track of total energy
+            E1 = NEelist[i1]
+            # Keep track of total wave number
+            WN1 = NEwntotlist1[i1]
+
+            # XXX Probably here we can use X (or S) and eliminate some redundancy by choosing i2 >= i1
+
+            for i2,s2 in enumerate(NEsl2):
+                E2 = E1 + NEelist[i2]
+                WN2 = WN1 + NEwntotlist2[i2]
+
+
+                # NEstatelist is ordered in energy
+                if E2 > Emax:
+                    break
+
+                # We need to add at least another particle to have 0 total momentum.
+                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
+                    continue
+
+                # XXX Entering this inner cycle is the most expensive part
+                # Maybe the checks can be performed in a particular order (do not compute both WN3 and Emax?)
+                for i3,s3 in enumerate(NEsl3):
+                    E3 = E2 + NEelist[i3]
+                    WN3 = WN2 + NEwntotlist3[i3]
+
+                    # NEstatelist is ordered in energy
+                    if E3>Emax:
                         break
-                    if deltaOcc < 0:
+
+                    # We need to add at least another particle to have 0 total momentum.
+                    # Also, we cannot add anymore negative x momentum or positive y momentum in step 4
+                    # XXX omega here is called many times, and it takes a long time in total
+                    if WN3[0]>0 or WN3[1]<0 or tuple(WN3) not in allowedWn or E3+minEnergy(WN3)>Emax:
                         continue
 
-                    maxN0 = int(floor(min(deltaOcc, deltaE/m)))
+                    # There is no states that can cancel the total momentum
+                    # XXX is this redundant?
+                    if tuple(-WN3) not in SEwnidx.keys():
+                        continue
 
-                    # possible values for the occupation value at rest
-                    for N0 in range(maxN0+1):
-                        # Only states with correct parity
-                        if N0==0:
-                            state = reverse(LMstate)+RMstate
-                        else:
-                            state = reverse(LMstate)+[(0,N0)]+RMstate
+                    for i4 in SEwnidx[tuple(-WN3)]:
+                        E4 = E3 + NEelist[i4]
+                        WN4 = WN3 + NEwntotlist4[i4]
+                        s4 = NEsl4[i4]
 
-                        statelist[(-1)**(N0+OLM+ORM)].append(state)
+                        if E4 > Emax:
+                            break
 
-        return statelist
+                        if WN4[0]!=0 or WN4[1]!=0:
+                            raise RuntimeError("Total momentum should be zero")
+
+                        # Add zero modes
+                        for Z0 in itertools.count():
+                            Etot = E4 + Z0*m
+                            if Etot > Emax:
+                                break
+
+                            state = s1+s2+s3+s4
+                            if Z0>0:
+                                state += [(array([0,0]),Z0)]
+
+                            k = 1-2*(occn(state)%2)
+                            ret[k].append(state)
+
+        return {k: ret[k] for k in (-1,1)}

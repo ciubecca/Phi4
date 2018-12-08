@@ -66,7 +66,7 @@ class LocOperator():
         self.oscFactors = []
 
         for i, (dlist,clists) in enumerate(oscillators):
-            clists = list(sorted(clists,key=helper.oscEnergy))
+            clists = list(sorted(clists, key=helper.oscEnergy))
 
             self.dlistPos[dlist] = i
 
@@ -181,6 +181,9 @@ def V4OpsHalf(basis):
     return V40, V31, V22
 
 
+# Takes the opposite of a tuple
+def minus(t):
+    return (-t[0],-t[1])
 
 def V2OpsHalf(basis):
     """ Generate half of the oscillators of the V2 operator
@@ -195,7 +198,7 @@ def V2OpsHalf(basis):
     V20 = [(dlist, [])]
 
     for k1 in allowedWn12:
-        k2 = -k1
+        k2 = minus(k1)
         clist = (k1,k2)
 
         V20[-1][1].append(clist)
