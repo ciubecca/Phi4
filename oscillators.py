@@ -19,12 +19,12 @@ from me import *
 
 tol = 10**(-10)
 
+# @profile
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
     return factorial(len(x))/scipy.prod(
         [factorial(sum(1 for _ in group)) for key, group in groupby(x)]
         )
-
 
 class LocOperator():
     """
@@ -33,6 +33,7 @@ class LocOperator():
     from a set of tails
     """
 
+    # @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -79,6 +80,7 @@ class LocOperator():
                     *scipy.prod([1/sqrt(2*omega(n)*L**2) for n in clist+dlist])
                     for clist in clists])
 
+    # @profile
     def torepr1(self, clist, dlist):
         """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
         tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
@@ -111,7 +113,7 @@ class LocOperator():
         return me.computeME(basis, i, statePos,
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList, self.oscEnergies)
 
-
+# @profile
 def V4OpsHalf(basis):
     """ Generate half of the oscillators of the V4 operator
     basis: basis of all the low-energy states below ET """
@@ -154,7 +156,7 @@ def V4OpsHalf(basis):
                     continue
 
                 k4 = -ktot
-                clist = (k1,k2,k3,k4)
+                clist = tuple(sorted((tuple(k) for k in (k1,k2,k3,k4))))
 
                 if oscEnergy(clist) <= Emax+tol:
                     V40[-1][1].append(clist)
@@ -162,7 +164,7 @@ def V4OpsHalf(basis):
 # Generate an LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
 
-    return V40
+    return (V40, )
 
 
     V31 = []
