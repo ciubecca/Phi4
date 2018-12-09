@@ -48,23 +48,27 @@ class Phi4():
 
         self.V[0] = scipy.sparse.eye(basis.size)*self.L**2
 
+        self.V[4] = 0
 
-    def computeEigval(self, ET, neigs=6):
+    def setg(self, g0, g2, g4):
+        self.g = {}
+        self.g[0] = g0
+        self.g[2] = g2
+        self.g[4] = g4
+
+    def computeEigval(self, neigs=6):
         """ Compute the eigenvalues for sharp cutoff ET
         neigs: number of eigenvalues to compute
         """
 
-        g0 = self.g0
-        g2 = self.g2
-        g4 = self.g4
+        compH = self.h0 + sum([self.g[n]* self.V[n] for n in (0,2,4)])
 
-        compH = self.h0 + sum(self.g[n]* self.V[4] for n in (0,2,4))
 
         # Seed vector
-        v0 = scipy.zeros(self.compH.shape[0])
+        v0 = scipy.zeros(compH.shape[0])
         v0[:10] = 1
 
-        self.eigenvalues = scipy.sort(scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
+        self.eigval = scipy.sort(scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
                             which='SA', return_eigenvectors=False))
 
         gc.collect()

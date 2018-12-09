@@ -15,16 +15,9 @@ bases = Basis.fromScratch(m, L, Emax)
 for k in (-1,1):
     print("k={}, Emax={}, L={}, size={}".format(k, Emax, L, len(bases[k])))
 
-exit(0)
 
-a = Phi4(bases[1])
-a.computePotential()
-print(a.V[2])
-
-# for s in basis.stateList:
-    # print(reprState(s))
-
-# for i,e in enumerate(basis.elist):
-    # print("{}: {}".format(i,e))
+for k in (-1,1):
+    a = Phi4(bases[k])
+    a.computePotential()
 
 

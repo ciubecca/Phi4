@@ -281,7 +281,7 @@ class Basis():
         return ret
 
 
-    @profile
+    # @profile
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
