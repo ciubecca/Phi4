@@ -281,7 +281,7 @@ class Basis():
         return ret
 
 
-
+    @profile
     def buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
@@ -344,6 +344,7 @@ class Basis():
 
         NEsl12 = [list(sorted(states, key=energy)) for states in NEsl12.values()]
         NE12elist = [[energy(s) for s in states] for states in NEsl12]
+        NE12occlist = [[occn(s) for s in states] for states in NEsl12]
 
         ret = {k:[] for k in (-1,1)}
 
@@ -352,9 +353,11 @@ class Basis():
             for j1, s in enumerate(states):
                 s34 = rotate(rotate(s))
                 e34 = NE12elist[i][j1]
+                o34 = NE12occlist[i][j1]
 
                 for j2, s12 in enumerate(states):
                     e = e34 + NE12elist[i][j2]
+                    o = o34 + NE12occlist[i][j2]
 
                     if e > Emax:
                         break
@@ -362,6 +365,8 @@ class Basis():
                     # Add zero modes
                     for Z0 in itertools.count():
                         Etot = e + Z0*m
+                        occtot = o + Z0
+
                         if Etot > Emax:
                             break
 
@@ -369,88 +374,7 @@ class Basis():
                         if Z0>0:
                             state += [(array([0,0]),Z0)]
 
-                        k = 1-2*(occn(state)%2)
+                        k = 1-2*(occtot%2)
                         ret[k].append(state)
-
-        return ret
-
-
-
-        # Generate dictionary (kx,ky) -> ([idx]) , where idx is an index for the states in the South-East moving quadrant
-        SEwnidx = dict()
-        for idx, wn in enumerate(NEwntotlist4):
-            if tuple(wn) not in SEwnidx.keys():
-                SEwnidx[tuple(wn)] = [idx]
-            else:
-                SEwnidx[tuple(wn)].append(idx)
-
-
-        # Rotate and join NE moving states counterclockwise
-        for i1,s1 in enumerate(NEsl1):
-
-            # Keep track of total energy
-            E1 = NEelist[i1]
-            # Keep track of total wave number
-            WN1 = NEwntotlist1[i1]
-
-            # XXX Probably here we can use X (or S) and eliminate some redundancy by choosing i2 >= i1
-
-            for i2,s2 in enumerate(NEsl2):
-                E2 = E1 + NEelist[i2]
-                WN2 = WN1 + NEwntotlist2[i2]
-
-
-                # NEstatelist is ordered in energy
-                if E2 > Emax:
-                    break
-
-                # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
-                    continue
-
-                # XXX Entering this inner cycle is the most expensive part
-                # Maybe the checks can be performed in a particular order (do not compute both WN3 and Emax?)
-                for i3,s3 in enumerate(NEsl3):
-                    E3 = E2 + NEelist[i3]
-                    WN3 = WN2 + NEwntotlist3[i3]
-
-                    # NEstatelist is ordered in energy
-                    if E3>Emax:
-                        break
-
-                    # We need to add at least another particle to have 0 total momentum.
-                    # Also, we cannot add anymore negative x momentum or positive y momentum in step 4
-                    # XXX omega here is called many times, and it takes a long time in total
-                    if WN3[0]>0 or WN3[1]<0 or tuple(WN3) not in allowedWn or E3+minEnergy(WN3)>Emax:
-                        continue
-
-                    # There is no states that can cancel the total momentum
-                    # XXX is this redundant?
-                    if tuple(-WN3) not in SEwnidx.keys():
-                        continue
-
-                    for i4 in SEwnidx[tuple(-WN3)]:
-                        E4 = E3 + NEelist[i4]
-                        WN4 = WN3 + NEwntotlist4[i4]
-                        s4 = NEsl4[i4]
-
-                        if E4 > Emax:
-                            break
-
-                        if WN4[0]!=0 or WN4[1]!=0:
-                            raise RuntimeError("Total momentum should be zero")
-
-                        # Add zero modes
-                        for Z0 in itertools.count():
-                            Etot = E4 + Z0*m
-                            if Etot > Emax:
-                                break
-
-                            state = s1+s2+s3+s4
-                            if Z0>0:
-                                state += [(array([0,0]),Z0)]
-
-                            k = 1-2*(occn(state)%2)
-                            ret[k].append(state)
 
         return ret
