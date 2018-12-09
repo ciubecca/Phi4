@@ -1,5 +1,5 @@
 import builtins
-from memory_profiler import memory_usage
+# from memory_profiler import memory_usage
 import warnings
 
 try:

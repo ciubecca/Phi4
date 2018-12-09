@@ -1,3 +1,4 @@
+from profile_support import *
 import scipy
 import scipy.sparse.linalg
 import scipy.sparse
@@ -30,7 +31,7 @@ class MatrixConstructor():
         self.basis = basis
         self.statePos = buildStatePos(basis)
 
-
+    @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, sumTranspose=True):
         """
         Vlist: list of oscillators

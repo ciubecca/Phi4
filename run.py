@@ -1,3 +1,4 @@
+from profile_support import *
 from phi4 import *
 from sys import argv, exit
 

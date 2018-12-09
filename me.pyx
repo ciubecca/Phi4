@@ -44,7 +44,6 @@ def gendlists(state, nd, ntot, allowedWn):
     dlists = set(tuple(y) for y in combinations(x,nd))
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, allowedWn))
 
-
 def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis

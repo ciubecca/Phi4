@@ -33,7 +33,7 @@ class LocOperator():
     from a set of tails
     """
 
-    # @profile
+    @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -113,7 +113,7 @@ class LocOperator():
         return me.computeME(basis, i, statePos,
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList, self.oscEnergies)
 
-# @profile
+@profile
 def V4OpsHalf(basis):
     """ Generate half of the oscillators of the V4 operator
     basis: basis of all the low-energy states below ET """
@@ -125,41 +125,47 @@ def V4OpsHalf(basis):
     Emax = helper.Emax
     oscEnergy = helper.oscEnergy
 
-    allowedWnList = list(sorted([np.array(wn) for wn in allowedWn], key=omega))
+    # Sort wavenumbers lexicographically, and convert to arrays
+    allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+    l = len(allowedWnList)
+    # (wn -> idx) where idx is the position in the ordered list
+    allowedWnIdx = {tuple(wn):i for i,wn in enumerate(allowedWnList)}
     elist = [omega(wn) for wn in allowedWnList]
 
     dlist = ()
 # The list of annihilation momenta is empty
     V40 = [(dlist, [])]
 
-    for i1, k1 in enumerate(allowedWnList):
+    for i1 in range(l):
+        k1 = allowedWnList[i1]
         e1 = elist[i1]
 
-        for i2, k2 in enumerate(allowedWnList):
+        for i2 in range(i1, l):
+            k2 = allowedWnList[i2]
             e2 = elist[i2]
 
-            if e1+e2 > Emax:
-                break
-
-            if tuple(k1+k2) not in allowedWn:
+            if e1+e2+minEnergy(k1+k2) > Emax+tol:
                 continue
 
-            for i3,k3 in enumerate(allowedWnList):
+            for i3 in range(i2,l):
+                k3 = allowedWnList[i3]
                 e3 = elist[i3]
-                etot = e1+e2+e3
 
-                if etot > Emax:
-                    break
+                k4 = -k1-k2-k3
 
-                ktot = k1+k2+k3
-                if tuple(ktot) not in allowedWn or etot+minEnergy(ktot)>Emax:
+                if tuple(k4) not in allowedWn:
                     continue
 
-                k4 = -ktot
-                clist = tuple(sorted((tuple(k) for k in (k1,k2,k3,k4))))
+                i4 = allowedWnIdx[tuple(k4)]
+                if i4 < i3:
+                    continue
 
-                if oscEnergy(clist) <= Emax+tol:
-                    V40[-1][1].append(clist)
+                e4 = elist[i4]
+                if e1+e2+e3+e4 > Emax+tol:
+                    continue
+
+                clist = (tuple(k1),tuple(k2),tuple(k3),tuple(k4))
+                V40[-1][1].append(clist)
 
 # Generate an LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
