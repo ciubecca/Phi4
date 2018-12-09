@@ -303,22 +303,78 @@ class Basis():
         # Generate list of all NE moving states, and sort them by energy
         NEstatelist = self._genNEstatelist(self)
         NEstatelist.sort(key=lambda s: energy(s))
+        # List of energies of the states in quadrants
+        NEelist = [energy(s) for s in NEstatelist]
 
-        # XXX Possible optimization: sort first by total wave number, and then by energy?
         NEsl1 = NEstatelist
         NEsl2 = [rotate(s) for s in NEsl1]
-        NEsl3 = [rotate(s) for s in NEsl2]
-        NEsl4 = [rotate(s) for s in NEsl3]
-
-
-        # List of energies of the states in quadrants
-        NEelist = [energy(s) for s in NEsl1]
 
         # Lists of total wavenumbers for states in quadrants
         NEwntotlist1 = [totwn(s) for s in NEsl1]
         NEwntotlist2 = [np.dot(rot,wntot) for wntot in NEwntotlist1]
-        NEwntotlist3 = [np.dot(rot,wntot) for wntot in NEwntotlist2]
-        NEwntotlist4 = [np.dot(rot,wntot) for wntot in NEwntotlist3]
+
+        NEsl12 = {}
+
+        # Rotate and join NE moving states counterclockwise
+        for i1,s1 in enumerate(NEsl1):
+
+            # Keep track of total energy
+            E1 = NEelist[i1]
+            # Keep track of total wave number
+            WN1 = NEwntotlist1[i1]
+
+            for i2,s2 in enumerate(NEsl2):
+                E2 = E1 + NEelist[i2]
+                WN2 = WN1 + NEwntotlist2[i2]
+
+                # NEstatelist is ordered in energy
+                if E2 > Emax:
+                    break
+
+                # We need to add at least another particle to have 0 total momentum.
+                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
+                    continue
+
+                s12 = s1+s2
+
+                if tuple(WN2) not in NEsl12.keys():
+                    NEsl12[tuple(WN2)] = [s12]
+                else:
+                    NEsl12[tuple(WN2)].append(s12)
+
+        NEsl12 = [list(sorted(states, key=energy)) for states in NEsl12.values()]
+        NE12elist = [[energy(s) for s in states] for states in NEsl12]
+
+        ret = {k:[] for k in (-1,1)}
+
+        for i, states in enumerate(NEsl12):
+
+            for j1, s in enumerate(states):
+                s34 = rotate(rotate(s))
+                e34 = NE12elist[i][j1]
+
+                for j2, s12 in enumerate(states):
+                    e = e34 + NE12elist[i][j2]
+
+                    if e > Emax:
+                        break
+
+                    # Add zero modes
+                    for Z0 in itertools.count():
+                        Etot = e + Z0*m
+                        if Etot > Emax:
+                            break
+
+                        state = s34 + s12
+                        if Z0>0:
+                            state += [(array([0,0]),Z0)]
+
+                        k = 1-2*(occn(state)%2)
+                        ret[k].append(state)
+
+        return ret
+
+
 
         # Generate dictionary (kx,ky) -> ([idx]) , where idx is an index for the states in the South-East moving quadrant
         SEwnidx = dict()
@@ -328,7 +384,6 @@ class Basis():
             else:
                 SEwnidx[tuple(wn)].append(idx)
 
-        ret = {k:[] for k in (-1,1)}
 
         # Rotate and join NE moving states counterclockwise
         for i1,s1 in enumerate(NEsl1):
@@ -398,4 +453,4 @@ class Basis():
                             k = 1-2*(occn(state)%2)
                             ret[k].append(state)
 
-        return {k: ret[k] for k in (-1,1)}
+        return ret
