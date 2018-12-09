@@ -39,16 +39,12 @@ class Phi4():
         self.V = {}
 
         c = MatrixConstructor(basis)
-        # Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
-        Vlist = {2:V2OpsHalf(basis)}
-        # for n in (2,4):
-        for n in (2,):
+        Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
+        for n in (2,4):
             self.V[n] = c.buildMatrix(Vlist[n])*self.L**2
         del c
 
         self.V[0] = scipy.sparse.eye(basis.size)*self.L**2
-
-        self.V[4] = 0
 
     def setg(self, g0, g2, g4):
         self.g = {}

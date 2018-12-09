@@ -14,6 +14,7 @@ from scipy import exp, pi
 from scipy.special import binom
 import bisect
 import me
+import numpy as np
 from me import *
 
 tol = 10**(-10)
@@ -116,20 +117,43 @@ def V4OpsHalf(basis):
     basis: basis of all the low-energy states below ET """
 
     helper = basis.helper
-    nmax = helper.nmax
+    omega = helper.omega
+    minEnergy = helper.minEnergy
+    allowedWn = helper.allowedWn
     Emax = helper.Emax
     oscEnergy = helper.oscEnergy
+
+    allowedWnList = list(sorted([np.array(wn) for wn in allowedWn], key=omega))
+    elist = [omega(wn) for wn in allowedWnList]
 
     dlist = ()
 # The list of annihilation momenta is empty
     V40 = [(dlist, [])]
-    for k1 in range(-nmax,nmax+1):
-        for k2 in range(k1,nmax+1):
-            # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
-            for k3 in range(max(-nmax-k1-k2,k2),
-                    min(int(floor((-k1-k2)/2)),nmax)+1):
 
-                k4 = -k1-k2-k3
+    for i1, k1 in enumerate(allowedWnList):
+        e1 = elist[i1]
+
+        for i2, k2 in enumerate(allowedWnList):
+            e2 = elist[i2]
+
+            if e1+e2 > Emax:
+                break
+
+            if tuple(k1+k2) not in allowedWn:
+                continue
+
+            for i3,k3 in enumerate(allowedWnList):
+                e3 = elist[i3]
+                etot = e1+e2+e3
+
+                if etot > Emax:
+                    break
+
+                ktot = k1+k2+k3
+                if tuple(ktot) not in allowedWn or etot+minEnergy(ktot)>Emax:
+                    continue
+
+                k4 = -ktot
                 clist = (k1,k2,k3,k4)
 
                 if oscEnergy(clist) <= Emax+tol:
@@ -137,6 +161,8 @@ def V4OpsHalf(basis):
 
 # Generate an LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
+
+    return V40
 
 
     V31 = []
