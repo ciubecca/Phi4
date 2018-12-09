@@ -362,19 +362,14 @@ class Basis():
                     if e > Emax:
                         break
 
-                    # Add zero modes
-                    for Z0 in itertools.count():
-                        Etot = e + Z0*m
+                    for Z0 in range(int(floor((Emax-e)/m))+1):
+                        if Z0==0:
+                            state = s34 + s12
+                        else:
+                            state = s34 + s12 + [(array([0,0]),Z0)]
                         occtot = o + Z0
-
-                        if Etot > Emax:
-                            break
-
-                        state = s34 + s12
-                        if Z0>0:
-                            state += [(array([0,0]),Z0)]
-
                         k = 1-2*(occtot%2)
                         ret[k].append(state)
+
 
         return ret
