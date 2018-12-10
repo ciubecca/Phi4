@@ -138,7 +138,7 @@ def _genMomentaPairs(helper):
         for i2 in range(i1,l):
             k2 = allowedWnList[i2]
             k12 = tuple(k1+k2)
-            e12 = e1+elist[i1]
+            e12 = e1+elist[i2]
 
             if k12 not in allowedWn:
                 continue
@@ -261,6 +261,7 @@ def V4OpsHalf(basis):
 
     allowedWn12 = _genMomentaPairs(helper)
     elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWn12]
+
 
     # Cycle over total momentum of annihilation operators
     for wnIdx in range(len(allowedWn12)):

@@ -21,17 +21,32 @@ cdef double tol = 10**(-10)
 # parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 
 
-def filterDlist(dlist, nd, ntot, allowedWn):
-
+# XXX Review this function, to take Lambda into account?
+def filterDlist(dlist, nd, ntot, helper):
     if nd==ntot:
         return tuple(sum([numpy.array(d) for d in dlist])) == (0,0)
     elif nd==ntot-1:
-        return tuple(sum([numpy.array(d) for d in dlist])) in allowedWn
+        return tuple(sum([numpy.array(d) for d in dlist])) in helper.allowedWn
     else:
         return True
 
+# def filterDlist(dlist, nd, ntot, helper):
+    # nc = ntot-nd
+    # ktot = tuple(sum([numpy.array(d) for d in dlist]))
 
-def gendlists(state, nd, ntot, allowedWn):
+    # if nc == 0:
+        # return ktot == (0,0)
+# # XXX Check, and fix to take Lambda into account
+    # else:
+        # return minEnergy(ktot, nc) < Emax
+    # return tuple(sum([numpy.array(d) for d in dlist])) == (0,0)
+    # elif nd==ntot-1:
+        # return tuple(sum([numpy.array(d) for d in dlist])) in allowedWn
+    # else:
+        # return True
+
+
+def gendlists(state, nd, ntot, helper):
     """ Generates a list of all the possible combinations of momenta in the state that
     can be annihilated
     state: input state in representation 1
@@ -40,14 +55,10 @@ def gendlists(state, nd, ntot, allowedWn):
     allowedWn: all the allowed wave numbers in the basis
     """
 
-    # if nd==2:
-        # x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
-        # print([tuple(sorted(tuple(y))) for y in combinations(x,nd)])
-
     x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
     dlists = set(tuple(y) for y in combinations(x,nd))
 
-    return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, allowedWn))
+    return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, helper))
 
 def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
@@ -97,13 +108,11 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         Emax = helper.Emax
 
         # cycle over all the sets of momenta that can be annihilated
-        for dlist in gendlists(state, nd, nd+nc, allowedWn):
+        for dlist in gendlists(state, nd, nd+nc, helper):
 
             try:
                 k = dlistPos[dlist]
             except KeyError as e:
-                print("sorted", tuple(sorted(dlist)))
-                print("oscEnergy: ", oscEnergy(dlist))
                 raise e
 
 
