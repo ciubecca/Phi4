@@ -113,6 +113,48 @@ class LocOperator():
         return me.computeME(basis, i, statePos,
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList, self.oscEnergies)
 
+
+def _genMomentaPairs(helper):
+    """ Generate sets of all inequivalent pairs of momenta,
+    ordered lexicographically, and indexed by total momentum.
+    This is a subroutine used to construct the V22 matrix """
+
+    omega = helper.omega
+    minEnergy = helper.minEnergy
+    allowedWn = helper.allowedWn
+    Emax = helper.Emax
+
+    # Sort 2d momenta lexicographically
+    allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+    l = len(allowedWnList)
+    elist = [omega(wn) for wn in allowedWnList]
+
+    allowedWn12 = {}
+
+    for i1 in range(l):
+        k1 = allowedWnList[i1]
+        e1 = elist[i1]
+
+        for i2 in range(i1,l):
+            k2 = allowedWnList[i2]
+            k12 = tuple(k1+k2)
+            e12 = e1+elist[i1]
+
+            if k12 not in allowedWn:
+                continue
+
+            if e12+minEnergy(k12) > Emax+tol:
+                continue
+
+            if k12 not in allowedWn12:
+                allowedWn12[k12] = []
+            allowedWn12[k12].append((tuple(k1),tuple(k2)))
+
+    # Sort 2d momenta pairs lexicographically
+    return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
+
+
+
 @profile
 def V4OpsHalf(basis):
     """ Generate half of the oscillators of the V4 operator
@@ -144,7 +186,8 @@ def V4OpsHalf(basis):
             k2 = allowedWnList[i2]
             e2 = elist[i2]
 
-            if e1+e2+minEnergy(k1+k2) > Emax+tol:
+            # XXX Check
+            if e1+e2+minEnergy(k1+k2, 2) > Emax+tol:
                 continue
 
             for i3 in range(i2,l):
@@ -167,50 +210,74 @@ def V4OpsHalf(basis):
                 clist = (tuple(k1),tuple(k2),tuple(k3),tuple(k4))
                 V40[-1][1].append(clist)
 
-# Generate an LocOperator instance from the computed set of oscillators
+# Generate a LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
 
-    return (V40, )
 
 
     V31 = []
-    for k1 in range(-nmax,nmax+1):
+    for k1 in allowedWnList:
 # The set of annihilation momenta contains just one momentum
-        dlist = (k1,)
+        dlist = (tuple(k1),)
+        # The state must have at least another particle if k1 != 0
+        e1 = minEnergy(k1)
         V31.append((dlist,[]))
 
-        for k2 in range(-nmax,nmax+1):
-            for k3 in range(max(-nmax+k1-k2,k2),
-                           min(int(floor((k1-k2)/2)),nmax)+1):
+        for i2 in range(l):
+            k2 = allowedWnList[i2]
+            e2 = elist[i2]
+
+            # XXX Check
+            if e1+e2+minEnergy(k1-k2,2) > Emax+tol:
+                continue
+
+            for i3 in range(i2, l):
+                k3 = allowedWnList[i3]
 
                 k4 = k1-k2-k3
-                clist = (k2,k3,k4)
 
-                if helper.oscEnergy(clist) <= Emax+tol:
-                    V31[-1][1].append(clist)
+                if tuple(k4) not in allowedWn:
+                    continue
+
+                i4 = allowedWnIdx[tuple(k4)]
+
+                if i4 < i3:
+                    continue
+
+                e3 = elist[i3]
+                e4 = elist[i4]
+
+                # XXX Check
+                if e1+e2+e3+e4 > Emax+tol:
+                    continue
+
+                clist = (tuple(k2),tuple(k3),tuple(k4))
+                V31[-1][1].append(clist)
 
     V31 = LocOperator(V31, 1, 3, helper)
 
+
     V22 = []
-    for k1 in range(-nmax,nmax+1):
-        for k2 in range(k1,nmax+1):
-# The set of annihilation momenta is a pair
-            dlist = (k1,k2)
+
+    allowedWn12 = _genMomentaPairs(helper)
+    elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWn12]
+
+    # Cycle over total momentum of annihilation operators
+    for wnIdx in range(len(allowedWn12)):
+
+        kpairlist = allowedWn12[wnIdx]
+
+        for i in range(len(kpairlist)):
+            kpair = kpairlist[i]
+            e12 = elist[wnIdx][i]
+
+            dlist = kpair
             V22.append((dlist,[]))
 
-            for k3 in range(max(-nmax+k1+k2,-nmax),
-                    min(int(floor((k1+k2)/2)),nmax)+1):
-
-                k4 = k1+k2-k3
-                clist = (k3,k4)
-
-                if helper.oscEnergy(clist) <= Emax+tol and\
-                    sorted([abs(k3),abs(k4)])<=sorted([abs(k1),abs(k2)]):
-                    # only consider lexicographically ordered part of V22
-                    # but also including diagonal part which will be separated below
-
-                    V22[-1][1].append(clist)
-
+            for j in range(i, len(kpairlist)):
+                # XXX Need to perforn any checks ?
+                clist = kpairlist[j]
+                V22[-1][1].append(clist)
 
     V22 = LocOperator(V22, 2, 2, helper)
 

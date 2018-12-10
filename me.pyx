@@ -40,8 +40,13 @@ def gendlists(state, nd, ntot, allowedWn):
     allowedWn: all the allowed wave numbers in the basis
     """
 
+    # if nd==2:
+        # x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
+        # print([tuple(sorted(tuple(y))) for y in combinations(x,nd)])
+
     x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
     dlists = set(tuple(y) for y in combinations(x,nd))
+
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, allowedWn))
 
 def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
@@ -69,6 +74,8 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
 
         helper = basis.helper
 
+        oscEnergy = helper.oscEnergy
+
         # List of columns indices of generated basis elements
         col = []
         # List of partial matrix elements
@@ -92,7 +99,13 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         # cycle over all the sets of momenta that can be annihilated
         for dlist in gendlists(state, nd, nd+nc, allowedWn):
 
-            k = dlistPos[dlist]
+            try:
+                k = dlistPos[dlist]
+            except KeyError as e:
+                print("sorted", tuple(sorted(dlist)))
+                print("oscEnergy: ", oscEnergy(dlist))
+                raise e
+
 
 # Only select the oscillators such that the sum of the state and oscillator energies
 # lies within the bounds of the lookupbasis energies
