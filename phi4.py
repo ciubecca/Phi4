@@ -54,6 +54,8 @@ class Phi4():
         # TODO Add contribution from mass perturbation
         dg0 = -g4**2/(96*(4*pi)**3)*(Emax-8*m*log(Emax/m))
         dg2 = -g2**2/(6*(4*pi)**2)*log(Emax/m)
+        dg0 = 0
+        dg2 = 0
 
         self.g[0] = g0 - dg0
         self.g[2] = g2 - dg2
