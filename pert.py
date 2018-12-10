@@ -36,9 +36,11 @@ for k in (-1,1):
     eigs[k] = a.eigval
 
     if k==1:
-        # print("state[15]: ", toCanonical(a.basis.stateList[15]))
-        # print("state[3]: ", toCanonical(a.basis.stateList[3]))
-        # print(a.V[4])
+        # print("state[19]: ", toCanonical(a.basis.stateList[19]))
+        print("state[15]: ", toCanonical(a.basis.stateList[15]))
+        print(a.V[4])
+        print("Nonzero matrix elements:", a.V[4].count_nonzero())
+        np.savetxt("matrix.csv", a.V[4].todense().reshape(1,a.basis.size**2), delimiter=',')
         pass
 
 print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))
