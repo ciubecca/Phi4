@@ -10,10 +10,12 @@ import numpy as np
 
 tol = 10**-8
 
-# Counter clockwise rotation by 90 degrees
-rot = array([[0,-1],[1,0]])
-# Reflection wrt x axis
-refl = array([[-1,0],[0,1]])
+
+
+def sortOsc(s):
+    """ Sort modes in a state according to momenta """
+    return list(sorted(s, key=lambda x: tuple(x[0])))
+
 
 
 class Helper():
@@ -69,7 +71,6 @@ class Helper():
                     else:
                         self.normFactors[c,d,n] = scipy.nan
 
-
     def torepr2(self, s):
         # XXX Represent the state as numpy array? Or matrix? Or sparse vector?
         ret = [0]*len(self.allowedWn)
@@ -124,31 +125,18 @@ class Helper():
         return sum([Zn for n,Zn in s])
 
 
-def reprState(state):
-    return [(tuple(n), Zn) for n,Zn in state]
-
-def sortOsc(s):
-    """ Sort modes in a state according to momenta """
-    return list(sorted(s, key=lambda x: tuple(x[0])))
-
-def rotate(s):
-    """ Rotate state counterclockwise by pi/2 """
-    return [(np.dot(rot,n),Zn) for n,Zn in s]
-
-def reflect(self, s):
-    """ Reflect on state wrt x axis """
-    return [(np.dot(refl,n),Zn) for n,Zn in s]
 
 
 class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateset, helper):
+    def __init__(self, k, stateset, helper, sym=False):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
         helper: Helper object
+        sym: take symmetries into account, and project out singlet states
         """
         self.k = k
         self.helper = helper
@@ -156,6 +144,7 @@ class Basis():
         energy = helper.energy
         occn = helper.occn
         self.Emax = helper.Emax
+        self.sym = sym
 
         self.stateList = sorted(stateset, key=energy)
         self.energyList = [energy(state) for state in self.stateList]
@@ -164,8 +153,6 @@ class Basis():
 
         # TODO To implement
         # self.parityList = [int(state==reverse(state)) for state in self.stateList]
-
-        self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
 
         self.size = len(self.energyList)
         self.Emax = max(self.energyList)
@@ -201,7 +188,9 @@ class Basis():
 
         self._occmax = int(floor(Emax/m))
 
-        bases = self.buildBasis(self)
+        self._buildBasis(self)
+
+        # TODO Need to sort all vectors
         # Make the representation of each state unique by sorting the oscillators
         bases = {k: [sortOsc(s) for s in bases[k]] for k in (-1,1)}
 
@@ -212,7 +201,7 @@ class Basis():
         return len(self.stateList)
 
     def __repr__(self):
-        return str([reprState(s) for s in self.stateList])
+        return str([toTuple(s) for s in self.stateList])
 
     def _genNEwnlist(self, Emax, Lambda):
         """ Generate list of North-East moving wave numbers momenta, nx > ny >= 0,
@@ -288,7 +277,7 @@ class Basis():
 
 
     # @profile
-    def buildBasis(self):
+    def _buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
         helper = self.helper
@@ -348,34 +337,63 @@ class Basis():
                 else:
                     NEsl12[tuple(WN2)].append(s12)
 
-        NEsl12 = [list(sorted(states, key=energy)) for states in NEsl12.values()]
-        NE12elist = [[energy(s) for s in states] for states in NEsl12]
-        NE12occlist = [[occn(s) for s in states] for states in NEsl12]
+        # Create states moving north or south, and join them pairwise
+        Nsl12 = [list(sorted(states, key=energy)) for states in Nsl12.values()]
+        N12elist = [[energy(s) for s in states] for states in Nsl12]
+        N12occlist = [[occn(s) for s in states] for states in Nsl12]
 
-        ret = {k:[] for k in (-1,1)}
+        # List of states in Representation 1, which are not related by symmetries when self.sym = False
+        self.bases = {k:[] for k in (-1,1)}
+        idx = 0
+        # Dictionary of indices for states in Representation 2, modded by symmetry
+        self.statesPos = {k:{} for k in (-1,1)}
+        # Number of Fock states in the singlet representation of state. This is used to compute the appropriate normalization
+        # factors
+        self.ncomponents = {k:[] for k in (-1,1)}
 
-        for i, states in enumerate(NEsl12):
+        for i, states in enumerate(Nsl12):
 
             for j1, s in enumerate(states):
                 s34 = rotate(rotate(s))
-                e34 = NE12elist[i][j1]
-                o34 = NE12occlist[i][j1]
+                e34 = N12elist[i][j1]
+                o34 = N12occlist[i][j1]
+
 
                 for j2, s12 in enumerate(states):
-                    e = e34 + NE12elist[i][j2]
-                    o = o34 + NE12occlist[i][j2]
+                    e = e34 + N12elist[i][j2]
+                    o = o34 + N12occlist[i][j2]
 
                     if e > Emax:
                         break
 
                     for Z0 in range(int(floor((Emax-e)/m))+1):
-                        if Z0==0:
+                        if Z0 == 0:
                             state = s34 + s12
                         else:
                             state = s34 + s12 + [(array([0,0]),Z0)]
+
                         occtot = o + Z0
                         k = 1-2*(occtot%2)
-                        ret[k].append(state)
 
+                        # XXX This can be optimized because it doesn't need to be performed for every Z0
+                        if self.sym:
+                            transStates = getTransformed(state)
+                            # The states already exists (for each Z0), when taking symmetries into account
+                            if not transStates.isdisjoint(statePos[k]):
+                                break
 
-        return ret
+                            # Number of Fock space states in the singlet state
+                            self.ncomponents[k].append(len(transStates))
+                            self.bases[k].append(state)
+
+                            for s in transStates:
+                                self.statePos[k][s] = idx
+                            idx += 1
+
+                        else:
+                            self.bases[k].append(state)
+                            s = bytes(helper.torepr2(state))
+                            self.statePos[k][s] = idx
+                            idx += 1
+
+        return
