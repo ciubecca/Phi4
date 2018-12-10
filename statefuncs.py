@@ -8,7 +8,7 @@ from itertools import combinations
 import itertools
 import numpy as np
 
-tol = 10**-8
+tol = 10**-10
 
 # Counter clockwise rotation by 90 degrees
 rot = array([[0,-1],[1,0]])
@@ -36,7 +36,7 @@ class Helper():
         print(m, L, Emax, Lambda)
 
         # Maximum of sqrt(nx^2 + ny^2)
-        self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))
+        self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))+tol
         # Maximum integer wave number
         nmax = floor(self.nmaxFloat)
         self.nmax = nmax
@@ -67,7 +67,7 @@ class Helper():
                 if sqrt(nx**2+ny**2) <= self.nmaxFloat:
                     self.allowedWn12.add((nx,ny))
 
-        occmax = floor(Emax/m)
+        occmax = floor(Emax/m+tol)
         self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,occmax+1))
         for c in range(noscmax+1):
             for d in range(noscmax+1):
@@ -175,12 +175,11 @@ class Basis():
         self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
 
         self.size = len(self.energyList)
-        self.Emax = max(self.energyList)
 
         # Check assumptions
         el = self.energyList
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
-        assert (max(el) <= self.Emax)
+        assert (max(el) <= self.Emax+tol)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
 
@@ -206,7 +205,7 @@ class Basis():
         m = helper.m
         energy = helper.energy
 
-        self._occmax = int(floor(Emax/m))
+        self._occmax = int(floor(Emax/m)+tol)
 
         bases = self.buildBasis(self)
         # Make the representation of each state unique by sorting the oscillators
@@ -285,7 +284,7 @@ class Basis():
                 WN += n
                 # We need to add at least another particle to have 0 total momentum.
                 # XXX Check
-                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax:
+                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol:
                     break
                 newstate.append(mode)
 
@@ -341,11 +340,11 @@ class Basis():
                 WN2 = WN1 + NEwntotlist2[i2]
 
                 # NEstatelist is ordered in energy
-                if E2 > Emax:
+                if E2 > Emax+tol:
                     break
 
                 # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
+                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax+tol:
                     continue
 
                 s12 = s1+s2
@@ -372,10 +371,10 @@ class Basis():
                     e = e34 + NE12elist[i][j2]
                     o = o34 + NE12occlist[i][j2]
 
-                    if e > Emax:
+                    if e > Emax+tol:
                         break
 
-                    for Z0 in range(int(floor((Emax-e)/m))+1):
+                    for Z0 in range(int(floor((Emax-e)/m+tol))+1):
                         if Z0==0:
                             state = s34 + s12
                         else:

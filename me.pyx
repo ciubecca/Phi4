@@ -3,9 +3,8 @@ from sys import getsizeof as sizeof
 import scipy, numpy
 from math import factorial, floor, sqrt
 import statefuncs
-from statefuncs import Basis
+from statefuncs import Basis, Helper
 import itertools
-from statefuncs import Helper
 from itertools import combinations, islice, permutations
 from scipy import exp, pi
 from scipy.special import binom
@@ -15,7 +14,8 @@ cimport cython
 from cpython cimport array as array
 import array
 
-cdef double tol = 10**(-10)
+# XXX Warning usign exponential notation sets this to zero!
+cdef double tol = 0.00000001
 
 # TODO
 # parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
@@ -111,23 +111,31 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         for dlist in gendlists(state, nd, nd+nc, helper):
 
             debug = False
-            state0 = []
+            state0 = [((0,0),6)]
             state1 = [((0, -1), 1), ((0, 1), 1)]
             state2 = [((-1, 0), 1), ((1, 0), 1)]
-            # if state==state0 and nd==0 and nc==2:
+            # if state==state0 and nd==2 and nc==2:
                 # debug = True
+                # print("e state:", e)
                 # print("dlist:", dlist)
 
             try:
                 k = dlistPos[dlist]
-            except KeyError as e:
-                raise e
+            except KeyError as err:
+                raise err
 
 
 # Only select the oscillators such that the sum of the state and oscillator energies
 # lies within the bounds of the lookupbasis energies
             imin = bisect.bisect_left(oscEnergies[k], 0-e-tol)
             imax = bisect.bisect_left(oscEnergies[k], Emax-e+tol)
+
+            if debug:
+                print("oscEnergies", oscEnergies[k])
+                print("tol", tol)
+                print("Emax-e", Emax-e)
+                print("Emax-e+tol", Emax-e+tol)
+                print("imin, imax", imin, imax)
 
             if imax <= imin:
                 continue

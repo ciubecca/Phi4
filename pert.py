@@ -36,9 +36,9 @@ for k in (-1,1):
     eigs[k] = a.eigval
 
     if k==1:
-        # print("state[2]: ", toCanonical(a.basis.stateList[2]))
+        # print("state[15]: ", toCanonical(a.basis.stateList[15]))
         # print("state[3]: ", toCanonical(a.basis.stateList[3]))
-        # print(a.V[2])
+        # print(a.V[4])
         pass
 
 print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))

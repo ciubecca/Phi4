@@ -4,10 +4,9 @@ from sys import getsizeof as sizeof
 import scipy
 from math import factorial, floor, sqrt
 import statefuncs
-from statefuncs import Basis
+from statefuncs import Basis, Helper, tol
 from collections import Counter
 import itertools
-from statefuncs import Helper
 from itertools import combinations, islice, permutations
 from itertools import groupby
 from scipy import exp, pi
@@ -17,12 +16,18 @@ import me
 import numpy as np
 from me import *
 
-tol = 10**(-10)
 debug = False
 
+maxx = 0
+
 # @profile
+# XXX Does this have precision issues?
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
+    # global maxx
+    # if len(x) > maxx:
+        # maxx = len(x)
+        # print(maxx)
     return factorial(len(x))/scipy.prod(
         [factorial(sum(1 for _ in group)) for key, group in groupby(x)]
         )

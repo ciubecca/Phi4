@@ -2,8 +2,6 @@ import pytest
 import random
 from phi4 import *
 
-tol = 10**(-10)
-
 # @pytest.mark.skip(reason="Not needed now")
 def test_basis():
     Elist = [10]
