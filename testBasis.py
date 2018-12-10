@@ -2,8 +2,6 @@ import pytest
 import random
 from phi4 import *
 
-tol = 10**(-10)
-
 # @pytest.mark.skip(reason="Not needed now")
 def test_basis():
     Elist = [10]
@@ -21,7 +19,7 @@ def test_basis():
 
 
 def test_sym():
-    Elist = [12]
+    Elist = [11]
     Llist = [6]
 
     for i in range(len(Elist)):

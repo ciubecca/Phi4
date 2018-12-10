@@ -1,7 +1,10 @@
 from phi4 import *
 from sys import argv, exit
+from math import factorial
+from statefuncs import *
 
 m = 1
+neigs = 6
 
 if len(argv) < 4:
     print("{} <Emax> <L> <g4> [<g2>]".format(argv[0]))
@@ -27,13 +30,18 @@ for k in (-1,1):
     a = Phi4(bases[k])
     a.computePotential()
 
-    a.setg(0, g2, g4)
+    a.setg(0, g2, g4/(factorial(4)))
 
-    a.computeEigval()
+    a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
 
-# This should be proportional to g2
-print("Vacuum: ", eigs[1][0])
+    if k==1:
+        # print("state[15]: ", toCanonical(a.basis.stateList[15]))
+        # print("state[3]: ", toCanonical(a.basis.stateList[3]))
+        # print(a.V[4])
+        pass
 
+print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))
+print("Vacuum: ", eigs[1][0])
 print("Even spectrum: ", eigs[1][1:]-eigs[1][0])
 print("Odd  spectrum: ", eigs[-1]-eigs[1][0])

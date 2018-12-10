@@ -8,14 +8,17 @@ from itertools import combinations
 import itertools
 import numpy as np
 
-tol = 10**-8
-
-
+tol = 10**-10
 
 def sortOsc(s):
     """ Sort modes in a state according to momenta """
     return list(sorted(s, key=lambda x: tuple(x[0])))
 
+
+# XXX Is this necessary?
+def toCanonical(state):
+    """ Transorm the state in representation 1 to canonical ordering of the momenta """
+    return list(sorted(((tuple(n), Zn) for n,Zn in state), key=lambda x: x[0]))
 
 
 class Helper():
@@ -33,7 +36,7 @@ class Helper():
         print(m, L, Emax, Lambda)
 
         # Maximum of sqrt(nx^2 + ny^2)
-        self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))
+        self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))+tol
         # Maximum integer wave number
         nmax = floor(self.nmaxFloat)
         self.nmax = nmax
@@ -55,12 +58,16 @@ class Helper():
 
         # Set of allowed momenta in first and second quadrants, plus zero momentum
         self.allowedWn12 = set()
-        for nx in range(0, nmax+1):
-            for ny in range(0, nmax+1):
+        for nx in range(-nmax, nmax+1):
+            if nx < 0:
+                nymin = 1
+            else:
+                nymin = 0
+            for ny in range(nymin, nmax+1):
                 if sqrt(nx**2+ny**2) <= self.nmaxFloat:
                     self.allowedWn12.add((nx,ny))
 
-        occmax = floor(Emax/m)
+        occmax = floor(Emax/m+tol)
         self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,occmax+1))
         for c in range(noscmax+1):
             for d in range(noscmax+1):
@@ -90,7 +97,7 @@ class Helper():
     def totwn(self, state):
         if state==[]:
             return array([0,0])
-        return sum(Zn*n for n,Zn in state)
+        return sum([Zn*np.array(n) for n,Zn in state])
 
     def _omega(self, n):
         """ Energy corresponding to wavenumber n"""
@@ -125,8 +132,6 @@ class Helper():
         return sum([Zn for n,Zn in s])
 
 
-
-
 class Basis():
     """ Class used to store and compute a basis of states"""
 
@@ -155,12 +160,11 @@ class Basis():
         # self.parityList = [int(state==reverse(state)) for state in self.stateList]
 
         self.size = len(self.energyList)
-        self.Emax = max(self.energyList)
 
         # Check assumptions
         el = self.energyList
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
-        assert (max(el) <= self.Emax)
+        assert (max(el) <= self.Emax+tol)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
 
@@ -186,7 +190,7 @@ class Basis():
         m = helper.m
         energy = helper.energy
 
-        self._occmax = int(floor(Emax/m))
+        self._occmax = int(floor(Emax/m)+tol)
 
         self._buildBasis(self)
 
@@ -201,7 +205,7 @@ class Basis():
         return len(self.stateList)
 
     def __repr__(self):
-        return str([toTuple(s) for s in self.stateList])
+        return str([toCanonical(s) for s in self.stateList])
 
     def _genNEwnlist(self, Emax, Lambda):
         """ Generate list of North-East moving wave numbers momenta, nx > ny >= 0,
@@ -267,7 +271,7 @@ class Basis():
                 WN += n
                 # We need to add at least another particle to have 0 total momentum.
                 # XXX Check
-                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax:
+                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol:
                     break
                 newstate.append(mode)
 
@@ -323,11 +327,11 @@ class Basis():
                 WN2 = WN1 + NEwntotlist2[i2]
 
                 # NEstatelist is ordered in energy
-                if E2 > Emax:
+                if E2 > Emax+tol:
                     break
 
                 # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax:
+                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax+tol:
                     continue
 
                 s12 = s1+s2
@@ -363,11 +367,11 @@ class Basis():
                     e = e34 + N12elist[i][j2]
                     o = o34 + N12occlist[i][j2]
 
-                    if e > Emax:
+                    if e > Emax+tol:
                         break
 
-                    for Z0 in range(int(floor((Emax-e)/m))+1):
-                        if Z0 == 0:
+                    for Z0 in range(int(floor((Emax-e)/m+tol))+1):
+                        if Z0==0:
                             state = s34 + s12
                         else:
                             state = s34 + s12 + [(array([0,0]),Z0)]
@@ -384,14 +388,14 @@ class Basis():
 
                             # Number of Fock space states in the singlet state
                             self.ncomponents[k].append(len(transStates))
-                            self.bases[k].append(state)
+                            self.bases[k].append(toCanonical(state))
 
                             for s in transStates:
                                 self.statePos[k][s] = idx
                             idx += 1
 
                         else:
-                            self.bases[k].append(state)
+                            self.bases[k].append(toCanonical(state))
                             s = bytes(helper.torepr2(state))
                             self.statePos[k][s] = idx
                             idx += 1

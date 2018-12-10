@@ -4,10 +4,9 @@ from sys import getsizeof as sizeof
 import scipy
 from math import factorial, floor, sqrt
 import statefuncs
-from statefuncs import Basis
+from statefuncs import Basis, Helper, tol
 from collections import Counter
 import itertools
-from statefuncs import Helper
 from itertools import combinations, islice, permutations
 from itertools import groupby
 from scipy import exp, pi
@@ -17,14 +16,26 @@ import me
 import numpy as np
 from me import *
 
-tol = 10**(-10)
+debug = False
+
+maxx = 0
 
 # @profile
+# XXX Does this have precision issues?
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
+    # global maxx
+    # if len(x) > maxx:
+        # maxx = len(x)
+        # print(maxx)
     return factorial(len(x))/scipy.prod(
         [factorial(sum(1 for _ in group)) for key, group in groupby(x)]
         )
+
+# TODO Maybe this is necessary to order the dlists in V4
+# def toCanonicalOsclist(osclist):
+    # """ Order canonically the momenta in a list of oscillators """
+    # return list(sorted(osclist))
 
 class LocOperator():
     """
@@ -79,6 +90,14 @@ class LocOperator():
             self.oscFactors.append([bose(clist)*bose(dlist)*binom(nc+nd,nc)\
                     *scipy.prod([1/sqrt(2*omega(n)*L**2) for n in clist+dlist])
                     for clist in clists])
+
+        if debug and nd==0 and nc==2:
+            print("clists", clists)
+            print("oscEnergies", self.oscEnergies[0])
+            print("oscFactors", self.oscFactors[0])
+            print(self.oscList)
+
+
 
     # @profile
     def torepr1(self, clist, dlist):
@@ -306,6 +325,8 @@ def V2OpsHalf(basis):
     for k1 in allowedWn12:
         k2 = minus(k1)
         clist = (k1,k2)
+        if debug and basis.k==1:
+            print("clist:", clist)
 
         V20[-1][1].append(clist)
 
