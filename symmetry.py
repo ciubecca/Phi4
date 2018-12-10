@@ -12,8 +12,8 @@ refly = array([[-1,0],[0,1]])
 # Reflection wrt x axis
 reflx = array([[1,0],[0,-1]])
 # Reflection wrt diagonals
-xs = array([0,1],[1,0])
-ys = array([0,-1],[-1,0])
+xs = array([[0,1],[1,0]])
+ys = array([[0,-1],[-1,0]])
 
 def rotate(s):
     """ Rotate state counterclockwise by pi/2 """

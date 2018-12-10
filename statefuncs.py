@@ -7,6 +7,7 @@ from collections import Counter
 from itertools import combinations
 import itertools
 import numpy as np
+from symmetry import *
 
 tol = 10**-10
 
@@ -136,7 +137,7 @@ class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateset, helper, sym=False):
+    def __init__(self, k, stateList, statePos, helper, sym=False):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
@@ -151,8 +152,17 @@ class Basis():
         self.Emax = helper.Emax
         self.sym = sym
 
-        self.stateList = sorted(stateset, key=energy)
-        self.energyList = [energy(state) for state in self.stateList]
+
+        # Retrieve the transformation of the indices to get lists sorted in energy
+        self.energyList = [energy(state) for state in stateset]
+        idx = np.argsort(np.array(self.energyList))
+
+        self.stateList = list(sorted(stateset, key=energy))
+        self.energyList.sort()
+
+        # TODO Need to sort this !!!
+        self.statePos = statePos
+
 
         self.occnList = [occn(state) for state in self.stateList]
 
@@ -177,7 +187,7 @@ class Basis():
 
 
     @classmethod
-    def fromScratch(self, m, L, Emax, Lambda=np.inf):
+    def fromScratch(self, m, L, Emax, Lambda=np.inf, sym=False):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
         L: side of the torus
@@ -189,16 +199,16 @@ class Basis():
         occn = helper.occn
         m = helper.m
         energy = helper.energy
+        self.sym = sym
 
         self._occmax = int(floor(Emax/m)+tol)
 
         self._buildBasis(self)
 
-        # TODO Need to sort all vectors
         # Make the representation of each state unique by sorting the oscillators
-        bases = {k: [sortOsc(s) for s in bases[k]] for k in (-1,1)}
+        self.bases = {k: [sortOsc(s) for s in self.bases[k]] for k in (-1,1)}
 
-        return {k: self(k,bases[k],helper) for k in (-1,1)}
+        return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym) for k in (-1,1)}
 
 
     def __len__(self):
@@ -312,7 +322,8 @@ class Basis():
         NEwntotlist1 = [totwn(s) for s in NEsl1]
         NEwntotlist2 = [np.dot(rot,wntot) for wntot in NEwntotlist1]
 
-        NEsl12 = {}
+        # North-moving states in first and second quadrants
+        Nsl12 = {}
 
         # Rotate and join NE moving states counterclockwise
         for i1,s1 in enumerate(NEsl1):
@@ -336,10 +347,10 @@ class Basis():
 
                 s12 = s1+s2
 
-                if tuple(WN2) not in NEsl12.keys():
-                    NEsl12[tuple(WN2)] = [s12]
+                if tuple(WN2) not in Nsl12.keys():
+                    Nsl12[tuple(WN2)] = [s12]
                 else:
-                    NEsl12[tuple(WN2)].append(s12)
+                    Nsl12[tuple(WN2)].append(s12)
 
         # Create states moving north or south, and join them pairwise
         Nsl12 = [list(sorted(states, key=energy)) for states in Nsl12.values()]
@@ -350,7 +361,7 @@ class Basis():
         self.bases = {k:[] for k in (-1,1)}
         idx = 0
         # Dictionary of indices for states in Representation 2, modded by symmetry
-        self.statesPos = {k:{} for k in (-1,1)}
+        self.statePos = {k:{} for k in (-1,1)}
         # Number of Fock states in the singlet representation of state. This is used to compute the appropriate normalization
         # factors
         self.ncomponents = {k:[] for k in (-1,1)}
