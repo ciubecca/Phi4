@@ -31,7 +31,7 @@ class MatrixConstructor():
         self.basis = basis
         self.statePos = buildStatePos(basis)
 
-    @profile
+    # @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, sumTranspose=True):
         """
         Vlist: list of oscillators

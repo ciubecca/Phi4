@@ -10,7 +10,7 @@ from operator import attrgetter
 import gc
 from matrix import *
 from scipy.integrate import quad
-from scipy import exp, pi, array, e, sqrt
+from scipy import exp, pi, array, e, sqrt, log
 from sys import getsizeof as sizeof
 import numpy as np
 
@@ -48,8 +48,15 @@ class Phi4():
 
     def setg(self, g0, g2, g4):
         self.g = {}
-        self.g[0] = g0
-        self.g[2] = g2
+        Emax = self.basis.Emax
+        m = self.m
+
+        # TODO Add contribution from mass perturbation
+        dg0 = -g4**2/(96*(4*pi)**3)*(Emax-8*m*log(Emax/m))
+        dg2 = -g2**2/(6*(4*pi)**2)*log(Emax/m)
+
+        self.g[0] = g0 - dg0
+        self.g[2] = g2 - dg2
         self.g[4] = g4
 
     def computeEigval(self, neigs=6):
@@ -58,7 +65,6 @@ class Phi4():
         """
 
         compH = self.h0 + sum([self.g[n]* self.V[n] for n in (0,2,4)])
-
 
         # Seed vector
         v0 = scipy.zeros(compH.shape[0])

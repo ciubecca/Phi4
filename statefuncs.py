@@ -155,6 +155,7 @@ class Basis():
         totwn = helper.totwn
         energy = helper.energy
         occn = helper.occn
+        self.Emax = helper.Emax
 
         self.stateList = sorted(stateset, key=energy)
         self.energyList = [energy(state) for state in self.stateList]
@@ -172,7 +173,7 @@ class Basis():
         # Check assumptions
         el = self.energyList
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
-        # assert (max(el) <= Emax)
+        assert (max(el) <= self.Emax)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
 

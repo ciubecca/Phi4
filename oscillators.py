@@ -33,7 +33,7 @@ class LocOperator():
     from a set of tails
     """
 
-    @profile
+    # @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -155,7 +155,7 @@ def _genMomentaPairs(helper):
 
 
 
-@profile
+# @profile
 def V4OpsHalf(basis):
     """ Generate half of the oscillators of the V4 operator
     basis: basis of all the low-energy states below ET """
