@@ -37,9 +37,6 @@ def XS(s):
 def YS(s):
     return [(np.dot(ys,n),Zn) for n,Zn in s]
 
-def toTuple(state):
-    """ Transform state in Repr1 with numpy arrays to tuples to store momenta """
-    return [(tuple(n), Zn) for n,Zn in state]
 
 def genTransformed(state):
     """ Generate the set of all transformed states under all symmetries for any given Fock space state """

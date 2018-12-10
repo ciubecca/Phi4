@@ -154,14 +154,17 @@ class Basis():
 
 
         # Retrieve the transformation of the indices to get lists sorted in energy
-        self.energyList = [energy(state) for state in stateset]
+        self.energyList = [energy(state) for state in stateList]
         idx = np.argsort(np.array(self.energyList))
 
-        self.stateList = list(sorted(stateset, key=energy))
+        print(idx)
+
+        self.stateList = list(sorted(stateList, key=energy))
         self.energyList.sort()
 
-        # TODO Need to sort this !!!
-        self.statePos = statePos
+        # Remap the indices
+        self.statePos = {state:idx[i] for state,i in statePos.items()}
+
 
 
         self.occnList = [occn(state) for state in self.stateList]
@@ -359,7 +362,7 @@ class Basis():
 
         # List of states in Representation 1, which are not related by symmetries when self.sym = False
         self.bases = {k:[] for k in (-1,1)}
-        idx = 0
+        idx = {k:0 for k in (-1,1)}
         # Dictionary of indices for states in Representation 2, modded by symmetry
         self.statePos = {k:{} for k in (-1,1)}
         # Number of Fock states in the singlet representation of state. This is used to compute the appropriate normalization
@@ -402,13 +405,13 @@ class Basis():
                             self.bases[k].append(toCanonical(state))
 
                             for s in transStates:
-                                self.statePos[k][s] = idx
-                            idx += 1
+                                self.statePos[k][s] = idx[k]
+                            idx[k] += 1
 
                         else:
                             self.bases[k].append(toCanonical(state))
                             s = bytes(helper.torepr2(state))
-                            self.statePos[k][s] = idx
-                            idx += 1
+                            self.statePos[k][s] = idx[k]
+                            idx[k] += 1
 
         return
