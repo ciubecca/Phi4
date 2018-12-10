@@ -1,8 +1,10 @@
 from phi4 import *
 from sys import argv, exit
 from math import factorial
+from statefuncs import *
 
 m = 1
+neigs = 2
 
 if len(argv) < 4:
     print("{} <Emax> <L> <g4> [<g2>]".format(argv[0]))
@@ -30,8 +32,13 @@ for k in (-1,1):
 
     a.setg(0, g2, g4/(factorial(4)))
 
-    a.computeEigval()
+    a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
+
+    if k==1:
+        # print("state[2]: ", toCanonical(a.basis.stateList[2]))
+        # print("state[3]: ", toCanonical(a.basis.stateList[3]))
+        print(a.V[2])
 
 print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))
 print("Vacuum: ", eigs[1][0])

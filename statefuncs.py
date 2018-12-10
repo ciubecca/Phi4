@@ -15,6 +15,11 @@ rot = array([[0,-1],[1,0]])
 # Reflection wrt x axis
 refl = array([[-1,0],[0,1]])
 
+# XXX Is this necessary?
+def toCanonical(state):
+    """ Transorm the state in representation 1 to canonical ordering of the momenta """
+    return list(sorted(((tuple(n), Zn) for n,Zn in state), key=lambda x: x[0]))
+
 
 class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
@@ -53,8 +58,12 @@ class Helper():
 
         # Set of allowed momenta in first and second quadrants, plus zero momentum
         self.allowedWn12 = set()
-        for nx in range(0, nmax+1):
-            for ny in range(0, nmax+1):
+        for nx in range(-nmax, nmax+1):
+            if nx < 0:
+                nymin = 1
+            else:
+                nymin = 0
+            for ny in range(nymin, nmax+1):
                 if sqrt(nx**2+ny**2) <= self.nmaxFloat:
                     self.allowedWn12.add((nx,ny))
 
@@ -89,7 +98,7 @@ class Helper():
     def totwn(self, state):
         if state==[]:
             return array([0,0])
-        return sum(Zn*n for n,Zn in state)
+        return sum([Zn*np.array(n) for n,Zn in state])
 
     def _omega(self, n):
         """ Energy corresponding to wavenumber n"""
@@ -124,8 +133,6 @@ class Helper():
         return sum([Zn for n,Zn in s])
 
 
-def reprState(state):
-    return [(tuple(n), Zn) for n,Zn in state]
 
 def sortOsc(s):
     """ Sort modes in a state according to momenta """
@@ -212,7 +219,7 @@ class Basis():
         return len(self.stateList)
 
     def __repr__(self):
-        return str([reprState(s) for s in self.stateList])
+        return str([toCanonical(s) for s in self.stateList])
 
     def _genNEwnlist(self, Emax, Lambda):
         """ Generate list of North-East moving wave numbers momenta, nx > ny >= 0,
@@ -375,7 +382,7 @@ class Basis():
                             state = s34 + s12 + [(array([0,0]),Z0)]
                         occtot = o + Z0
                         k = 1-2*(occtot%2)
-                        ret[k].append(state)
+                        ret[k].append(toCanonical(state))
 
 
         return ret

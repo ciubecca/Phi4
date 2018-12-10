@@ -21,7 +21,7 @@ def test_basis():
 
 
 def test_sym():
-    Elist = [12]
+    Elist = [11]
     Llist = [6]
 
     for i in range(len(Elist)):

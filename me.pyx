@@ -110,6 +110,14 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         # cycle over all the sets of momenta that can be annihilated
         for dlist in gendlists(state, nd, nd+nc, helper):
 
+            debug = False
+            state0 = []
+            state1 = [((0, -1), 1), ((0, 1), 1)]
+            state2 = [((-1, 0), 1), ((1, 0), 1)]
+            # if state==state0 and nd==0 and nc==2:
+                # debug = True
+                # print("dlist:", dlist)
+
             try:
                 k = dlistPos[dlist]
             except KeyError as e:
@@ -124,12 +132,19 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
             if imax <= imin:
                 continue
 
+            if debug:
+                print("Check 1")
+
             oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
 
             for z in range(len(oscListSub)):
 
                 osc = oscListSub[z]
+
+                if debug:
+                    # print("osc", [list(x) for x in osc])
+                    print("osc:", numpy.asarray(osc))
 
                 newstatevec = array.copy(statevec)
                 cnewstatevec = newstatevec.data.as_chars
