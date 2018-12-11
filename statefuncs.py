@@ -386,34 +386,30 @@ class Basis():
                     if e > Emax+tol:
                         break
 
-                    for Z0 in range(int(floor((Emax-e)/m+tol))+1):
-                        if Z0==0:
-                            state = s34 + s12
-                        else:
-                            state = s34 + s12 + [(array([0,0]),Z0)]
 
+
+                    for Z0 in range(int(floor((Emax-e)/m+tol))+1):
                         occtot = o + Z0
                         k = 1-2*(occtot%2)
 
-                        # XXX This can be optimized because it doesn't need to be performed for every Z0
-                        if self.sym:
+                        if Z0==0:
+                            state = s34 + s12
+                            # XXX This is slow. We could precompute in on the half state and not on the full state
                             transStates = genTransformed(state, helper)
-                            # The states already exists (for each Z0), when taking symmetries into account
-                            if not transStates.isdisjoint(self.statePos[k]):
+                            # The states already exists (for every Z0), when taking symmetries into account
+                            if any(s in self.statePos[k] for s in transStates):
                                 break
-
-                            # Number of Fock space states in the singlet state
-                            self.ncomp[k].append(len(transStates))
-                            self.bases[k].append(toCanonical(state))
-
-                            for s in transStates:
-                                self.statePos[k][s] = idx[k]
-                            idx[k] += 1
-
                         else:
-                            self.bases[k].append(toCanonical(state))
-                            s = bytes(helper.torepr2(state))
+                            state = s34 + s12 + [(array([0,0]),Z0)]
+                            transStates = genTransformed(state, helper)
+
+                        # Number of Fock space states in the singlet state
+                        self.ncomp[k].append(len(transStates))
+                        self.bases[k].append(toCanonical(state))
+
+                        for s in transStates:
                             self.statePos[k][s] = idx[k]
-                            idx[k] += 1
+                        idx[k] += 1
+
 
         return
