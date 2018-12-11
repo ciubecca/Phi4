@@ -1,5 +1,5 @@
-import gc
-from sys import getsizeof as sizeof
+# cython: linetrace=True
+
 import scipy, numpy
 from math import factorial, floor, sqrt
 import statefuncs
@@ -7,7 +7,6 @@ from statefuncs import Basis, Helper
 import itertools
 from itertools import combinations, islice, permutations
 from scipy import exp, pi
-from scipy.special import binom
 import bisect
 from oscillators import *
 cimport cython
@@ -47,6 +46,9 @@ def gendlists(state, nd, ntot, helper):
 
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, helper))
 
+
+@cython.binding(True)
+@profile
 def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
@@ -123,7 +125,7 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
 
                 for ii in range(osc.shape[0]):
                     # Index of momentum in representation 2
-                    jj = allowedWn[tuple(osc[ii, 0:2])]
+                    jj = allowedWn[(osc[ii, 0],osc[ii, 1])]
                     Zc = osc[ii, 2]
                     Zd = osc[ii, 3]
                     cnewstatevec[jj] += Zc-Zd
