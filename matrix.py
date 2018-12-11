@@ -3,25 +3,6 @@ import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 
-def buildStatePos(basis):
-    # Dictionary of positions of states
-    # TODO Contains also the P-reversed states
-    # NOTE: using arrays is much less efficient!
-
-    statePos = {}
-    helper = basis.helper
-    irange = range(basis.size)
-
-    for i in irange:
-        state = basis.repr2List[i]
-        statePos[state] = i
-
-        # XXX To implement
-        # statePos[state[::-1]] = i
-
-    return statePos
-
-
 
 class MatrixConstructor():
     def __init__(self, basis):
@@ -29,7 +10,7 @@ class MatrixConstructor():
         basis: basis for the row and column elements
         """
         self.basis = basis
-        self.statePos = buildStatePos(basis)
+        self.statePos = basis.statePos
 
     # @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, sumTranspose=True):
