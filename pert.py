@@ -2,7 +2,10 @@ from phi4 import *
 from sys import argv, exit
 from math import factorial
 from statefuncs import *
+import copy
+from scipy import sparse
 
+sym = True
 m = 1
 neigs = 4
 
@@ -18,13 +21,24 @@ try:
 except IndexError:
     g2 = 0
 
+print("gap for g4=0 :".format(sqrt(1+2*g2)))
 
-bases = Basis.fromScratch(m, L, Emax)
+
+bases = Basis.fromScratch(m, L, Emax, sym=sym)
 
 for k in (-1,1):
     print("k={}, Emax={}, L={}, size={}".format(k, Emax, L, len(bases[k])))
 
 eigs = {}
+
+debug = False
+
+def printMatrix(m):
+    md = m.todense()
+    for i in range(m.shape[0]):
+        for j in range(i+1, m.shape[0]):
+            md[i,j] = 0
+    print(sparse.csr_matrix(md))
 
 for k in (-1,1):
     a = Phi4(bases[k])
@@ -35,16 +49,21 @@ for k in (-1,1):
     a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
 
-    if k==-1:
-        # print("state[19]: ", toCanonical(a.basis.stateList[19]))
-        # print("state[15]: ", toCanonical(a.basis.stateList[15]))
-        # print(a.V[4])
-        # print("Nonzero matrix elements:", a.V[4].count_nonzero())
+    # if k==-1 and debug:
+        # # print("state[15]: ", toCanonical(a.basis.stateList[15]))
+        # # print("state[3]: ", toCanonical(a.basis.stateList[3]))
+        # # print(a.basis.energyList)
+
+        # for i,s in enumerate(a.basis.stateList):
+            # if i==0 or i==6:
+                # print("{}: {}".format(i,s))
+                # print("e: {}".format(a.basis.energyList[i]))
+
+        # assert abs((a.V[4]-a.V[4]).transpose()).max() < 10**-5
+        # printMatrix(a.V[4])
         # np.savetxt("matrix.csv", a.V[4].todense().reshape(1,a.basis.size**2), delimiter=',')
-        print(a.basis.stateList)
-        print(a.basis.energyList)
-        print(a.V[4])
-        pass
+        # pass
+
 
 print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))
 print("Vacuum: ", eigs[1][0])
