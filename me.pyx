@@ -17,9 +17,6 @@ import array
 # XXX Warning usign exponential notation sets this to zero!
 cdef double tol = 0.00000001
 
-# TODO
-# parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
-
 # TODO Check and vectorize this 
 def symFactors(ncomp1, ncomp2):
     return sqrt(ncomp1/ncomp2)
@@ -34,20 +31,6 @@ def filterDlist(dlist, nd, ntot, helper):
     else:
         return True
 
-# def filterDlist(dlist, nd, ntot, helper):
-    # nc = ntot-nd
-    # ktot = tuple(sum([numpy.array(d) for d in dlist]))
-
-    # if nc == 0:
-        # return ktot == (0,0)
-# # XXX Check, and fix to take Lambda into account
-    # else:
-        # return minEnergy(ktot, nc) < Emax
-    # return tuple(sum([numpy.array(d) for d in dlist])) == (0,0)
-    # elif nd==ntot-1:
-        # return tuple(sum([numpy.array(d) for d in dlist])) in allowedWn
-    # else:
-        # return True
 
 
 def gendlists(state, nd, ntot, helper):
@@ -105,66 +88,33 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         statevec = array.array('b', helper.torepr2(state))
         cstatevec = statevec.data.as_chars
         
-        # TODO
-        # parityList = lookupbasis.parityList
         allowedWn = helper.allowedWn
         normFactors = helper.normFactors
         Emax = helper.Emax
 
-        debug = False
- 
-        if (i==0) and nd==1 and nc==3 and basis.k==-1:
-            debug = True
-            print("{}: state = {}".format(i,state))
-
 
         # cycle over all the sets of momenta that can be annihilated
         for dlist in gendlists(state, nd, nd+nc, helper):
-
             try:
                 k = dlistPos[dlist]
             except KeyError as err:
                 raise err
-
-            if debug:
-                print("dlist: ", dlist)
-                pass
 
 
 # Only select the oscillators such that the sum of the state and oscillator energies
 # lies within the bounds of the lookupbasis energies
             imin = bisect.bisect_left(oscEnergies[k], 0-e-tol)
             imax = bisect.bisect_left(oscEnergies[k], Emax-e+tol)
-
-            # if debug:
-                # print("oscEnergies", oscEnergies[k])
-                # print("tol", tol)
-                # print("Emax-e", Emax-e)
-                # print("Emax-e+tol", Emax-e+tol)
-                # print("imin, imax", imin, imax)
-
             if imax <= imin:
                 continue
 
-            if debug:
-                print("Check 1")
 
             oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
 
-            if debug:
-                # print("oscList[k]", oscList[k])
-                print("oscListSub:", oscListSub)
-                pass
-
             for z in range(len(oscListSub)):
 
                 osc = oscListSub[z]
-
-                if debug:
-                    # print("osc", [list(x) for x in osc])
-                    # print("osc:", numpy.asarray(osc))
-                    pass
 
                 newstatevec = array.copy(statevec)
                 cnewstatevec = newstatevec.data.as_chars
@@ -179,9 +129,6 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                     cnewstatevec[jj] += Zc-Zd
                     x *= normFactors[Zc, Zd, cstatevec[jj]]
 
-                    # if debug and tuple(osc[ii, 0:2]) == 
-
-
 
                 if ignKeyErr:
                     try:
@@ -191,16 +138,9 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 else:
                     j = statePos[bytes(newstatevec)]
 
-                if debug and (j==6):
-                    print("final state:", basis.stateList[j])
-                    pass
     
                 # TODO Check and vectorize
                 x *= symFactors(ncomp1, basis.ncomp[j])
-
-                if debug and (j==6):
-                    print("x*L^2 = {}".format(x*basis.helper.L**2))
-                    pass
 
                 data.append(x)
                 col.append(j)

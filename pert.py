@@ -31,7 +31,7 @@ for k in (-1,1):
 
 eigs = {}
 
-debug = True
+debug = False
 
 def printMatrix(m):
     md = m.todense()
@@ -49,20 +49,21 @@ for k in (-1,1):
     a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
 
-    if k==-1 and debug:
-        # print("state[15]: ", toCanonical(a.basis.stateList[15]))
-        # print("state[3]: ", toCanonical(a.basis.stateList[3]))
-        # print(a.basis.energyList)
+    # if k==-1 and debug:
+        # # print("state[15]: ", toCanonical(a.basis.stateList[15]))
+        # # print("state[3]: ", toCanonical(a.basis.stateList[3]))
+        # # print(a.basis.energyList)
 
-        for i,s in enumerate(a.basis.stateList):
-            if i==0 or i==6:
-                print("{}: {}".format(i,s))
-                print("e: {}".format(a.basis.energyList[i]))
+        # for i,s in enumerate(a.basis.stateList):
+            # if i==0 or i==6:
+                # print("{}: {}".format(i,s))
+                # print("e: {}".format(a.basis.energyList[i]))
 
-        assert abs((a.V[4]-a.V[4]).transpose()).max() < 10**-5
-        printMatrix(a.V[4])
-        np.savetxt("matrix.csv", a.V[4].todense().reshape(1,a.basis.size**2), delimiter=',')
-        pass
+        # assert abs((a.V[4]-a.V[4]).transpose()).max() < 10**-5
+        # printMatrix(a.V[4])
+        # np.savetxt("matrix.csv", a.V[4].todense().reshape(1,a.basis.size**2), delimiter=',')
+        # pass
+
 
 print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))
 print("Vacuum: ", eigs[1][0])
