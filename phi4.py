@@ -28,26 +28,36 @@ class Phi4():
         scipy.set_printoptions(precision=15)
 
 
-    def computePotential(self):
+    def computePotential(self, Vlist=None, V22=None):
         """
         Builds the potential matrices and the free Hamiltonian
+        If Vlist has been computed for another k, reuse it because it is expensive
         """
 
         basis = self.basis
+        helper = basis.helper
         self.h0 = scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size)
 
         self.V = {}
 
         c = MatrixConstructor(basis)
-        Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
+
+        if Vlist == None:
+            Vlist = {2:V2OpsHalf(helper), 4:V4OpsHalf(helper)}
+            V22 = V4Ops22(helper)
+
         for n in (2,4):
             self.V[n] = c.buildMatrix(Vlist[n])*self.L**2
             # XXX Temporary fix
             if n == 4:
-                self.V[n] += c.buildMatrix(V4Ops22(basis), sumTranspose=False)*self.L**2
+                self.V[n] += c.buildMatrix(V22, sumTranspose=False)*self.L**2
         del c
 
         self.V[0] = scipy.sparse.eye(basis.size)*self.L**2
+
+        return Vlist, V22
+
+
 
     def setg(self, g0, g2, g4):
         self.g = {}

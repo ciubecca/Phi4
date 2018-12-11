@@ -46,7 +46,6 @@ class LocOperator():
         oscillators: list of tuples. The first element of the tuple is a tuple of
         wavenumbers of annihilation operators, and the second element a list of
         tuples of wavenumbers of creation operators
-        basis: basis on which the operator will act
         nd: number of annihilation operators
         nc: number of creation operators
         """
@@ -176,12 +175,10 @@ def _genMomentaPairs(helper):
 
 
 # XXX This is slow
-@profile
-def V4OpsHalf(basis):
-    """ Generate half of the oscillators of the V4 operator
-    basis: basis of all the low-energy states below ET """
+# @profile
+def V4OpsHalf(helper):
+    """ Generate half of the oscillators of the V4 operator """
 
-    helper = basis.helper
     omega = helper.omega
     minEnergy = helper.minEnergy
     allowedWn = helper.allowedWn
@@ -293,11 +290,10 @@ def V4OpsHalf(basis):
     return V40, V31
 
 # @profile
-def V4Ops22(basis):
+def V4Ops22(helper):
     # XXX Temporary fix
     """ Do not symmetrize for the moment! """
 
-    helper = basis.helper
     omega = helper.omega
     minEnergy = helper.minEnergy
     allowedWn = helper.allowedWn
@@ -338,11 +334,9 @@ def V4Ops22(basis):
 def minus(t):
     return (-t[0],-t[1])
 
-def V2OpsHalf(basis):
-    """ Generate half of the oscillators of the V2 operator
-    basis: basis of all the low-energy states below ET """
+def V2OpsHalf(helper):
+    """ Generate half of the oscillators of the V2 operator """
 
-    helper = basis.helper
     nmax = helper.nmax
     Emax = helper.Emax
     allowedWn12 = helper.allowedWn12

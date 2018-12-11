@@ -41,10 +41,13 @@ def printMatrix(m):
             md[i,j] = 0
     print(sparse.csr_matrix(md))
 
+Vlist = None
+V22 = None
+
 for k in (-1,1):
     print("Computing k={} matrices...".format(k))
     a = Phi4(bases[k])
-    a.computePotential()
+    Vlist, V22 = a.computePotential(Vlist, V22)
 
     a.setg(0, g2, g4/(factorial(4)))
 
