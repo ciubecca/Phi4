@@ -112,8 +112,8 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         Emax = helper.Emax
 
         debug = False
-        
-        if (i==4) and nd==2 and nc==2 and basis.k==1:
+ 
+        if (i==0) and nd==1 and nc==3 and basis.k==-1:
             debug = True
             print("{}: state = {}".format(i,state))
 
@@ -127,7 +127,7 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 raise err
 
             if debug:
-                # print("dlist: ", dlist)
+                print("dlist: ", dlist)
                 pass
 
 
@@ -191,14 +191,14 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 else:
                     j = statePos[bytes(newstatevec)]
 
-                if debug and (j==2):
+                if debug and (j==6):
                     print("final state:", basis.stateList[j])
                     pass
     
                 # TODO Check and vectorize
                 x *= symFactors(ncomp1, basis.ncomp[j])
 
-                if debug and j==2:
+                if debug and (j==6):
                     print("x*L^2 = {}".format(x*basis.helper.L**2))
                     pass
 

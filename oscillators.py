@@ -91,11 +91,11 @@ class LocOperator():
                     *scipy.prod([1/sqrt(2*omega(n)*L**2) for n in clist+dlist])
                     for clist in clists])
 
-        if debug and nd==0 and nc==2:
-            print("clists", clists)
-            print("oscEnergies", self.oscEnergies[0])
-            print("oscFactors", self.oscFactors[0])
-            print(self.oscList)
+        # if debug and nd==0 and nc==2:
+            # print("clists", clists)
+            # print("oscEnergies", self.oscEnergies[0])
+            # print("oscFactors", self.oscFactors[0])
+            # print(self.oscList)
 
 
 
@@ -319,7 +319,7 @@ def V4Ops22(basis):
 
         kpairlist = allowedWn12[wnIdx]
 
-        debug = True
+        debug = False
         if debug and wnIdx == 3 and basis.k==1:
             print(kpairlist)
 
@@ -362,8 +362,8 @@ def V2OpsHalf(basis):
     for k1 in allowedWn12:
         k2 = minus(k1)
         clist = (k1,k2)
-        if debug and basis.k==1:
-            print("clist:", clist)
+        # if debug and basis.k==-1:
+            # print("clist:", clist)
 
         V20[-1][1].append(clist)
 

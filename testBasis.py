@@ -2,7 +2,7 @@ import pytest
 import random
 from phi4 import *
 
-tol = 10**-7
+tol = 10**-6
 
 # @pytest.mark.skip(reason="Not needed now")
 def test_basis():
@@ -42,12 +42,12 @@ def test_quartic_spec():
     g4 = [24]
 
     vac = [-0.004076480376270055]
-    spece = [[2.035553009079848, 3.199678014214963, 3.356677133229781, 4.082445472190814, 4.21252008745907]]
-    speco = [[0.973434499023974, 3.207424273691506, 4.494048612886267, 4.62886587275236, 5.184264427307492, 5.359318131071841]]
+    spece = [[2.035553009079848, 3.356677133229781, 4.21252008745907]]
+    speco = [[0.973434499023974, 3.207424273691506, 4.62886587275236, 5.359318131071841]]
 
     for Emax,L,g2,g4,e0,se,so in zip(Elist,Llist,g2,g4,vac,spece,speco):
 
-        bases = Basis.fromScratch(m=1, L=L, Emax=Emax)
+        bases = Basis.fromScratch(m=1, L=L, Emax=Emax, sym=True)
         eigs = {}
 
         for k in (-1,1):

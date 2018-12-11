@@ -109,6 +109,7 @@ class Helper():
 
     # XXX The use of this function is incorrect in presence of a momentum cutoff. Should replace by a function that
     # finds the minimal energy of state with given total momentum, and single particle momenta smaller than the cutoff
+    # XXX Incorrect !!
     def minEnergy(self, wn, z0min=0):
         """ Minimal energy to add to a state with total wavenumber "wn" in order
         to create a state with total zero momentum
@@ -119,7 +120,9 @@ class Helper():
         if wn[0]==0 and wn[1]==0:
             return m*z0min
         else:
-            return self.omega(wn) + m*(z0min-1)
+            # return self.omega(wn) + m*(z0min-1)
+            # XXX Bugged
+            return self.omega(wn)
 
     def kSq(self, n):
         """ Squared momentum corresponding to wave number n """

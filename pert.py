@@ -49,14 +49,15 @@ for k in (-1,1):
     a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
 
-    if k==1 and debug:
+    if k==-1 and debug:
         # print("state[15]: ", toCanonical(a.basis.stateList[15]))
         # print("state[3]: ", toCanonical(a.basis.stateList[3]))
         # print(a.basis.energyList)
 
         for i,s in enumerate(a.basis.stateList):
-            if i==2 or i==4:
+            if i==0 or i==6:
                 print("{}: {}".format(i,s))
+                print("e: {}".format(a.basis.energyList[i]))
 
         assert abs((a.V[4]-a.V[4]).transpose()).max() < 10**-5
         printMatrix(a.V[4])
