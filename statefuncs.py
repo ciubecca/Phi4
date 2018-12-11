@@ -34,8 +34,6 @@ class Helper():
         self.Emax = Emax
         self.Lambda = Lambda
 
-        print(m, L, Emax, Lambda)
-
         # Maximum of sqrt(nx^2 + ny^2)
         self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))+tol
         # Maximum integer wave number

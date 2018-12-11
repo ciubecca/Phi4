@@ -7,14 +7,14 @@ tol = 10**-7
 # @pytest.mark.skip(reason="Not needed now")
 def test_basis():
     Elist = [10]
-    Llist = [10]
-    sizelist = [(36179, 36562)]
+    Llist = [8]
+    sizelist = [(994, 972)]
 
     for i in range(len(Elist)):
         Emax = Elist[i]
         L = Llist[i]
 
-        bases = Basis.fromScratch(1, L, Emax)
+        bases = Basis.fromScratch(1, L, Emax, sym=True)
 
         for j,k in enumerate((1,-1)):
             assert bases[k].size == sizelist[i][j]
