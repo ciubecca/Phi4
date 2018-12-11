@@ -378,15 +378,14 @@ class Basis():
                 e34 = N12elist[i][j1]
                 o34 = N12occlist[i][j1]
 
-
-                for j2, s12 in enumerate(states):
+                # Save some time by using reflection
+                for j2 in range(j1, len(states)):
+                    s12 = states[j2]
                     e = e34 + N12elist[i][j2]
                     o = o34 + N12occlist[i][j2]
 
                     if e > Emax+tol:
                         break
-
-
 
                     for Z0 in range(int(floor((Emax-e)/m+tol))+1):
                         occtot = o + Z0
