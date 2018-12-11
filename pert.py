@@ -4,7 +4,7 @@ from math import factorial
 from statefuncs import *
 
 m = 1
-neigs = 6
+neigs = 4
 
 if len(argv) < 4:
     print("{} <Emax> <L> <g4> [<g2>]".format(argv[0]))
@@ -35,10 +35,12 @@ for k in (-1,1):
     a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
 
-    if k==1:
+    if k==-1:
         # print("state[15]: ", toCanonical(a.basis.stateList[15]))
         # print("state[3]: ", toCanonical(a.basis.stateList[3]))
-        # print(a.V[4])
+        print(a.basis.stateList)
+        print(a.basis.energyList)
+        print(a.V[4])
         pass
 
 print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))

@@ -11,6 +11,7 @@ class MatrixConstructor():
         """
         self.basis = basis
         self.statePos = basis.statePos
+        print(basis.statePos)
 
     # @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, sumTranspose=True):

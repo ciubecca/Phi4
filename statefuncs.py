@@ -152,18 +152,21 @@ class Basis():
         self.Emax = helper.Emax
         self.sym = sym
 
-
         # Retrieve the transformation of the indices to get lists sorted in energy
-        self.energyList = [energy(state) for state in stateList]
-        idx = np.argsort(np.array(self.energyList))
-
-        print(idx)
-
-        self.stateList = list(sorted(stateList, key=energy))
-        self.energyList.sort()
+        energyList = [energy(state) for state in stateList]
+        idx = np.argsort(np.array(energyList))
+        idx2 = {j,i for i,j in enumerate(idx) }
 
         # Remap the indices
-        self.statePos = {state:idx[i] for state,i in statePos.items()}
+        self.stateList = [stateList[idx[i]] for i in range(len(energyList))]
+        self.energyList = [energyList[idx[i]] for i in range(len(energyList))]
+        self.statePos = {state: idx2[i] for state,i in statePos.items()}
+
+        if k==1:
+            # print("energyList", self.energyList)
+            # print("stateList", self.stateList)
+            # print("statePos", self.statePos)
+            pass
 
 
 
