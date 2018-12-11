@@ -17,9 +17,10 @@ import array
 # XXX Warning usign exponential notation sets this to zero!
 cdef double tol = 0.00000001
 
-# TODO Check and vectorize this 
-def symFactors(ncomp1, ncomp2):
-    return sqrt(ncomp1/ncomp2)
+symFactors = [[0. for _ in range(9)] for _ in range(9)]
+for ncomp1 in (1,2,4,8):
+    for ncomp2 in (1,2,4,8):
+        symFactors[ncomp1][ncomp2] = sqrt(ncomp1/ncomp2)
 
 
 # XXX Review this function, to take Lambda into account?
@@ -30,7 +31,6 @@ def filterDlist(dlist, nd, ntot, helper):
         return tuple(sum([numpy.array(d) for d in dlist])) in helper.allowedWn
     else:
         return True
-
 
 
 def gendlists(state, nd, ntot, helper):
@@ -82,7 +82,8 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         # I define these local variables outside the loops for performance reasons
         e = basis.energyList[i]
         # Number of components in symmetry representation of state
-        ncomp1 = basis.ncomp[i]
+        ncomp = basis.ncomp
+        ncompi = basis.ncomp[i]
         state = basis.stateList[i]
 
         statevec = array.array('b', helper.torepr2(state))
@@ -107,7 +108,6 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
             imax = bisect.bisect_left(oscEnergies[k], Emax-e+tol)
             if imax <= imin:
                 continue
-
 
             oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
@@ -138,9 +138,7 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 else:
                     j = statePos[bytes(newstatevec)]
 
-    
-                # TODO Check and vectorize
-                x *= symFactors(ncomp1, basis.ncomp[j])
+                x *= symFactors[ncompi][ncomp[j]]
 
                 data.append(x)
                 col.append(j)
