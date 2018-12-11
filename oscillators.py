@@ -159,14 +159,28 @@ def _genMomentaPairs(helper):
             k12 = tuple(k1+k2)
             e12 = e1+elist[i2]
 
+            debug = False
+            st = tuple(sorted((tuple(k1),tuple(k2))))
+            tofind = {((0,-1),(0,1)), ((-1,0), (1,0))}
+            # if st in tofind:
+                # debug = True
+                # print("st", st)
+
             if k12 not in allowedWn:
                 continue
+
+            if debug:
+                print("Check1")
 
             if e12+minEnergy(k12) > Emax+tol:
                 continue
 
+            if debug:
+                print("Check2")
+
             if k12 not in allowedWn12:
                 allowedWn12[k12] = []
+
             allowedWn12[k12].append((tuple(k1),tuple(k2)))
 
     # Sort 2d momenta pairs lexicographically
@@ -275,17 +289,39 @@ def V4OpsHalf(basis):
 
     V31 = LocOperator(V31, 1, 3, helper)
 
+    return V40, V31
+
+
+def V4Ops22(basis):
+    # XXX Temporary fix
+    """ Do not symmetrize for the moment! """
+
+    helper = basis.helper
+    omega = helper.omega
+    minEnergy = helper.minEnergy
+    allowedWn = helper.allowedWn
+    Emax = helper.Emax
+    oscEnergy = helper.oscEnergy
 
     V22 = []
 
+    # TODO Change name for this !!
     allowedWn12 = _genMomentaPairs(helper)
     elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWn12]
 
+    # debug = True
+    # if debug and basis.k==1:
+        # print(allowedWn12[3])
 
     # Cycle over total momentum of annihilation operators
+    # XXX is this a bug?
     for wnIdx in range(len(allowedWn12)):
 
         kpairlist = allowedWn12[wnIdx]
+
+        debug = True
+        if debug and wnIdx == 3 and basis.k==1:
+            print(kpairlist)
 
         for i in range(len(kpairlist)):
             kpair = kpairlist[i]
@@ -294,14 +330,15 @@ def V4OpsHalf(basis):
             dlist = kpair
             V22.append((dlist,[]))
 
-            for j in range(i, len(kpairlist)):
+            for j in range(len(kpairlist)):
                 # XXX Need to perforn any checks ?
                 clist = kpairlist[j]
                 V22[-1][1].append(clist)
 
     V22 = LocOperator(V22, 2, 2, helper)
+    return (V22,)
 
-    return V40, V31, V22
+
 
 
 # Takes the opposite of a tuple

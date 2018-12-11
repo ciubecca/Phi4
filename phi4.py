@@ -42,6 +42,9 @@ class Phi4():
         Vlist = {2:V2OpsHalf(basis), 4:V4OpsHalf(basis)}
         for n in (2,4):
             self.V[n] = c.buildMatrix(Vlist[n])*self.L**2
+            # XXX Temporary fix
+            if n == 4:
+                self.V[n] += c.buildMatrix(V4Ops22(basis), sumTranspose=False)*self.L**2
         del c
 
         self.V[0] = scipy.sparse.eye(basis.size)*self.L**2
