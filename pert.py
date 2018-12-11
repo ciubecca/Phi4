@@ -21,9 +21,10 @@ try:
 except IndexError:
     g2 = 0
 
-print("gap for g4=0 :".format(sqrt(1+2*g2)))
+# print("gap for g4=0 :".format(sqrt(1+2*g2)))
 
 
+print("Computing basis...")
 bases = Basis.fromScratch(m, L, Emax, sym=sym)
 
 for k in (-1,1):
@@ -41,11 +42,13 @@ def printMatrix(m):
     print(sparse.csr_matrix(md))
 
 for k in (-1,1):
+    print("Computing k={} matrices...".format(k))
     a = Phi4(bases[k])
     a.computePotential()
 
     a.setg(0, g2, g4/(factorial(4)))
 
+    print("Diagonalizing matrix...".format(k))
     a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
 

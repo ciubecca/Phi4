@@ -20,9 +20,12 @@ from me import *
 
 debug = False
 
-maxx = 0
+# XXX Beware of bugs when changing L with these global variables!
+clist_pref = {}
+clist_e = {}
+clist_count = {}
 
-# @profile
+
 # XXX Does this have precision issues?
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
@@ -63,7 +66,6 @@ class LocOperator():
 # This is a list of lists. Each list contains all the possible creation momenta
 # corresponding to a given set of annihilation momenta
         self.oscList = []
-        self.oscList2 = []
 
 # List with same lenght as oscList. It contains the total energy of the corresponding
 # oscillators
@@ -75,9 +77,9 @@ class LocOperator():
 # Overall prefactor
         pref = binom(nc+nd,nc)
 
-        clist_pref = {}
-        clist_e = {}
-        clist_count = {}
+        global clist_pref
+        global clist_e
+        global clist_count
 
         for i, (dlist,clists) in enumerate(oscillators):
 
@@ -85,6 +87,7 @@ class LocOperator():
             dlist_e = oscEnergy(dlist)
             dlist_count = Counter(dlist)
 
+            # XXX Use global variables for this?
             for clist in clists:
                 if clist not in clist_pref:
                     clist_pref[clist] = bose(clist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in clist])
@@ -157,24 +160,11 @@ def _genMomentaPairs(helper):
             k12 = tuple(k1+k2)
             e12 = e1+elist[i2]
 
-            debug = False
-            st = tuple(sorted((tuple(k1),tuple(k2))))
-            tofind = {((0,-1),(0,1)), ((-1,0), (1,0))}
-            # if st in tofind:
-                # debug = True
-                # print("st", st)
-
             if k12 not in allowedWn:
                 continue
 
-            if debug:
-                print("Check1")
-
             if e12+minEnergy(k12) > Emax+tol:
                 continue
-
-            if debug:
-                print("Check2")
 
             if k12 not in allowedWn12:
                 allowedWn12[k12] = []
@@ -185,8 +175,8 @@ def _genMomentaPairs(helper):
     return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
 
 
-
-# @profile
+# XXX This is slow
+@profile
 def V4OpsHalf(basis):
     """ Generate half of the oscillators of the V4 operator
     basis: basis of all the low-energy states below ET """
@@ -244,8 +234,21 @@ def V4OpsHalf(basis):
 # Generate a LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
 
+######################################################
+    # Pre-compute sorted V13 indices for the creation operators
+    # V13indices = []
+    # for i2 in range(l):
+        # V13indices.append([])
+        # k2 = allowedWnList[i2]
+        # for i3 in range(i2, l):
+            # k3 = allowedWnList[i3]
+            # k4 = tuple(k1-k2-k3)
+            # if k4 in allowedWn and allowedWnIdx[k4]>=i3:
+                # V13indices[i2].append(i3)
 
 
+
+#######################################################
     V31 = []
     for k1 in allowedWnList:
 # The set of annihilation momenta contains just one momentum
@@ -307,19 +310,11 @@ def V4Ops22(basis):
     allowedWn12 = _genMomentaPairs(helper)
     elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWn12]
 
-    # debug = True
-    # if debug and basis.k==1:
-        # print(allowedWn12[3])
 
     # Cycle over total momentum of annihilation operators
-    # XXX is this a bug?
     for wnIdx in range(len(allowedWn12)):
 
         kpairlist = allowedWn12[wnIdx]
-
-        debug = False
-        if debug and wnIdx == 3 and basis.k==1:
-            print(kpairlist)
 
         for i in range(len(kpairlist)):
             kpair = kpairlist[i]
@@ -360,8 +355,6 @@ def V2OpsHalf(basis):
     for k1 in allowedWn12:
         k2 = minus(k1)
         clist = (k1,k2)
-        # if debug and basis.k==-1:
-            # print("clist:", clist)
 
         V20[-1][1].append(clist)
 
