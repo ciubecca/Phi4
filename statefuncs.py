@@ -155,7 +155,7 @@ class Basis():
         # Retrieve the transformation of the indices to get lists sorted in energy
         energyList = [energy(state) for state in stateList]
         idx = np.argsort(np.array(energyList))
-        idx2 = {j,i for i,j in enumerate(idx) }
+        idx2 = {j:i for i,j in enumerate(idx) }
 
         # Remap the indices
         self.stateList = [stateList[idx[i]] for i in range(len(energyList))]
