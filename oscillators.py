@@ -1,4 +1,6 @@
 from profile_support import *
+from operator import mul
+from functools import reduce
 import gc
 from sys import getsizeof as sizeof
 import scipy
@@ -44,7 +46,7 @@ class LocOperator():
     from a set of tails
     """
 
-    # @profile
+    @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -77,8 +79,12 @@ class LocOperator():
 
 # Combinatorial and phase-space factors of the oscillators
         self.oscFactors = []
+        self.oscFactors2 = []
 
         for i, (dlist,clists) in enumerate(oscillators):
+
+            factor = bose(dlist)*binom(nc+nd,nc)*scipy.prod([1/sqrt(2*omega(n)*L**2) for n in dlist])
+
             clists = list(sorted(clists, key=helper.oscEnergy))
 
             self.dlistPos[dlist] = i
@@ -87,8 +93,12 @@ class LocOperator():
 
             self.oscEnergies.append([oscEnergy(clist)-oscEnergy(dlist) for clist in clists])
 
-            self.oscFactors.append([bose(clist)*bose(dlist)*binom(nc+nd,nc)\
-                    *scipy.prod([1/sqrt(2*omega(n)*L**2) for n in clist+dlist])
+            self.oscFactors2.append([factor*bose(clist)\
+                    *scipy.prod([1/sqrt(2*omega(n)*L**2) for n in clist])
+                    for clist in clists])
+
+            self.oscFactors.append([factor*bose(clist)\
+                    *reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in clist])
                     for clist in clists])
 
         # if debug and nd==0 and nc==2:
@@ -291,7 +301,7 @@ def V4OpsHalf(basis):
 
     return V40, V31
 
-
+# @profile
 def V4Ops22(basis):
     # XXX Temporary fix
     """ Do not symmetrize for the moment! """

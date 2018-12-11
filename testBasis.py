@@ -4,7 +4,7 @@ from phi4 import *
 
 tol = 10**-6
 
-# @pytest.mark.skip(reason="Not needed now")
+@pytest.mark.skip(reason="Not needed now")
 def test_basis():
     Elist = [10]
     Llist = [8]
@@ -20,6 +20,7 @@ def test_basis():
             assert bases[k].size == sizelist[i][j]
 
 
+@pytest.mark.skip(reason="Not needed now")
 def test_sym():
     Elist = [11]
     Llist = [6]
