@@ -106,15 +106,12 @@ class LocOperator():
 
             # XXX Slow
             self.oscList.append([self.torepr1(clist, dlist, clist_count[clist], dlist_count) for clist in clists])
-            # self.oscList2.append([self.torepr12(clist,dlist) for clist in clists])
 
             self.oscEnergies.append([clist_e[clist]-dlist_e for clist in clists])
             self.oscFactors.append([dlist_pref*clist_pref[clist] for clist in clists])
 
 
 
-    @profile
-    # FIXME This is slow
     def torepr1(self, clist, dlist, ccount, dcount):
         """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
         tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
@@ -124,29 +121,6 @@ class LocOperator():
 
         wnlist = set(clist+dlist)
         return scipy.array([[n[0],n[1],ccount.get(n,0),dcount.get(n,0)] for n in wnlist], dtype=scipy.int8)
-
-
-    # @profile
-    # def torepr12(self, clist, dlist):
-        # """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
-        # tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
-        # the creation and annihilation momenta
-        # Zc and Zd are respectively the number of creation and annihilation operators at
-        # wavenumber n """
-
-        # wnlist = set(clist+dlist)
-        # # ret = np.zeros(shape=(len(wnlist), 4), dtype=scipy.int8)
-        # ret = np.zeros(shape=(len(wnlist), 4), dtype=scipy.int8)
-        # wnidx = {}
-        # for i,wn in enumerate(wnlist):
-            # ret[i][0] = wn[0]
-            # ret[i][1] = wn[1]
-            # wnidx[wn] = i
-        # for c in clist:
-            # ret[wnidx[c]][2] += 1
-        # for d in dlist:
-            # ret[wnidx[d]][3] += 1
-        # return ret
 
 
     def computeMatrixElements(self, basis, i, statePos, ignKeyErr=False):
@@ -221,7 +195,7 @@ def _genMomentaPairs(helper):
 
 
 
-# @profile
+@profile
 def V4OpsHalf(basis):
     """ Generate half of the oscillators of the V4 operator
     basis: basis of all the low-energy states below ET """
