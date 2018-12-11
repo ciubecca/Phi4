@@ -7,31 +7,19 @@ from collections import Counter
 from itertools import combinations
 import itertools
 import numpy as np
+from symmetry import *
 
 tol = 10**-10
-
-# Counter clockwise rotation by 90 degrees
-rot = array([[0,-1],[1,0]])
-# Reflection wrt x axis
-refl = array([[-1,0],[0,1]])
-
-# XXX Is this necessary?
-def toCanonical(state):
-    """ Transorm the state in representation 1 to canonical ordering of the momenta """
-    return list(sorted(((tuple(n), Zn) for n,Zn in state), key=lambda x: x[0]))
 
 def sortOsc(s):
     """ Sort modes in a state according to momenta """
     return list(sorted(s, key=lambda x: tuple(x[0])))
 
-def rotate(s):
-    """ Rotate state counterclockwise by pi/2 """
-    return [(np.dot(rot,n),Zn) for n,Zn in s]
 
-def reflect(self, s):
-    """ Reflect on state wrt x axis """
-    return [(np.dot(refl,n),Zn) for n,Zn in s]
-
+# XXX Is this necessary?
+def toCanonical(state):
+    """ Transorm the state in representation 1 to canonical ordering of the momenta """
+    return list(sorted(((tuple(n), Zn) for n,Zn in state), key=lambda x: x[0]))
 
 
 class Helper():
@@ -45,8 +33,6 @@ class Helper():
         self.m = m
         self.Emax = Emax
         self.Lambda = Lambda
-
-        print(m, L, Emax, Lambda)
 
         # Maximum of sqrt(nx^2 + ny^2)
         self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))+tol
@@ -91,7 +77,6 @@ class Helper():
                     else:
                         self.normFactors[c,d,n] = scipy.nan
 
-
     def torepr2(self, s):
         # XXX Represent the state as numpy array? Or matrix? Or sparse vector?
         ret = [0]*len(self.allowedWn)
@@ -124,6 +109,7 @@ class Helper():
 
     # XXX The use of this function is incorrect in presence of a momentum cutoff. Should replace by a function that
     # finds the minimal energy of state with given total momentum, and single particle momenta smaller than the cutoff
+    # XXX Incorrect !!
     def minEnergy(self, wn, z0min=0):
         """ Minimal energy to add to a state with total wavenumber "wn" in order
         to create a state with total zero momentum
@@ -134,7 +120,9 @@ class Helper():
         if wn[0]==0 and wn[1]==0:
             return m*z0min
         else:
-            return self.omega(wn) + m*(z0min-1)
+            # return self.omega(wn) + m*(z0min-1)
+            # XXX Bugged
+            return self.omega(wn)
 
     def kSq(self, n):
         """ Squared momentum corresponding to wave number n """
@@ -146,18 +134,16 @@ class Helper():
         return sum([Zn for n,Zn in s])
 
 
-
-
-
 class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateset, helper):
+    def __init__(self, k, stateList, statePos, helper, sym=False, ncomp=None):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
         helper: Helper object
+        sym: take symmetries into account, and project out singlet states
         """
         self.k = k
         self.helper = helper
@@ -165,18 +151,27 @@ class Basis():
         energy = helper.energy
         occn = helper.occn
         self.Emax = helper.Emax
+        self.sym = sym
 
-        self.stateList = sorted(stateset, key=energy)
-        self.energyList = [energy(state) for state in self.stateList]
+        self.size = len(stateList)
+
+        # Retrieve the transformation of the indices to get lists sorted in energy
+        energyList = [energy(state) for state in stateList]
+        idx = np.argsort(np.array(energyList))
+        # Reverse indices
+        idx2 = {j:i for i,j in enumerate(idx) }
+
+        # Remap the indices
+        self.stateList = [stateList[idx[i]] for i in range(self.size)]
+        self.energyList = [energyList[idx[i]] for i in range(self.size)]
+        self.statePos = {state: idx2[i] for state,i in statePos.items()}
+
+        # Symmetry types
+        if sym:
+            self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
+
 
         self.occnList = [occn(state) for state in self.stateList]
-
-        # TODO To implement
-        # self.parityList = [int(state==reverse(state)) for state in self.stateList]
-
-        self.repr2List = [bytes(helper.torepr2(state)) for state in self.stateList]
-
-        self.size = len(self.energyList)
 
         # Check assumptions
         el = self.energyList
@@ -194,7 +189,7 @@ class Basis():
 
 
     @classmethod
-    def fromScratch(self, m, L, Emax, Lambda=np.inf):
+    def fromScratch(self, m, L, Emax, Lambda=np.inf, sym=False):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
         L: side of the torus
@@ -206,14 +201,19 @@ class Basis():
         occn = helper.occn
         m = helper.m
         energy = helper.energy
+        self.sym = sym
 
         self._occmax = int(floor(Emax/m)+tol)
 
-        bases = self.buildBasis(self)
-        # Make the representation of each state unique by sorting the oscillators
-        bases = {k: [sortOsc(s) for s in bases[k]] for k in (-1,1)}
+        self._buildBasis(self)
 
-        return {k: self(k,bases[k],helper) for k in (-1,1)}
+        # Make the representation of each state unique by sorting the oscillators
+        self.bases = {k: [sortOsc(s) for s in self.bases[k]] for k in (-1,1)}
+
+        if sym:
+            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym, ncomp=self.ncomp[k]) for k in (-1,1)}
+        else:
+            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym) for k in (-1,1)}
 
 
     def __len__(self):
@@ -296,7 +296,7 @@ class Basis():
 
 
     # @profile
-    def buildBasis(self):
+    def _buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
         helper = self.helper
@@ -327,7 +327,8 @@ class Basis():
         NEwntotlist1 = [totwn(s) for s in NEsl1]
         NEwntotlist2 = [np.dot(rot,wntot) for wntot in NEwntotlist1]
 
-        NEsl12 = {}
+        # North-moving states in first and second quadrants
+        Nsl12 = {}
 
         # Rotate and join NE moving states counterclockwise
         for i1,s1 in enumerate(NEsl1):
@@ -351,27 +352,36 @@ class Basis():
 
                 s12 = s1+s2
 
-                if tuple(WN2) not in NEsl12.keys():
-                    NEsl12[tuple(WN2)] = [s12]
+                if tuple(WN2) not in Nsl12.keys():
+                    Nsl12[tuple(WN2)] = [s12]
                 else:
-                    NEsl12[tuple(WN2)].append(s12)
+                    Nsl12[tuple(WN2)].append(s12)
 
-        NEsl12 = [list(sorted(states, key=energy)) for states in NEsl12.values()]
-        NE12elist = [[energy(s) for s in states] for states in NEsl12]
-        NE12occlist = [[occn(s) for s in states] for states in NEsl12]
+        # Create states moving north or south, and join them pairwise
+        Nsl12 = [list(sorted(states, key=energy)) for states in Nsl12.values()]
+        N12elist = [[energy(s) for s in states] for states in Nsl12]
+        N12occlist = [[occn(s) for s in states] for states in Nsl12]
 
-        ret = {k:[] for k in (-1,1)}
+        # List of states in Representation 1, which are not related by symmetries when self.sym = False
+        self.bases = {k:[] for k in (-1,1)}
+        idx = {k:0 for k in (-1,1)}
+        # Dictionary of indices for states in Representation 2, modded by symmetry
+        self.statePos = {k:{} for k in (-1,1)}
+        # Number of Fock states in the singlet representation of state. This is used to compute the appropriate normalization
+        # factors
+        self.ncomp = {k:[] for k in (-1,1)}
 
-        for i, states in enumerate(NEsl12):
+        for i, states in enumerate(Nsl12):
 
             for j1, s in enumerate(states):
                 s34 = rotate(rotate(s))
-                e34 = NE12elist[i][j1]
-                o34 = NE12occlist[i][j1]
+                e34 = N12elist[i][j1]
+                o34 = N12occlist[i][j1]
+
 
                 for j2, s12 in enumerate(states):
-                    e = e34 + NE12elist[i][j2]
-                    o = o34 + NE12occlist[i][j2]
+                    e = e34 + N12elist[i][j2]
+                    o = o34 + N12occlist[i][j2]
 
                     if e > Emax+tol:
                         break
@@ -381,9 +391,29 @@ class Basis():
                             state = s34 + s12
                         else:
                             state = s34 + s12 + [(array([0,0]),Z0)]
+
                         occtot = o + Z0
                         k = 1-2*(occtot%2)
-                        ret[k].append(toCanonical(state))
 
+                        # XXX This can be optimized because it doesn't need to be performed for every Z0
+                        if self.sym:
+                            transStates = genTransformed(state, helper)
+                            # The states already exists (for each Z0), when taking symmetries into account
+                            if not transStates.isdisjoint(self.statePos[k]):
+                                break
 
-        return ret
+                            # Number of Fock space states in the singlet state
+                            self.ncomp[k].append(len(transStates))
+                            self.bases[k].append(toCanonical(state))
+
+                            for s in transStates:
+                                self.statePos[k][s] = idx[k]
+                            idx[k] += 1
+
+                        else:
+                            self.bases[k].append(toCanonical(state))
+                            s = bytes(helper.torepr2(state))
+                            self.statePos[k][s] = idx[k]
+                            idx[k] += 1
+
+        return
