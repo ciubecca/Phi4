@@ -137,7 +137,7 @@ class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateList, statePos, helper, sym=False):
+    def __init__(self, k, stateList, statePos, helper, sym=False, ncomp=None):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
@@ -152,30 +152,25 @@ class Basis():
         self.Emax = helper.Emax
         self.sym = sym
 
+        self.size = len(stateList)
+
         # Retrieve the transformation of the indices to get lists sorted in energy
         energyList = [energy(state) for state in stateList]
         idx = np.argsort(np.array(energyList))
+        # Reverse indices
         idx2 = {j:i for i,j in enumerate(idx) }
 
         # Remap the indices
-        self.stateList = [stateList[idx[i]] for i in range(len(energyList))]
-        self.energyList = [energyList[idx[i]] for i in range(len(energyList))]
+        self.stateList = [stateList[idx[i]] for i in range(self.size)]
+        self.energyList = [energyList[idx[i]] for i in range(self.size)]
         self.statePos = {state: idx2[i] for state,i in statePos.items()}
 
-        if k==1:
-            # print("energyList", self.energyList)
-            # print("stateList", self.stateList)
-            # print("statePos", self.statePos)
-            pass
-
+        # Symmetry types
+        if sym:
+            self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
 
 
         self.occnList = [occn(state) for state in self.stateList]
-
-        # TODO To implement
-        # self.parityList = [int(state==reverse(state)) for state in self.stateList]
-
-        self.size = len(self.energyList)
 
         # Check assumptions
         el = self.energyList
@@ -214,7 +209,10 @@ class Basis():
         # Make the representation of each state unique by sorting the oscillators
         self.bases = {k: [sortOsc(s) for s in self.bases[k]] for k in (-1,1)}
 
-        return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym) for k in (-1,1)}
+        if sym:
+            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym, ncomp=self.ncomp[k]) for k in (-1,1)}
+        else:
+            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym) for k in (-1,1)}
 
 
     def __len__(self):
@@ -370,7 +368,7 @@ class Basis():
         self.statePos = {k:{} for k in (-1,1)}
         # Number of Fock states in the singlet representation of state. This is used to compute the appropriate normalization
         # factors
-        self.ncomponents = {k:[] for k in (-1,1)}
+        self.ncomp = {k:[] for k in (-1,1)}
 
         for i, states in enumerate(Nsl12):
 
@@ -398,13 +396,13 @@ class Basis():
 
                         # XXX This can be optimized because it doesn't need to be performed for every Z0
                         if self.sym:
-                            transStates = getTransformed(state)
+                            transStates = genTransformed(state, helper)
                             # The states already exists (for each Z0), when taking symmetries into account
-                            if not transStates.isdisjoint(statePos[k]):
+                            if not transStates.isdisjoint(self.statePos[k]):
                                 break
 
                             # Number of Fock space states in the singlet state
-                            self.ncomponents[k].append(len(transStates))
+                            self.ncomp[k].append(len(transStates))
                             self.bases[k].append(toCanonical(state))
 
                             for s in transStates:

@@ -20,6 +20,10 @@ cdef double tol = 0.00000001
 # TODO
 # parityFactors = [[1, sqrt(2)],[1/sqrt(2),1]]
 
+# TODO Check and vectorize this 
+def symFactors(ncomp1, ncomp2):
+    return sqrt(ncomp1/ncomp2)
+
 
 # XXX Review this function, to take Lambda into account?
 def filterDlist(dlist, nd, ntot, helper):
@@ -94,8 +98,8 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
 
         # I define these local variables outside the loops for performance reasons
         e = basis.energyList[i]
-        # TODO
-        # p = basis.parityList[i]
+        # Number of components in symmetry representation of state
+        ncomp1 = basis.ncomp[i]
         state = basis.stateList[i]
 
         statevec = array.array('b', helper.torepr2(state))
@@ -175,8 +179,8 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 else:
                     j = statePos[bytes(newstatevec)]
     
-                # TODO
-                # x *= parityFactors[p][parityList[j]]
+                # TODO Check and vectorize
+                x *= symFactors(ncomp1, basis.ncomp[j])
                 data.append(x)
                 col.append(j)
 

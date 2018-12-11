@@ -3,6 +3,7 @@ from sys import argv, exit
 from math import factorial
 from statefuncs import *
 
+sym = True
 m = 1
 neigs = 4
 
@@ -19,7 +20,7 @@ except IndexError:
     g2 = 0
 
 
-bases = Basis.fromScratch(m, L, Emax)
+bases = Basis.fromScratch(m, L, Emax, sym=sym)
 
 for k in (-1,1):
     print("k={}, Emax={}, L={}, size={}".format(k, Emax, L, len(bases[k])))
