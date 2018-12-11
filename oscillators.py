@@ -26,18 +26,9 @@ maxx = 0
 # XXX Does this have precision issues?
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
-    # global maxx
-    # if len(x) > maxx:
-        # maxx = len(x)
-        # print(maxx)
     return factorial(len(x))/scipy.prod(
         [factorial(sum(1 for _ in group)) for key, group in groupby(x)]
         )
-
-# TODO Maybe this is necessary to order the dlists in V4
-# def toCanonicalOsclist(osclist):
-    # """ Order canonically the momenta in a list of oscillators """
-    # return list(sorted(osclist))
 
 class LocOperator():
     """
@@ -46,7 +37,7 @@ class LocOperator():
     from a set of tails
     """
 
-    @profile
+    # @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -195,7 +186,7 @@ def _genMomentaPairs(helper):
 
 
 
-@profile
+# @profile
 def V4OpsHalf(basis):
     """ Generate half of the oscillators of the V4 operator
     basis: basis of all the low-energy states below ET """
