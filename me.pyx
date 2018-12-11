@@ -111,22 +111,24 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         normFactors = helper.normFactors
         Emax = helper.Emax
 
+        debug = False
+        
+        if (i==4) and nd==2 and nc==2 and basis.k==1:
+            debug = True
+            print("{}: state = {}".format(i,state))
+
+
         # cycle over all the sets of momenta that can be annihilated
         for dlist in gendlists(state, nd, nd+nc, helper):
-
-            debug = False
-            state0 = [((0,0),6)]
-            state1 = [((0, -1), 1), ((0, 1), 1)]
-            state2 = [((-1, 0), 1), ((1, 0), 1)]
-            # if state==state0 and nd==2 and nc==2:
-                # debug = True
-                # print("e state:", e)
-                # print("dlist:", dlist)
 
             try:
                 k = dlistPos[dlist]
             except KeyError as err:
                 raise err
+
+            if debug:
+                # print("dlist: ", dlist)
+                pass
 
 
 # Only select the oscillators such that the sum of the state and oscillator energies
@@ -134,12 +136,12 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
             imin = bisect.bisect_left(oscEnergies[k], 0-e-tol)
             imax = bisect.bisect_left(oscEnergies[k], Emax-e+tol)
 
-            if debug:
-                print("oscEnergies", oscEnergies[k])
-                print("tol", tol)
-                print("Emax-e", Emax-e)
-                print("Emax-e+tol", Emax-e+tol)
-                print("imin, imax", imin, imax)
+            # if debug:
+                # print("oscEnergies", oscEnergies[k])
+                # print("tol", tol)
+                # print("Emax-e", Emax-e)
+                # print("Emax-e+tol", Emax-e+tol)
+                # print("imin, imax", imin, imax)
 
             if imax <= imin:
                 continue
@@ -150,13 +152,19 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
             oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
 
+            if debug:
+                # print("oscList[k]", oscList[k])
+                print("oscListSub:", oscListSub)
+                pass
+
             for z in range(len(oscListSub)):
 
                 osc = oscListSub[z]
 
                 if debug:
                     # print("osc", [list(x) for x in osc])
-                    print("osc:", numpy.asarray(osc))
+                    # print("osc:", numpy.asarray(osc))
+                    pass
 
                 newstatevec = array.copy(statevec)
                 cnewstatevec = newstatevec.data.as_chars
@@ -171,6 +179,10 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                     cnewstatevec[jj] += Zc-Zd
                     x *= normFactors[Zc, Zd, cstatevec[jj]]
 
+                    # if debug and tuple(osc[ii, 0:2]) == 
+
+
+
                 if ignKeyErr:
                     try:
                         j = statePos[bytes(newstatevec)]
@@ -178,9 +190,18 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                         continue
                 else:
                     j = statePos[bytes(newstatevec)]
+
+                if debug and (j==2):
+                    print("final state:", basis.stateList[j])
+                    pass
     
                 # TODO Check and vectorize
                 x *= symFactors(ncomp1, basis.ncomp[j])
+
+                if debug and j==2:
+                    print("x*L^2 = {}".format(x*basis.helper.L**2))
+                    pass
+
                 data.append(x)
                 col.append(j)
 
