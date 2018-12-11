@@ -20,6 +20,19 @@ def toCanonical(state):
     """ Transorm the state in representation 1 to canonical ordering of the momenta """
     return list(sorted(((tuple(n), Zn) for n,Zn in state), key=lambda x: x[0]))
 
+def sortOsc(s):
+    """ Sort modes in a state according to momenta """
+    return list(sorted(s, key=lambda x: tuple(x[0])))
+
+def rotate(s):
+    """ Rotate state counterclockwise by pi/2 """
+    return [(np.dot(rot,n),Zn) for n,Zn in s]
+
+def reflect(self, s):
+    """ Reflect on state wrt x axis """
+    return [(np.dot(refl,n),Zn) for n,Zn in s]
+
+
 
 class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
@@ -134,17 +147,6 @@ class Helper():
 
 
 
-def sortOsc(s):
-    """ Sort modes in a state according to momenta """
-    return list(sorted(s, key=lambda x: tuple(x[0])))
-
-def rotate(s):
-    """ Rotate state counterclockwise by pi/2 """
-    return [(np.dot(rot,n),Zn) for n,Zn in s]
-
-def reflect(self, s):
-    """ Reflect on state wrt x axis """
-    return [(np.dot(refl,n),Zn) for n,Zn in s]
 
 
 class Basis():
