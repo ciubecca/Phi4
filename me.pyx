@@ -1,6 +1,7 @@
 # cython: linetrace=True
 
-import scipy, numpy
+import scipy
+import numpy as np
 from math import factorial, floor, sqrt
 import statefuncs
 from statefuncs import Basis, Helper
@@ -25,9 +26,9 @@ for ncomp1 in (1,2,4,8):
 # XXX Review this function, to take Lambda into account?
 def filterDlist(dlist, nd, ntot, helper):
     if nd==ntot:
-        return tuple(sum([numpy.array(d) for d in dlist])) == (0,0)
+        return tuple(sum([np.array(d) for d in dlist])) == (0,0)
     elif nd==ntot-1:
-        return tuple(sum([numpy.array(d) for d in dlist])) in helper.allowedWn
+        return tuple(sum([np.array(d) for d in dlist])) in helper.allowedWn
     else:
         return True
 
@@ -48,7 +49,7 @@ def gendlists(state, nd, ntot, helper):
 
 
 @cython.binding(True)
-@profile
+# @profile
 def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
@@ -67,6 +68,7 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         cdef char *cstatevec
         cdef char *cnewstatevec
         cdef char[:,:] osc
+        # cdef char[:,:,:] oscListSub
         cdef float[:] oscFactorsSub
         cdef char Zc, Zd, nmax
         cdef int z, ii, jj
@@ -113,9 +115,11 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
 
             oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
+            # oscListSub = np.array(oscList[k][imin:imax])
 
             for z in range(len(oscListSub)):
 
+                # XXX This is a bit slow. Maybe need to define oscListSub as a C variable?
                 osc = oscListSub[z]
 
                 newstatevec = array.copy(statevec)
