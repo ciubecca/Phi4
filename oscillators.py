@@ -72,6 +72,7 @@ class LocOperator():
 # This is a list of lists. Each list contains all the possible creation momenta
 # corresponding to a given set of annihilation momenta
         self.oscList = []
+        self.oscList2 = []
 
 # List with same lenght as oscList. It contains the total energy of the corresponding
 # oscillators
@@ -79,38 +80,42 @@ class LocOperator():
 
 # Combinatorial and phase-space factors of the oscillators
         self.oscFactors = []
-        self.oscFactors2 = []
+
+# Overall prefactor
+        pref = binom(nc+nd,nc)
+
+        clist_pref = {}
+        clist_e = {}
+        clist_count = {}
 
         for i, (dlist,clists) in enumerate(oscillators):
 
-            factor = bose(dlist)*binom(nc+nd,nc)*scipy.prod([1/sqrt(2*omega(n)*L**2) for n in dlist])
+            dlist_pref = pref*bose(dlist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in dlist],1)
+            dlist_e = oscEnergy(dlist)
+            dlist_count = Counter(dlist)
+
+            for clist in clists:
+                if clist not in clist_pref:
+                    clist_pref[clist] = bose(clist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in clist])
+                    clist_e[clist] = oscEnergy(clist)
+                    clist_count[clist] = Counter(clist)
 
             clists = list(sorted(clists, key=helper.oscEnergy))
 
             self.dlistPos[dlist] = i
 
-            self.oscList.append([self.torepr1(clist,dlist) for clist in clists])
+            # XXX Slow
+            self.oscList.append([self.torepr1(clist, dlist, clist_count[clist], dlist_count) for clist in clists])
+            # self.oscList2.append([self.torepr12(clist,dlist) for clist in clists])
 
-            self.oscEnergies.append([oscEnergy(clist)-oscEnergy(dlist) for clist in clists])
-
-            self.oscFactors2.append([factor*bose(clist)\
-                    *scipy.prod([1/sqrt(2*omega(n)*L**2) for n in clist])
-                    for clist in clists])
-
-            self.oscFactors.append([factor*bose(clist)\
-                    *reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in clist])
-                    for clist in clists])
-
-        # if debug and nd==0 and nc==2:
-            # print("clists", clists)
-            # print("oscEnergies", self.oscEnergies[0])
-            # print("oscFactors", self.oscFactors[0])
-            # print(self.oscList)
+            self.oscEnergies.append([clist_e[clist]-dlist_e for clist in clists])
+            self.oscFactors.append([dlist_pref*clist_pref[clist] for clist in clists])
 
 
 
-    # @profile
-    def torepr1(self, clist, dlist):
+    @profile
+    # FIXME This is slow
+    def torepr1(self, clist, dlist, ccount, dcount):
         """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
         tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
         the creation and annihilation momenta
@@ -118,12 +123,30 @@ class LocOperator():
         wavenumber n """
 
         wnlist = set(clist+dlist)
+        return scipy.array([[n[0],n[1],ccount.get(n,0),dcount.get(n,0)] for n in wnlist], dtype=scipy.int8)
 
-        cosc = Counter(clist)
-        dosc = Counter(dlist)
 
-        # return [[n,cosc.get(n,0),dosc.get(n,0)] for n in wnlist]
-        return scipy.array([[n[0],n[1],cosc.get(n,0),dosc.get(n,0)] for n in wnlist], dtype=scipy.int8)
+    # @profile
+    # def torepr12(self, clist, dlist):
+        # """ This generates a list of tuples of the form [(n, Zc, Zd),...] from two separate
+        # tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
+        # the creation and annihilation momenta
+        # Zc and Zd are respectively the number of creation and annihilation operators at
+        # wavenumber n """
+
+        # wnlist = set(clist+dlist)
+        # # ret = np.zeros(shape=(len(wnlist), 4), dtype=scipy.int8)
+        # ret = np.zeros(shape=(len(wnlist), 4), dtype=scipy.int8)
+        # wnidx = {}
+        # for i,wn in enumerate(wnlist):
+            # ret[i][0] = wn[0]
+            # ret[i][1] = wn[1]
+            # wnidx[wn] = i
+        # for c in clist:
+            # ret[wnidx[c]][2] += 1
+        # for d in dlist:
+            # ret[wnidx[d]][3] += 1
+        # return ret
 
 
     def computeMatrixElements(self, basis, i, statePos, ignKeyErr=False):
