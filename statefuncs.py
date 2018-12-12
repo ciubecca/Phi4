@@ -78,11 +78,11 @@ class Helper():
                         self.normFactors[c,d,n] = scipy.nan
 
     def torepr2(self, s):
-        # XXX Represent the state as numpy array? Or matrix? Or sparse vector?
-        ret = [0 for _ in range(len(self.allowedWn))]
+        ret = [0]*len(self.allowedWn)
         for n,Zn in s:
             ret[self.allowedWn[tuple(n)]] = Zn
         return ret
+
 
     def oscEnergy(self, wnlist):
         """ Energy of an oscillator (ordered tuple of momenta) """
@@ -295,7 +295,6 @@ class Basis():
         return ret
 
 
-    @profile
     def _buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
@@ -397,16 +396,18 @@ class Basis():
                     if bytes(helper.torepr2(state)) in self.statePos[k]:
                         continue
                     transStates = genTransformed(state, helper)
+                    # Number of Fock space states in the singlet state
+                    self.ncomp[k].append(len(transStates))
+                    self.bases[k].append(toCanonical(state))
+                    for rs in transStates:
+                        self.statePos[k][bytes(rs)] = idx[k]
+                    idx[k] += 1
 
-                    for Z0 in range(int(floor((Emax-e)/m+tol))+1):
-
-                        if Z0 > 0:
-                            state = s34 + s12 + [(array([0,0]),Z0)]
-
+                    # Add zero modes
+                    for Z0 in range(1, int(floor((Emax-e)/m+tol))+1):
+                        state = s34 + s12 + [(array([0,0]),Z0)]
                         occtot = o + Z0
                         k = 1-2*(occtot%2)
-
-                        # Number of Fock space states in the singlet state
                         self.ncomp[k].append(len(transStates))
                         self.bases[k].append(toCanonical(state))
 

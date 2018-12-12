@@ -30,6 +30,9 @@ bases = Basis.fromScratch(m, L, Emax, sym=sym)
 for k in (-1,1):
     print("k={}, Emax={}, L={}, size={}".format(k, Emax, L, len(bases[k])))
 
+
+exit(0)
+
 eigs = {}
 
 debug = False

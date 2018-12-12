@@ -34,6 +34,7 @@ def Y(s):
     return [(np.dot(reflx,n),Zn) for n,Zn in s]
 def XS(s):
     return [(np.dot(xs,n),Zn) for n,Zn in s]
+@profile
 def YS(s):
     return [(np.dot(ys,n),Zn) for n,Zn in s]
 
