@@ -397,14 +397,13 @@ class Basis():
 
                         if Z0==0:
                             state = s34 + s12
-                            # XXX This is slow. We could precompute in on the half state and not on the full state
-                            transStates = genTransformed(state, helper)
-                            # The states already exists (for every Z0), when taking symmetries into account
-                            if any(s in self.statePos[k] for s in transStates):
+                            # The state already exists (for every Z0), when taking symmetries into account
+                            if bytes(helper.torepr2(state)) in self.statePos[k]:
                                 break
                         else:
                             state = s34 + s12 + [(array([0,0]),Z0)]
-                            transStates = genTransformed(state, helper)
+
+                        transStates = genTransformed(state, helper)
 
                         # Number of Fock space states in the singlet state
                         self.ncomp[k].append(len(transStates))
