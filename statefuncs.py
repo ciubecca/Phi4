@@ -338,7 +338,11 @@ class Basis():
             # Keep track of total wave number
             WN1 = NEwntotlist1[i1]
 
+            # XXX The commented part is wrong. Can we save any more time?
+            # for i2 in range(i1, len(NEsl2)):
+                # s2 = NEsl2[i2]
             for i2,s2 in enumerate(NEsl2):
+
                 E2 = E1 + NEelist[i2]
                 WN2 = WN1 + NEwntotlist2[i2]
 
