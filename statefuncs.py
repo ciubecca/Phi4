@@ -79,7 +79,7 @@ class Helper():
 
     def torepr2(self, s):
         # XXX Represent the state as numpy array? Or matrix? Or sparse vector?
-        ret = [0]*len(self.allowedWn)
+        ret = [0 for _ in range(len(self.allowedWn))]
         for n,Zn in s:
             ret[self.allowedWn[tuple(n)]] = Zn
         return ret
@@ -295,7 +295,7 @@ class Basis():
         return ret
 
 
-    # @profile
+    @profile
     def _buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
@@ -391,26 +391,30 @@ class Basis():
                     if e > Emax+tol:
                         break
 
-                    for Z0 in range(int(floor((Emax-e)/m+tol))+1):
-                        occtot = o + Z0
-                        k = 1-2*(occtot%2)
+                    state = s34 + s12
+                    # The state already exists (for every Z0), when taking symmetries into account
+                    k = 1-2*(o%2)
+                    if bytes(helper.torepr2(state)) in self.statePos[k]:
+                        continue
+                    transStates = genTransformed(state, helper)
 
-                        if Z0==0:
-                            state = s34 + s12
-                            # The state already exists (for every Z0), when taking symmetries into account
-                            if bytes(helper.torepr2(state)) in self.statePos[k]:
-                                break
-                        else:
+                    for Z0 in range(int(floor((Emax-e)/m+tol))+1):
+
+                        if Z0 > 0:
                             state = s34 + s12 + [(array([0,0]),Z0)]
 
-                        transStates = genTransformed(state, helper)
+                        occtot = o + Z0
+                        k = 1-2*(occtot%2)
 
                         # Number of Fock space states in the singlet state
                         self.ncomp[k].append(len(transStates))
                         self.bases[k].append(toCanonical(state))
 
-                        for s in transStates:
-                            self.statePos[k][s] = idx[k]
+                        for rs in transStates:
+                            # Add zero modes for each of the transformed states
+                            rs[allowedWn[(0,0)]] = Z0
+                            self.statePos[k][bytes(rs)] = idx[k]
+
                         idx[k] += 1
 
 

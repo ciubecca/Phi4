@@ -1,4 +1,4 @@
-# cython: linetrace=False
+# cython: linetrace=True
 
 import scipy
 import numpy as np
@@ -48,8 +48,8 @@ def gendlists(state, nd, ntot, helper):
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, helper))
 
 
-# @cython.binding(True)
-# @profile
+@cython.binding(True)
+@profile
 def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis

@@ -39,8 +39,8 @@ def YS(s):
 
 
 def genTransformed(state, helper):
-    """ Generate the set of all transformed states under all symmetries for any given Fock space state """
-    return  {bytes(helper.torepr2(f(state))) for f in (I, S, S2, S3, X, Y, XS, YS)}
+    """ Generate the list of all transformed states under all symmetries for any given Fock space state """
+    return  [helper.torepr2(f(state)) for f in (I, S, S2, S3, X, Y, XS, YS)]
 
 
 
