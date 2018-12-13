@@ -2,7 +2,7 @@ import math
 import scipy
 import vegas
 import numpy as np
-from numpy import prod, sqrt, cos, sin
+from numpy import prod, sqrt, cos, sin, log
 from scipy.special import factorial
 
 pi = np.pi
@@ -115,4 +115,5 @@ class Phi0_1(Integrator):
                 HT(lam-P2(-y[0]-y[2]-y[4],-y[1]-y[3]-y[5]))
 
     def counterterm(self, lam):
-        return 0
+        # return -0.5*(48*(4*pi)**3)*(lam - 4*m*log(lam))
+        return -1/(48*(4*pi)**3)*(lam - 4*m*log(lam))
