@@ -400,17 +400,20 @@ class Basis():
                             # The state already exists (for every Z0), when taking symmetries into account
                             if bytes(helper.torepr2(state)) in self.statePos[k]:
                                 break
+                            transStates = genTransformed(state, helper)
                         else:
                             state = s34 + s12 + [(array([0,0]),Z0)]
 
-                        transStates = genTransformed(state, helper)
 
                         # Number of Fock space states in the singlet state
                         self.ncomp[k].append(len(transStates))
                         self.bases[k].append(toCanonical(state))
 
                         for s in transStates:
-                            self.statePos[k][s] = idx[k]
+                            if Z0 > 0:
+                                s[allowedWn[(0,0)]] = Z0
+                            self.statePos[k][bytes(s)] = idx[k]
+
                         idx[k] += 1
 
 
