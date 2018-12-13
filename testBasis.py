@@ -5,6 +5,26 @@ from phi4 import *
 tol = 10**-6
 
 # @pytest.mark.skip(reason="Not needed now")
+def test_occmax():
+    """ Test that size of basis built with occmax is equal to subset of full basis """
+    Elist = [12]
+    Llist = [6]
+    occmax = 4
+    m = 1
+
+    for i in range(len(Elist)):
+        Emax = Elist[i]
+        L = Llist[i]
+
+        basesFull = Basis.fromScratch(m, L, Emax, sym=True)
+        bases = Basis.fromScratch(m, L, Emax, occmax=occmax, sym=True)
+
+        for j,k in enumerate((1,-1)):
+            sub = [s for s in basesFull[k].stateList if basesFull[k].helper.occn(s) <= occmax]
+            assert bases[k].size == len(sub)
+
+
+# @pytest.mark.skip(reason="Not needed now")
 def test_basis():
     Elist = [10]
     Llist = [8]

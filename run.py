@@ -3,6 +3,7 @@ from phi4 import *
 from sys import argv, exit
 
 m = 1
+occmax = 4
 
 if len(argv) < 3:
     print("{} <Emax> <L>".format(argv[0]))
@@ -11,7 +12,7 @@ if len(argv) < 3:
 Emax = float(argv[1])
 L = float(argv[2])
 
-bases = Basis.fromScratch(m, L, Emax)
+bases = Basis.fromScratch(m, L, Emax, occmax=occmax)
 
 for k in (-1,1):
     print("k={}, Emax={}, L={}, size={}".format(k, Emax, L, len(bases[k])))

@@ -26,13 +26,14 @@ class Helper():
     """ This is just a "helper" class used to conveniently compute energies of
     oscillators and states and so on"""
 
-    def __init__(self, m, L, Emax, Lambda=np.inf, noscmax=8):
+    def __init__(self, m, L, Emax, Lambda=np.inf, occmax=np.inf, noscmax=8):
         """ noscmax: max number of oscillators """
 
         self.L = L
         self.m = m
         self.Emax = Emax
         self.Lambda = Lambda
+        self.occmax = occmax
 
         # Maximum of sqrt(nx^2 + ny^2)
         self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))+tol
@@ -66,7 +67,11 @@ class Helper():
                 if sqrt(nx**2+ny**2) <= self.nmaxFloat:
                     self.allowedWn12.add((nx,ny))
 
-        occmax = floor(Emax/m+tol)
+        if self.occmax == np.inf:
+            occmax = floor(Emax/m+tol)
+        else:
+            occmax = self.occmax
+
         self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,occmax+1))
         for c in range(noscmax+1):
             for d in range(noscmax+1):
@@ -120,8 +125,8 @@ class Helper():
         if wn[0]==0 and wn[1]==0:
             return m*z0min
         else:
-            # return self.omega(wn) + m*(z0min-1)
             # XXX Bugged
+            # return self.omega(wn) + m*(z0min-1)
             return self.omega(wn)
 
     def kSq(self, n):
@@ -179,6 +184,7 @@ class Basis():
         assert (max(el) <= self.Emax+tol)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
+        assert max(self.occnList) <= self.helper.occmax
 
 
     def irange(self, Emax):
@@ -189,21 +195,19 @@ class Basis():
 
 
     @classmethod
-    def fromScratch(self, m, L, Emax, Lambda=np.inf, sym=False):
+    def fromScratch(self, m, L, Emax, Lambda=np.inf, occmax=np.inf, sym=False):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
         L: side of the torus
         Emax: maximal energy of the states
         """
 
-        self.helper = Helper(m, L, Emax, Lambda)
+        self.helper = Helper(m, L, Emax, occmax=occmax, Lambda=Lambda)
         helper = self.helper
         occn = helper.occn
         m = helper.m
         energy = helper.energy
         self.sym = sym
-
-        self._occmax = int(floor(Emax/m)+tol)
 
         self._buildBasis(self)
 
@@ -262,6 +266,8 @@ class Basis():
         energy = helper.energy
         totwn = helper.totwn
         minEnergy = helper.minEnergy
+        occmax = helper.occmax
+        occn = helper.occn
 
         if idx == len(self.NEwnlist):
             # TODO Could Sort oscillators inside state here
@@ -274,8 +280,14 @@ class Basis():
         E = energy(NEstate)
         # Keep track of current total wave number
         WN = totwn(NEstate)
+        # Keep track of total occupation number
+        OCCN = occn(NEstate)
 
         ret = []
+
+        if OCCN >= occmax:
+            # Can break the recursive function here, since we cannot add any more modes
+            return ret
 
         for Zn in itertools.count():
             newstate = NEstate[:]
@@ -284,9 +296,11 @@ class Basis():
                 mode = (n, Zn)
                 E += omega(n)
                 WN += n
+                OCCN += Zn
+
                 # We need to add at least another particle to have 0 total momentum.
                 # XXX Check
-                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol:
+                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol or OCCN>occmax:
                     break
                 newstate.append(mode)
 
@@ -301,6 +315,7 @@ class Basis():
 
         helper = self.helper
         omega = helper.omega
+        occmax = helper.occmax
 
         m = helper.m
         energy = helper.energy
@@ -319,6 +334,7 @@ class Basis():
         NEstatelist.sort(key=lambda s: energy(s))
         # List of energies of the states in quadrants
         NEelist = [energy(s) for s in NEstatelist]
+        NEocclist = [occn(s) for s in NEstatelist]
 
         NEsl1 = NEstatelist
         NEsl2 = [rotate(s) for s in NEsl1]
@@ -337,6 +353,8 @@ class Basis():
             E1 = NEelist[i1]
             # Keep track of total wave number
             WN1 = NEwntotlist1[i1]
+            # Keep track of total occupation number
+            OCCN1 = NEelist[i1]
 
             # XXX The commented part is wrong. Can we save any more time?
             # for i2 in range(i1, len(NEsl2)):
@@ -345,13 +363,14 @@ class Basis():
 
                 E2 = E1 + NEelist[i2]
                 WN2 = WN1 + NEwntotlist2[i2]
+                OCCN2 = OCCN1 + NEelist[i2]
 
                 # NEstatelist is ordered in energy
                 if E2 > Emax+tol:
                     break
 
                 # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax+tol:
+                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax+tol or OCCN2>occmax:
                     continue
 
                 s12 = s1+s2
@@ -393,6 +412,10 @@ class Basis():
 
                     for Z0 in range(int(floor((Emax-e)/m+tol))+1):
                         occtot = o + Z0
+
+                        if occtot > occmax:
+                            break
+
                         k = 1-2*(occtot%2)
 
                         if Z0==0:
