@@ -3,6 +3,10 @@ import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 
+def submatrix(V, subidx):
+    """ Return the submatrix for states within smaller cutoffs """
+    return (V.tocsc()[:,subidx]).tocsr()[subidx,]
+
 
 class MatrixConstructor():
     def __init__(self, basis):

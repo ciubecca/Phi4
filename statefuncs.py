@@ -140,11 +140,12 @@ class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateList, statePos, helper, ncomp=None):
+    def __init__(self, k, stateList, helper, statePos=None, ncomp=None):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
         helper: Helper object
+        ncomp: symmetry components of each state
         """
         self.k = k
         self.helper = helper
@@ -156,25 +157,29 @@ class Basis():
 
         self.size = len(stateList)
 
-        # Retrieve the transformation of the indices to get lists sorted in energy
-        energyList = [energy(state) for state in stateList]
-        idx = np.argsort(np.array(energyList))
-        # Reverse indices
-        idx2 = {j:i for i,j in enumerate(idx) }
+        if statePos != None:
+            # Retrieve the transformation of the indices to get lists sorted in energy
+            energyList = [energy(state) for state in stateList]
+            idx = np.argsort(np.array(energyList))
+            # Reverse indices
+            idx2 = {j:i for i,j in enumerate(idx) }
+            # Remap the indices
+            self.stateList = [stateList[idx[i]] for i in range(self.size)]
+            self.energyList = [energyList[idx[i]] for i in range(self.size)]
+            self.statePos = {state: idx2[i] for state,i in statePos.items()}
 
-        # Remap the indices
-        self.stateList = [stateList[idx[i]] for i in range(self.size)]
-        self.energyList = [energyList[idx[i]] for i in range(self.size)]
-        self.statePos = {state: idx2[i] for state,i in statePos.items()}
+            # Symmetry types
+            self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
 
-        # Symmetry types
-        self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
+        # Assume that stateList is already sorted in energy. Need to construct statePos
+        # XXX Do we need to construct the subbasis if we just need the submatrix?
+        else:
+            raise RuntimeError("Not implemented")
 
 
         self.occnList = [occn(state) for state in self.stateList]
         # Maximal single particle momentum in each state
         self.maxmom = [maxmom(s) for s in self.stateList]
-
 
         # Check assumptions
         el = self.energyList
@@ -185,11 +190,9 @@ class Basis():
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
 
 
-    def irange(self, Emax):
-        """ Return max index for states with energy below Emax """
-        Emax = Emax + tol
-        imax = bisect.bisect_left(self.energyList, Emax)
-        return range(imax)
+    def subidxlist(self, Emax, Lambda=np.inf):
+        """ Return the indices of states within smaller cutoffs """
+        return [i for i in range(self.size) if self.energyList[i]<=Emax+tol and self.maxmom[i]<=Lambda+tol]
 
 
     @classmethod
@@ -212,7 +215,7 @@ class Basis():
         # Make the representation of each state unique by sorting the oscillators
         self.bases = {k: [sortOsc(s) for s in self.bases[k]] for k in (-1,1)}
 
-        return {k: self(k, self.bases[k], self.statePos[k],  helper, ncomp=self.ncomp[k]) for k in (-1,1)}
+        return {k: self(k, self.bases[k], helper, self.statePos[k], ncomp=self.ncomp[k]) for k in (-1,1)}
 
 
     def __len__(self):

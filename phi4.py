@@ -74,12 +74,22 @@ class Phi4():
         self.g[2] = g2 - dg2
         self.g[4] = g4
 
-    def computeEigval(self, neigs=6):
+    def computeEigval(self, Emax=np.inf, Lambda=np.inf, neigs=6):
         """ Compute the eigenvalues for sharp cutoff ET
         neigs: number of eigenvalues to compute
         """
 
-        compH = self.h0 + sum([self.g[n]* self.V[n] for n in (0,2,4)])
+        V = {}
+        if Emax<self.basis.Emax-tol or Lambda<self.basis.Lambda-tol:
+            subidx = self.basis.subidxlist(Emax, Lambda)
+            V = {n: submatrix(self.V[n], subidx) for n in (0,2,4)}
+            h0 = submatrix(self.h0, subidx)
+        else:
+            V = self.V
+            h0 = self.h0
+
+
+        compH = h0 + sum([self.g[n]*V[n] for n in (0,2,4)])
 
         # Seed vector
         v0 = scipy.zeros(compH.shape[0])
