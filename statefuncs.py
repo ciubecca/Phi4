@@ -15,6 +15,9 @@ def sortOsc(s):
     """ Sort modes in a state according to momenta """
     return list(sorted(s, key=lambda x: tuple(x[0])))
 
+def occn(s):
+    """ Occupation number of state """
+    return sum([Zn for n,Zn in s])
 
 # XXX Is this necessary?
 def toCanonical(state):
@@ -51,7 +54,7 @@ class Helper():
         idx = 0
         for nx in range(-nmax, nmax+1):
             for ny in range(-nmax, nmax+1):
-                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
+                if sqrt(nx**2+ny**2) <= self.nmaxFloat+tol:
                     self.allowedWn[(nx,ny)] = idx
                     idx += 1
 
@@ -63,7 +66,7 @@ class Helper():
             else:
                 nymin = 0
             for ny in range(nymin, nmax+1):
-                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
+                if sqrt(nx**2+ny**2) <= self.nmaxFloat+tol:
                     self.allowedWn12.add((nx,ny))
 
         occmax = floor(Emax/m+tol)
@@ -100,19 +103,16 @@ class Helper():
 
     def _omega(self, n):
         """ Energy corresponding to wavenumber n"""
-        m = self.m
-        return sqrt(m**2 + self.kSq(n))
+        return sqrt(self.m**2 + self.kSq(n))
 
     def omega(self, n):
         """ Energy corresponding to wavenumber n"""
         return self.omegaMat[n[0]][n[1]]
 
-    # XXX The use of this function is incorrect in presence of a momentum cutoff. Should replace by a function that
-    # finds the minimal energy of state with given total momentum, and single particle momenta smaller than the cutoff
-    # XXX Incorrect !!
+    # XXX This function can be improved. Need to find the configuration of allowed momenta with minimal energy
     def minEnergy(self, wn, z0min=0):
-        """ Minimal energy to add to a state with total wavenumber "wn" in order
-        to create a state with total zero momentum
+        """ This function provides a lower bound on the minimal energy to add to a state with total wavenumber "wn",
+        in order to create a state with total zero momentum
         z0min: minimum number of particles that must be added """
 
         m = self.m
@@ -120,18 +120,21 @@ class Helper():
         if wn[0]==0 and wn[1]==0:
             return m*z0min
         else:
-            # return self.omega(wn) + m*(z0min-1)
-            # XXX Bugged
-            return self.omega(wn)
+            # XXX This cannot be used if Lambda < inf
+            # return self.omega(wn)
+            return self._omega(wn)
 
     def kSq(self, n):
         """ Squared momentum corresponding to wave number n """
         L = self.L
-        return (2*pi/L)**2*np.sum(n**2)
+        return (2*pi/L)**2*(n[0]**2+n[1]**2)
 
-    def occn(self, s):
+    def maxmom(self, s):
         """ Occupation number of state """
-        return sum([Zn for n,Zn in s])
+        if s == []:
+            return 0.
+        return max(sqrt(self.kSq(n)) for n,_ in s)
+
 
 
 class Basis():
@@ -149,8 +152,9 @@ class Basis():
         self.helper = helper
         totwn = helper.totwn
         energy = helper.energy
-        occn = helper.occn
+        maxmom = helper.maxmom
         self.Emax = helper.Emax
+        self.Lambda = helper.Lambda
         self.sym = sym
 
         self.size = len(stateList)
@@ -172,11 +176,15 @@ class Basis():
 
 
         self.occnList = [occn(state) for state in self.stateList]
+        # Maximal single particle momentum in each state
+        self.maxmom = [maxmom(s) for s in self.stateList]
+
 
         # Check assumptions
         el = self.energyList
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
         assert (max(el) <= self.Emax+tol)
+        assert (max(self.maxmom) <= self.Lambda+tol)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
 
@@ -198,7 +206,6 @@ class Basis():
 
         self.helper = Helper(m, L, Emax, Lambda)
         helper = self.helper
-        occn = helper.occn
         m = helper.m
         energy = helper.energy
         self.sym = sym
@@ -286,7 +293,8 @@ class Basis():
                 WN += n
                 # We need to add at least another particle to have 0 total momentum.
                 # XXX Check
-                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol:
+                # if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol:
+                if E+minEnergy(WN)>Emax+tol:
                     break
                 newstate.append(mode)
 
@@ -309,7 +317,6 @@ class Basis():
         Lambda = helper.Lambda
         allowedWn = helper.allowedWn
         minEnergy = helper.minEnergy
-        occn = helper.occn
 
         # Generate list of all NE moving momenta
         self._genNEwnlist(self, Emax, Lambda)
@@ -351,7 +358,8 @@ class Basis():
                     break
 
                 # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax+tol:
+                # XXX CHECK
+                if E2+minEnergy(WN2)>Emax+tol:
                     continue
 
                 s12 = s1+s2
@@ -412,6 +420,5 @@ class Basis():
                         for s in transStates:
                             self.statePos[k][s] = idx[k]
                         idx[k] += 1
-
 
         return
