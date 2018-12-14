@@ -17,6 +17,7 @@ bases = Basis.fromScratch(m, L, Emax, Lambda)
 for k in (-1,1):
     print("k={}, L={}, Emax={}, Lambda={}, size={}".format(k, L, Emax, Lambda, len(bases[k])))
 
+exit(1)
 
 Vlist = None
 V22 = None

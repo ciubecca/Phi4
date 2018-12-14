@@ -52,6 +52,8 @@ for k in (-1,1):
 
     a.setg(0, g2, g4/(factorial(4)))
 
+    a.setmatrix()
+
     print("Diagonalizing matrix...".format(k))
     a.computeEigval(neigs=neigs)
     eigs[k] = a.eigval
