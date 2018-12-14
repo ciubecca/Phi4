@@ -1,6 +1,7 @@
 import numpy as np
 from time import time
 import os
+from numpy import log, e
 from integrator import *
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -9,37 +10,42 @@ from matplotlib import rc
 nitn = 20
 neval = 50000
 
+
 plt.style.use('ggplot')
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
 
-print("Computing O(VV) vacuum diagram...")
+# print("Computing O(VV) vacuum diagram...")
+print("Computing O(g^2) overlap ...")
 
 print("nitn={}, neval={}".format(nitn, neval))
 
 start = time()
 
-lamList = np.linspace(10,200,20)
+loglamlist = np.linspace(1,8,20)
 reslist = []
 
-integ = Phi0_1(nitn, neval)
+integ = Phi0_2(nitn, neval)
 
-for lam in lamList:
+for lam in e**(loglamlist):
     print("Integrating for lambda={}".format(lam))
     res = integ.do(lam)
-    res2 = res - integ.counterterm(lam)
 
     print("Result: {}".format(res))
-    print("Result with counterterm: {}".format(res2))
 
-    reslist.append(res2.mean)
+    reslist.append(res.mean)
 
 
 end = time()
 print("Time passed: {}".format(end-start))
 
-plt.plot(lamList, reslist)
-plt.xlabel(r"$\Lambda$")
-plt.ylabel("$\mathcal{E}_0$")
-plt.savefig("V2.pdf")
+np.savetxt("Overlap.txt", np.array(reslist))
+
+plt.plot(loglamList, reslist)
+plt.xlabel(r"$\log(\Lambda)$")
+
+# plt.ylabel("$\mathcal{E}_0$")
+# plt.savefig("V2.pdf")
+plt.ylabel(r"$\langle 0 \mid \psi_0 \rangle$")
+plt.savefig("overlap.pdf")
