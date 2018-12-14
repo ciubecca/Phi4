@@ -34,7 +34,6 @@ g4list = np.linspace(0,30,15)
 lamlist = np.linspace(lammin, Lambda, 10)
 ETlist = np.linspace(ETmin, Emax, 10)
 
-
 print("Computing basis...")
 bases = Basis.fromScratch(m, L, Emax, Lambda)
 
