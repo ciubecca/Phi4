@@ -13,10 +13,10 @@ class Database():
         self.db = dataset.connect('sqlite:///'+dbname)
         self.table = self.db[tablename]
 
-    def insert(self, datadict, spec):
+    def insert(self, datadict):
 
         datadict["date"] = datetime.datetime.now()
-        datadict["spec"] = spec.tostring()
+        datadict["spec"] = datadict["spec"].tostring()
         self.table.insert(datadict)
 
     def getObjList(self, obj, exactQuery={}, approxQuery={}, orderBy="date"):
