@@ -5,6 +5,7 @@ from statefuncs import *
 import copy
 from scipy import sparse
 from database import *
+from time import time
 
 g2 = -0.75
 print("g2 = {}".format(g2))
@@ -36,8 +37,11 @@ g4list = np.linspace(0,30,15)
 lamlist = np.linspace(lammin, Lambda, nlam)
 ETlist = np.linspace(ETmin, Emax, nET)
 
+t0 = time()
 print("Computing basis...")
 bases = Basis.fromScratch(m, L, Emax, Lambda)
+t1 = time()
+print("Elapsed: ",t1-t0)
 
 for k in (-1,1):
     print("k={}, L={}, Emax={}, Lambda={}, size={}".format(k, L, Emax, Lambda, len(bases[k])))
@@ -48,11 +52,14 @@ Vlist = None
 V22 = None
 
 for k in (-1,1):
-
+    t0 = time()
     print("Computing k={} matrices...".format(k))
     a = Phi4(bases[k])
     Vlist, V22 = a.computePotential(Vlist, V22)
+    t1 = time()
+    print("Elapsed: ",t1-t0)
 
+    t0 = time()
     for ET in ETlist:
         for lam in lamlist:
 
@@ -68,3 +75,5 @@ for k in (-1,1):
                 if savedb:
                     data = {"neigs":neigs, "g2":g2, "g4":g4, "spec":a.eigval, "L":L, "ET":ET, "Lambda":lam, "m":m, "k":k}
                     db.insert(data)
+    t1 = time()
+    print("Elapsed: ",t1-t0)
