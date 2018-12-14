@@ -18,15 +18,7 @@ import me
 import numpy as np
 from me import *
 
-debug = False
 
-# XXX Beware of bugs when changing L with these global variables!
-clist_pref = {}
-clist_e = {}
-clist_count = {}
-
-
-# XXX Does this have precision issues?
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
     return factorial(len(x))/scipy.prod(
@@ -76,9 +68,10 @@ class LocOperator():
 # Overall prefactor
         pref = binom(nc+nd,nc)
 
-        global clist_pref
-        global clist_e
-        global clist_count
+
+        clist_pref = {}
+        clist_e = {}
+        clist_count = {}
 
         for i, (dlist,clists) in enumerate(oscillators):
 
