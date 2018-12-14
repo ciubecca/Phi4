@@ -16,7 +16,7 @@ m, b = np.polyfit(x[imin:], y[imin:], deg=1)
 
 norm = 3/(512*pi**3)
 
-print("norm = {}, m/norm = {}, b= {}".format(norm,m/norm,b))
+print("norm = {}, m/norm = {}, m = {}, b= {}".format(norm,m/norm,m,b))
 
 plt.scatter(x, y)
 
