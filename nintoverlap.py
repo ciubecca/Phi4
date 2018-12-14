@@ -3,17 +3,10 @@ from time import time
 import os
 from numpy import log, e
 from integrator import *
-import matplotlib.pyplot as plt
-from matplotlib import rc
-
 
 nitn = 20
 neval = 50000
 
-
-plt.style.use('ggplot')
-rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-rc('text', usetex=True)
 
 
 # print("Computing O(VV) vacuum diagram...")
