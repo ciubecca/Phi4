@@ -136,17 +136,15 @@ class Helper():
         return max(sqrt(self.kSq(n)) for n,_ in s)
 
 
-
 class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateList, statePos, helper, sym=False, ncomp=None):
+    def __init__(self, k, stateList, statePos, helper, ncomp=None):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
         helper: Helper object
-        sym: take symmetries into account, and project out singlet states
         """
         self.k = k
         self.helper = helper
@@ -155,7 +153,6 @@ class Basis():
         maxmom = helper.maxmom
         self.Emax = helper.Emax
         self.Lambda = helper.Lambda
-        self.sym = sym
 
         self.size = len(stateList)
 
@@ -171,8 +168,7 @@ class Basis():
         self.statePos = {state: idx2[i] for state,i in statePos.items()}
 
         # Symmetry types
-        if sym:
-            self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
+        self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
 
 
         self.occnList = [occn(state) for state in self.stateList]
@@ -197,7 +193,7 @@ class Basis():
 
 
     @classmethod
-    def fromScratch(self, m, L, Emax, Lambda=np.inf, sym=False):
+    def fromScratch(self, m, L, Emax, Lambda=np.inf):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
         L: side of the torus
@@ -208,7 +204,6 @@ class Basis():
         helper = self.helper
         m = helper.m
         energy = helper.energy
-        self.sym = sym
 
         self._occmax = int(floor(Emax/m)+tol)
 
@@ -217,10 +212,7 @@ class Basis():
         # Make the representation of each state unique by sorting the oscillators
         self.bases = {k: [sortOsc(s) for s in self.bases[k]] for k in (-1,1)}
 
-        if sym:
-            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym, ncomp=self.ncomp[k]) for k in (-1,1)}
-        else:
-            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym) for k in (-1,1)}
+        return {k: self(k, self.bases[k], self.statePos[k],  helper, ncomp=self.ncomp[k]) for k in (-1,1)}
 
 
     def __len__(self):
@@ -374,10 +366,10 @@ class Basis():
         N12elist = [[energy(s) for s in states] for states in Nsl12]
         N12occlist = [[occn(s) for s in states] for states in Nsl12]
 
-        # List of states in Representation 1, which are not related by symmetries when self.sym = False
+        # List of states in Representation 1, which are not related by symmetries
         self.bases = {k:[] for k in (-1,1)}
         idx = {k:0 for k in (-1,1)}
-        # Dictionary of indices for states in Representation 2, modded by symmetry
+        # Dictionary of indices for states in Representation 2, including the "redundant" ones by symmetry
         self.statePos = {k:{} for k in (-1,1)}
         # Number of Fock states in the singlet representation of state. This is used to compute the appropriate normalization
         # factors

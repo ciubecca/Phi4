@@ -14,7 +14,7 @@ def test_basis():
         Emax = Elist[i]
         L = Llist[i]
 
-        bases = Basis.fromScratch(1, L, Emax, sym=True)
+        bases = Basis.fromScratch(1, L, Emax)
 
         for j,k in enumerate((1,-1)):
             assert bases[k].size == sizelist[i][j]
@@ -29,7 +29,7 @@ def test_sym():
         Emax = Elist[i]
         L = Llist[i]
 
-        bases = Basis.fromScratch(1, L, Emax, sym=True)
+        bases = Basis.fromScratch(1, L, Emax)
 
         for k in (-1,1):
             a = Phi4(bases[k])
@@ -48,7 +48,7 @@ def test_quartic_spec():
 
     for Emax,L,g2,g4,e0,se,so in zip(Elist,Llist,g2,g4,vac,spece,speco):
 
-        bases = Basis.fromScratch(m=1, L=L, Emax=Emax, sym=True)
+        bases = Basis.fromScratch(m=1, L=L, Emax=Emax)
         eigs = {}
 
         for k in (-1,1):

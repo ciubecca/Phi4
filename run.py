@@ -20,5 +20,3 @@ for k in (-1,1):
 for k in (-1,1):
     a = Phi4(bases[k])
     a.computePotential()
-
-
