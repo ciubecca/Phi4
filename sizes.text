@@ -8,3 +8,5 @@ k=-1, L=7.0, Emax=18.0, Lambda=8.0, size=525361
 k=1, L=7.0, Emax=18.0, Lambda=8.0, size=525852
 k=-1, L=5.0, Emax=10.0, Lambda=8.0, size=73
 k=1, L=5.0, Emax=10.0, Lambda=8.0, size=78
+k=-1, L=5.0, Emax=24.0, Lambda=8.0, size=702924
+k=1, L=5.0, Emax=24.0, Lambda=8.0, size=704318

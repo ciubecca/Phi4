@@ -9,7 +9,7 @@ from cycler import cycler
 import database
 from sys import exit, argv
 
-output = "png"
+form  = "png"
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
@@ -18,9 +18,13 @@ g2 = -0.75
 
 lammin = 4
 ETmin = 10
+nlam = 2
+nET = 10
 
 klist = (1,-1)
 neigs = 4
+
+color = {1:"b", -1:"r"}
 
 if len(argv) < 4:
     print("{} <L> <Emax> <Lambda>".format(argv[0]))
@@ -43,19 +47,22 @@ db = database.Database()
 
 def plotvsET(L, lam, g2, g4, ETlist):
 
+    xlist = ETlist
+
     spectrum = {k:[] for k in klist}
     masses = {}
 
     for k in klist:
         for ET in ETlist:
 
-            approxQuery = {"g4":g4, g2:"g2", "L":L, "ET":ET, "Lambda":lam}
+            approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET, "Lambda":lam}
             exactQuery = {"k": k, "neigs":neigs}
             boundQuery = {}
 
+            print(approxQuery)
+
             try:
-                spectrum[k].append(db.getObjList('spec', exactQuery,
-                    approxQuery, orderBy="date")[0])
+                spectrum[k].append(db.getObjList('spec', exactQuery, approxQuery, orderBy="date")[0])
 
             except IndexError:
                 print("Not found:", exactQuery, approxQuery)
@@ -70,17 +77,17 @@ def plotvsET(L, lam, g2, g4, ETlist):
             imin = 1
         else:
             imin = 0
-        masses[k] = spectrum[k][:,imin]-spectrum[1][:,0]
+        masses[k] = (spectrum[k][:,imin:].transpose()-spectrum[1][:,0]).transpose()
 
-    # SPECTRUM
-    for k in (1):
-        plt.figure(fignum(k))
+    # VACUUM
+    plt.figure(1)
+    for k in (1,):
         # for i in range(neigs):
         for i in range(1):
             data = spectrum[k][:,i]/L
-            label = "lam={}, g={}".format(lam,g)
-            plt.plot(ETlist, data, label=label, marker=marker, markersize=markersize)
-        plt.gca().set_prop_cycle(None)
+            print(ETlist, data)
+            label = r"$\Lambda$={}".format(lam,g4)
+            plt.plot(ETlist, data, label=label, marker=marker, markersize=markersize, color=color[k])
 
     # MASS
     plt.figure(2)
@@ -88,30 +95,25 @@ def plotvsET(L, lam, g2, g4, ETlist):
     for k in (1, -1):
         # for i in range(neigs-int((1+k)/2)):
         for i in range(1):
-            data = masses[k][i]
-            label = "lam={}, g={}".format(lam,g)
-            plt.plot(xlist, data, label=label,
-                    markersize=markersize, marker=marker)
-        plt.gca().set_prop_cycle(None)
+            data = masses[k][:,i]
+            label = r"$\Lambda$={}, $k$={}".format(lam,k)
+            plt.plot(xlist, data, label=label, markersize=markersize, marker=marker, color=color[k])
 
 argv = sys.argv
 
 
 if len(argv) < 5:
-    print("{} <L> <g4> <Emax> <Lambda>".format(argv[0]))
+    print("{} <L> <Emax> <Lambda> <g4>".format(argv[0]))
     sys.exit(-1)
 
 L = float(argv[1])
-g4 = float(argv[2])
-Emax = float(argv[3])
-lam  = float(argv[4])
-
-lammin = 4
-ETmin = 10
+Emax = float(argv[2])
+lam  = float(argv[3])
+g4 = float(argv[4])
 
 g4list = np.linspace(0,30,15)
-lamlist = np.linspace(lammin, Lambda, 10)
-ETlist = np.linspace(ETmin, Emax, 10)
+lamlist = np.linspace(lammin, Lambda, nlam)
+ETlist = np.linspace(ETmin, Emax, nET)
 
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
@@ -119,27 +121,26 @@ plt.rcParams.update(params)
 plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
     cycler('linestyle', ['-', '--', ':', '-.'])))
 
-plotvsET(L=L, lam=lam, g2=g2, g4=g4, ETlist=ETlist)
+for lam in lamlist:
+    plotvsET(L=L, lam=lam, g2=g2, g4=g4, ETlist=ETlist)
 
-title = r"g4={}, L={}, Lambda={}".format(g4, L, Lambda)
-fname = r"g4={}, L={}, Lambda={}".format(g4, L, Lambda)
+title = r"g2={}, g4={}, L={}".format(g2, g4, L)
+fname = r"g2={}, g4={}, L={}".format(g2, g4, L)
 loc = "upper right"
 
 # Vacuum
-plt.figure(1)
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$E_T$")
-plt.ylabel(r"$\mathcal{E}_0$")
+plt.ylabel(r"$\mathcal{E}_0/L$")
 plt.legend(loc=loc)
-plt.savefig("vacvsET"+fname)
+plt.savefig("vacvsET_{}.{}".format(fname,form))
 
 
 # Mass
-plt.figure(2)
-plt.figure(3, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$L$")
 plt.ylabel(r"$m_{\rm ph}$")
 plt.legend(loc=loc)
-plt.savefig("massvsET"+fname)
+plt.savefig("massvsET_{}.{}".format(fname,form))

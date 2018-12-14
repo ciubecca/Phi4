@@ -29,10 +29,12 @@ Lambda = float(argv[3])
 
 lammin = 4
 ETmin = 10
+nlam = 2
+nET = 10
 
 g4list = np.linspace(0,30,15)
-lamlist = np.linspace(lammin, Lambda, 10)
-ETlist = np.linspace(ETmin, Emax, 10)
+lamlist = np.linspace(lammin, Lambda, nlam)
+ETlist = np.linspace(ETmin, Emax, nET)
 
 print("Computing basis...")
 bases = Basis.fromScratch(m, L, Emax, Lambda)
@@ -64,5 +66,5 @@ for k in (-1,1):
                 print("Spectrum: ", a.eigval)
 
                 if savedb:
-                    data = {"g4":g4, "g2":g2, "spec":a.eigval, "L":L, "ET":Emax, "Lambda":lam, "m":m, "k":k}
+                    data = {"neigs":neigs, "g2":g2, "g4":g4, "spec":a.eigval, "L":L, "ET":ET, "Lambda":lam, "m":m, "k":k}
                     db.insert(data)
