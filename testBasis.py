@@ -4,6 +4,33 @@ from phi4 import *
 
 tol = 10**-6
 
+
+def test_Lambda():
+    Elist = [10,18]
+    Llist = [8,5]
+    Lamlist = [3, 4]
+
+    m = 1
+
+    for i in range(len(Elist)):
+        Emax = Elist[i]
+        L = Llist[i]
+        lam = Lamlist[i]
+
+        bases1 = Basis.fromScratch(m, L, Emax, lam)
+        bases2 = Basis.fromScratch(m, L, Emax)
+        bases3 = Basis.fromScratch(m, L, Emax, Emax/2)
+
+        for k in (1,-1):
+            maxmom = bases2[k].helper.maxmom
+            sl1 = bases1[k].stateList
+            sl2 = [s for s in bases2[k].stateList if maxmom(s) <= lam+tol]
+            # print(max([maxmom(s) for s in sl2]))
+
+            assert len(sl1) == len(sl2)
+            assert len(bases2[k].stateList) == len(bases3[k].stateList)
+
+
 # @pytest.mark.skip(reason="Not needed now")
 def test_basis():
     Elist = [10]

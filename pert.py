@@ -9,15 +9,16 @@ sym = True
 m = 1
 neigs = 4
 
-if len(argv) < 4:
-    print("{} <Emax> <L> <g4> [<g2>]".format(argv[0]))
+if len(argv) < 5:
+    print("{} <L> <Emax> <Lambda> <g4> [<g2>]".format(argv[0]))
     exit(1)
 
-Emax = float(argv[1])
-L = float(argv[2])
-g4 = float(argv[3])
+L = float(argv[1])
+Emax = float(argv[2])
+Lambda = float(argv[3])
+g4 = float(argv[4])
 try:
-    g2 = float(argv[4])
+    g2 = float(argv[5])
 except IndexError:
     g2 = 0
 
@@ -25,10 +26,10 @@ except IndexError:
 
 
 print("Computing basis...")
-bases = Basis.fromScratch(m, L, Emax, sym=sym)
+bases = Basis.fromScratch(m, L, Emax, Lambda)
 
 for k in (-1,1):
-    print("k={}, Emax={}, L={}, size={}".format(k, Emax, L, len(bases[k])))
+    print("k={}, L={}, Emax={}, Lambda={}, size={}".format(k, L, Emax, Lambda, len(bases[k])))
 
 eigs = {}
 
@@ -71,7 +72,7 @@ for k in (-1,1):
         # pass
 
 
-print("Emax={}, L={}, g2={}, g4={}".format(Emax, L, g2, g4))
+print("L={}, Emax={}, Lambda={}, g2={}, g4={}".format(L, Emax, Lambda, g2, g4))
 print("Vacuum: ", eigs[1][0])
 print("Even spectrum: ", eigs[1][1:]-eigs[1][0])
 print("Odd  spectrum: ", eigs[-1]-eigs[1][0])
