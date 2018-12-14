@@ -37,19 +37,17 @@ class Integrator():
         self.neval = neval
 
     def do(self, lam, Joan=False):
-        cut = pi/2
 
         if not Joan:
             integ = vegas.Integrator([[0,lam], [0,lam], [0,lam], [0,2*pi], [0,2*pi]])
-
             # step 1 -- adapt to integrand; discard results
             integ(lambda x: self.integrand(x, lam), nitn=self.nitn, neval=self.neval)
-
             # step 2 -- integ has adapted to phi0_1; keep results
             ret = integ(lambda x: self.integrand(x, lam), nitn=self.nitn/2, neval=self.neval*2)
 
         # Old version by Joan
         else:
+            cut = pi/2
             integ = vegas.Integrator([[-cut,cut], [-cut,cut], [-cut,cut], [-cut,cut], [-cut,cut], [-cut,cut]])
             integ(lambda x: self.integrandJoan(x, lam), nitn=self.nitn, neval=self.neval)
             ret = integ(lambda x: self.integrandJoan(x, lam), nitn=self.nitn, neval=self.neval)
@@ -87,7 +85,7 @@ class Phi0_1(Integrator):
         e2 = omk(r[2])
         e3 = omk(r3)
         # Non-relativistic propagator
-        prop = 1/(e0+e1+e2+e3)
+        prop = -1/(e0+e1+e2+e3)
         # 2 pi is to account for the omitted angle
         return (2*pi) * self.factor * jacobian * prop * HT(lam-r3) * 1/(e0*e1*e2*e3)
 
@@ -112,7 +110,7 @@ class Phi0_1(Integrator):
 
     def counterterm(self, lam):
         # return -0.5*(48*(4*pi)**3)*(lam - 4*m*log(lam))
-        return -1/(48*(4*pi)**3)*(lam - 4*m*log(lam))
+        return -1/(48*(4*pi)**3)*lam
 
 
 
@@ -136,4 +134,4 @@ class Phi0_2(Integrator):
         e3 = omk(r3)
         prop = 1/(e0+e1+e2+e3)
         # The propagator is squared
-        return (2*pi) * self.factor * jacobian * prop**2 * HT(lam-r3) * 1/(e0*e1*e2*e3)
+        return -(2*pi) * self.factor * jacobian * prop**2 * HT(lam-r3) * 1/(e0*e1*e2*e3)

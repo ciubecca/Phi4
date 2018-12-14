@@ -41,11 +41,3 @@ end = time()
 print("Time passed: {}".format(end-start))
 
 np.savetxt("Overlap.txt", np.array(reslist))
-
-plt.plot(loglamList, reslist)
-plt.xlabel(r"$\log(\Lambda)$")
-
-# plt.ylabel("$\mathcal{E}_0$")
-# plt.savefig("V2.pdf")
-plt.ylabel(r"$\langle 0 \mid \psi_0 \rangle$")
-plt.savefig("overlap.pdf")
