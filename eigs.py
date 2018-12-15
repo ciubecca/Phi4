@@ -19,6 +19,9 @@ if savedb:
 m = 1
 neigs = 4
 
+g4list = np.linspace(2,60,30)
+print("g4 ;", g4list)
+
 
 if len(argv) < 4:
     print("{} <L> <Emax> <Lambda>".format(argv[0]))
@@ -33,7 +36,6 @@ ETmin = 10
 nlam = 2
 nET = 10
 
-g4list = np.linspace(0,30,15)
 lamlist = np.linspace(lammin, Lambda, nlam)
 ETlist = np.linspace(ETmin, Emax, nET)
 
