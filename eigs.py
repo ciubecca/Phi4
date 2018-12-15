@@ -33,7 +33,7 @@ Lambda = float(argv[3])
 
 lammin = 4
 ETmin = 10
-nlam = 2
+nlam = 3
 nET = 10
 
 lamlist = np.linspace(lammin, Lambda, nlam)
