@@ -12,7 +12,7 @@ from time import time
 
 form  = "png"
 
-rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+# rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
 g2 = -0.75
@@ -20,7 +20,7 @@ g4max = 30
 
 lammin = 4
 ETmin = 10
-nlam = 2
+nlam = 3
 nET = 10
 
 klist = (1,-1)
