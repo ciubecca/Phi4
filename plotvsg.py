@@ -14,8 +14,11 @@ form  = "png"
 # rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-g2 = -0.75
-g4max = 30
+g2 = 0
+g4max = 60
+
+g4list = np.linspace(2,g4max,30)
+
 
 lammin = 4
 ETmin = 10
@@ -96,7 +99,6 @@ L = float(argv[1])
 ETmax = float(argv[2])
 Lambdamax  = float(argv[3])
 
-g4list = np.linspace(0,30,15)
 lamlist = np.linspace(lammin, Lambdamax, nlam)
 ETlist = np.linspace(ETmin, ETmax, nET)
 

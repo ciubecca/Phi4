@@ -7,8 +7,6 @@ from scipy import sparse
 from database import *
 from time import time
 
-g2 = -0.75
-print("g2 = {}".format(g2))
 
 
 savedb = True
@@ -23,13 +21,17 @@ g4list = np.linspace(2,60,30)
 print("g4 ;", g4list)
 
 
-if len(argv) < 4:
-    print("{} <L> <Emax> <Lambda>".format(argv[0]))
+if len(argv) < 5:
+    print("{} <L> <Emax> <Lambda> <g2>".format(argv[0]))
     exit(1)
+
 
 L = float(argv[1])
 Emax = float(argv[2])
 Lambda = float(argv[3])
+g2 = float(argv[4])
+print("g2 = {}".format(g2))
+
 
 lammin = 4
 ETmin = 10
