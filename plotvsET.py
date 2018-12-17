@@ -1,25 +1,20 @@
 import sys
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import math
 from scipy import pi, log, log10, array, sqrt, stats
-from matplotlib import rc
-from cycler import cycler
 import database
 from sys import exit, argv
 from time import time
+from paramplots import *
 
 form  = "png"
 
 ct = True
 
-# rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-rc('text', usetex=True)
+g4max = 30
 
-g4max = 60
-
-g4list = np.linspace(2,60,30)
+g4list = np.linspace(2,g4max,8)
 print("g4:{}".format(g4list))
 
 lammin = 4
@@ -29,11 +24,6 @@ nET = 10
 
 klist = (1,-1)
 neigs = 4
-
-color = {1:"b", -1:"r"}
-
-marker = 'o'
-markersize = 2.5
 
 db = database.Database()
 
@@ -78,7 +68,7 @@ def plotvsET(L, lam, g2, g4, ETlist):
         for i in range(1):
             data = spectrum[k][:,i]/L
             label = r"$\Lambda$={}".format(lam,g4)
-            plt.plot(ETlist, data, label=label, marker=marker, markersize=markersize, color=color[k])
+            plt.plot(ETlist, data, label=label, color=color[k])
 
     # MASS
     plt.figure(2)
@@ -88,7 +78,7 @@ def plotvsET(L, lam, g2, g4, ETlist):
         for i in range(1):
             data = masses[k][:,i]
             label = r"$\Lambda$={}, $k$={}".format(lam,k)
-            plt.plot(xlist, data, label=label, markersize=markersize, marker=marker, color=color[k])
+            plt.plot(xlist, data, label=label, color=color[k])
 
 argv = sys.argv
 
@@ -105,14 +95,10 @@ g2  = float(argv[4])
 lamlist = np.linspace(lammin, Lambdamax, nlam)
 ETlist = np.linspace(ETmin, ETmax, nET)
 
-params = {'legend.fontsize': 8}
-plt.rcParams.update(params)
-
-plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
-    cycler('linestyle', ['-', '--', ':', '-.'])))
 
 for g4 in g4list:
-    for lam in lamlist:
+    for i,lam in enumerate(lamlist):
+        setparams(i)
         plotvsET(L=L, lam=lam, g2=g2, g4=g4, ETlist=ETlist)
 
     title = r"g2={}, g4={}, L={}".format(g2, g4, L)
@@ -138,4 +124,4 @@ for g4 in g4list:
     plt.savefig("plots/massvsET_{}.{}".format(fname,form))
     plt.clf()
 
-    plt.gca().set_prop_cycle(None)
+    # plt.gca().set_prop_cycle(None)

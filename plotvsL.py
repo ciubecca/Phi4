@@ -19,7 +19,7 @@ g2 = -0.75
 g4max = 30
 
 Llist = [5, 6, 7]
-ETlist = [23, 20, 18]
+ETlist = [24, 20, 18]
 
 lammin = 4
 nlam = 3

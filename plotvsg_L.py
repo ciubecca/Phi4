@@ -24,12 +24,16 @@ params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
 
-g4max = 60
+g4max = 30
 
-Llist = [5, 6]
-ETlist = [23, 20]
+Llist = [5, 6, 7]
+ETlist = [24, 20, 18]
 
-g4list = np.linspace(2,g4max,30)
+Llist = [5, 7]
+ETlist = [24, 18]
+
+g4list = np.linspace(2, g4max, 15)
+g4list = np.linspace(1, g4max, 30)
 print("g4: ", g4list)
 
 
@@ -53,7 +57,7 @@ def plotvsg(L, lam, g2, g4list, ET, idx):
         for g4 in g4list:
 
             approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET, "Lambda":lam}
-            exactQuery = {"k": k, "neigs":neigs}
+            exactQuery = {"k": k, "neigs":neigs, "logct":True}
             boundQuery = {}
 
 

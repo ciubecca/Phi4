@@ -3,14 +3,15 @@ from phi4 import *
 from sys import argv, exit
 
 m = 1
+Emax = np.inf
 
 if len(argv) < 4:
-    print("{} <L> <Emax> <Lambda>".format(argv[0]))
+    print("{} <L> <Lambda> <occmax>".format(argv[0]))
     exit(1)
 
 L = float(argv[1])
-Emax = float(argv[2])
-Lambda = float(argv[3])
+Lambda = float(argv[2])
+occmax = float(argv[3])
 
 bases = Basis.fromScratch(m, L, Emax, Lambda)
 
