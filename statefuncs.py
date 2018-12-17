@@ -297,7 +297,7 @@ class Basis():
                 mode = (n, Zn)
                 E += omega(n)
                 WN += n
-                OCCN += Zn
+                OCCN += 1
 
                 # We need to add at least another particle to have 0 total momentum.
                 if OCCN>occmax or E+minEnergy(WN)>Emax+tol:
@@ -352,7 +352,7 @@ class Basis():
             # Keep track of total wave number
             WN1 = NEwntotlist1[i1]
             # Keep track of total occupation number
-            OCCN1 = NEelist[i1]
+            OCCN1 = NEocclist[i1]
 
             # XXX The commented part is wrong. Can we save any more time?
             # for i2 in range(i1, len(NEsl2)):
@@ -361,7 +361,7 @@ class Basis():
 
                 E2 = E1 + NEelist[i2]
                 WN2 = WN1 + NEwntotlist2[i2]
-                OCCN2 = OCCN1 + NEelist[i2]
+                OCCN2 = OCCN1 + NEocclist[i2]
 
                 # NEstatelist is ordered in energy
                 if E2 > Emax+tol:

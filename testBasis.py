@@ -1,6 +1,27 @@
 import pytest
 import random
 from phi4 import *
+from statefuncs import *
+
+# @pytest.mark.skip(reason="Not needed now")
+def test_occmax():
+    """ Test that size of basis built with occmax is equal to subset of full basis """
+    Elist = [12]
+    Llist = [6]
+    occmax = 4
+    m = 1
+
+    for i in range(len(Elist)):
+        Emax = Elist[i]
+        L = Llist[i]
+
+        basesFull = Basis.fromScratch(m, L, Emax)
+        bases = Basis.fromScratch(m, L, Emax, occmax=occmax)
+
+        for j,k in enumerate((1,-1)):
+            sub = [s for s in basesFull[k].stateList if occn(s) <= occmax]
+            assert bases[k].size == len(sub)
+
 
 def test_spec_Lambda():
     Elist1 = [14]
@@ -71,24 +92,6 @@ def test_Lambda():
             assert len(bases2[k].stateList) == len(bases3[k].stateList)
 
 
-# @pytest.mark.skip(reason="Not needed now")
-def test_occmax():
-    """ Test that size of basis built with occmax is equal to subset of full basis """
-    Elist = [12]
-    Llist = [6]
-    occmax = 4
-    m = 1
-
-    for i in range(len(Elist)):
-        Emax = Elist[i]
-        L = Llist[i]
-
-        basesFull = Basis.fromScratch(m, L, Emax, sym=True)
-        bases = Basis.fromScratch(m, L, Emax, occmax=occmax, sym=True)
-
-        for j,k in enumerate((1,-1)):
-            sub = [s for s in basesFull[k].stateList if basesFull[k].helper.occn(s) <= occmax]
-            assert bases[k].size == len(sub)
 
 
 # @pytest.mark.skip(reason="Not needed now")
