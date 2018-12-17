@@ -59,27 +59,39 @@ class Phi4():
 
 
 
-    def setg(self, g0, g2, g4):
+    def setg(self, g0, g2, g4, ct=True):
         self.g = {}
-        Emax = self.basis.Emax
+        Lambda = self.basis.Lambda
         m = self.m
 
-        # TODO Add contribution from mass perturbation
-        dg0 = -g4**2/(96*(4*pi)**3)*(Emax-8*m*log(Emax/m))
-        dg2 = -g2**2/(6*(4*pi)**2)*log(Emax/m)
-        dg0 = 0
-        dg2 = 0
+        if ct:
+# The counterterm was computed by defining the Hamiltonian as g2 V2  + g4/(4 !) V4.
+# Instead in the code g4 is not divided by 4!
+            dg2 = -(g4*factorial(4))**2*1/(12*(4*pi)**2)*log(Lambda/m)
+        else:
+            dg2 = 0
 
-        self.g[0] = g0 - dg0
+        self.g[0] = g0
         self.g[2] = g2 - dg2
         self.g[4] = g4
+
+    def setmatrix(self, Emax=np.inf, Lambda=np.inf):
+
+        if Emax<self.basis.Emax-tol or Lambda<self.basis.Lambda-tol:
+            subidx = self.basis.subidxlist(Emax, Lambda)
+            self.Vcomp = {n: submatrix(self.V[n], subidx) for n in (0,2,4)}
+            self.h0comp = submatrix(self.h0, subidx)
+        else:
+            self.Vcomp = self.V
+            self.h0comp = self.h0
+
 
     def computeEigval(self, neigs=6):
         """ Compute the eigenvalues for sharp cutoff ET
         neigs: number of eigenvalues to compute
         """
 
-        compH = self.h0 + sum([self.g[n]* self.V[n] for n in (0,2,4)])
+        compH = self.h0comp + sum([self.g[n]*self.Vcomp[n] for n in (0,2,4)])
 
         # Seed vector
         v0 = scipy.zeros(compH.shape[0])

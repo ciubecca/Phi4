@@ -18,15 +18,7 @@ import me
 import numpy as np
 from me import *
 
-debug = False
 
-# XXX Beware of bugs when changing L with these global variables!
-clist_pref = {}
-clist_e = {}
-clist_count = {}
-
-
-# XXX Does this have precision issues?
 def bose(x):
     """ computes the Bose factor of a product of oscillators  """
     return factorial(len(x))/scipy.prod(
@@ -76,9 +68,10 @@ class LocOperator():
 # Overall prefactor
         pref = binom(nc+nd,nc)
 
-        global clist_pref
-        global clist_e
-        global clist_count
+
+        clist_pref = {}
+        clist_e = {}
+        clist_count = {}
 
         for i, (dlist,clists) in enumerate(oscillators):
 
@@ -144,6 +137,7 @@ def _genMomentaPairs(helper):
     Emax = helper.Emax
 
     # Sort 2d momenta lexicographically
+    # XXX Should I sort in energy so that I can break the cycles ?
     allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
     l = len(allowedWnList)
     elist = [omega(wn) for wn in allowedWnList]
@@ -159,8 +153,9 @@ def _genMomentaPairs(helper):
             k12 = tuple(k1+k2)
             e12 = e1+elist[i2]
 
-            if k12 not in allowedWn:
-                continue
+            # XXX CHECK if I can comment this
+            # if k12 not in allowedWn:
+                # continue
 
             if e12+minEnergy(k12) > Emax+tol:
                 continue
@@ -174,7 +169,6 @@ def _genMomentaPairs(helper):
     return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
 
 
-# XXX This is slow
 # @profile
 def V4OpsHalf(helper):
     """ Generate half of the oscillators of the V4 operator """
@@ -231,7 +225,6 @@ def V4OpsHalf(helper):
 # Generate a LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
 
-######################################################
     # Pre-compute sorted V13 indices for the creation operators
     # V13indices = []
     # for i2 in range(l):
@@ -326,7 +319,6 @@ def V4Ops22(helper):
 
     V22 = LocOperator(V22, 2, 2, helper)
     return (V22,)
-
 
 
 
