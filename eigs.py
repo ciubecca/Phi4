@@ -19,7 +19,7 @@ if savedb:
 m = 1
 neigs = 4
 
-g4list = np.linspace(2,60,30)
+g4list = np.linspace(1,30,30)
 print("g4 ;", g4list)
 
 lammin = 4

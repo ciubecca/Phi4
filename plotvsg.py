@@ -14,10 +14,10 @@ form  = "png"
 # rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 
-g2 = 0
 g4max = 60
 
 g4list = np.linspace(2,g4max,30)
+print("g4: ", g4list)
 
 
 lammin = 4
@@ -80,8 +80,8 @@ def plotvsET(L, lam, g2, g4list, ET):
 
     # MASS
     plt.figure(2)
-    # for k in (-1,1):
-    for k in (1, -1):
+    for k in (-1,):
+    # for k in (1, -1):
         # for i in range(neigs-int((1+k)/2)):
         for i in range(1):
             data = masses[k][:,i]
@@ -91,13 +91,14 @@ def plotvsET(L, lam, g2, g4list, ET):
 argv = sys.argv
 
 
-if len(argv) < 4:
-    print("{} <L> <ETmax> <Lambdamax>".format(argv[0]))
+if len(argv) < 5:
+    print("{} <L> <ETmax> <Lambdamax> <g2>".format(argv[0]))
     sys.exit(-1)
 
 L = float(argv[1])
 ETmax = float(argv[2])
 Lambdamax  = float(argv[3])
+g2 = float(argv[4])
 
 lamlist = np.linspace(lammin, Lambdamax, nlam)
 ETlist = np.linspace(ETmin, ETmax, nET)
