@@ -13,6 +13,16 @@ form  = "png"
 
 # rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
+# plt.rc('axes', prop_cycle=(cycler('linestyle', ['-', '--', ':', '-.']) +
+        # cycler('marker', ['o','v','.','-']) +
+        # cycler('markersize', [1,2,1,1])))
+d = {'linestyle': ['-', '--', ':', '-.'],
+        'marker': ['o','v','.','-'],
+        'markersize': [1,2,1,1]}
+
+params = {'legend.fontsize': 8}
+plt.rcParams.update(params)
+
 
 g4max = 60
 
@@ -22,21 +32,22 @@ print("g4: ", g4list)
 
 lammin = 4
 ETmin = 10
-nlam = 3
-nET = 10
+
+nlam = 2
+nET = 2
+# nlam = 3
+# nET = 10
 
 klist = (1,-1)
 neigs = 4
 
 color = {1:"b", -1:"r"}
 
-marker = 'o'
-markersize = 2.5
 
 db = database.Database()
 
 
-def plotvsET(L, lam, g2, g4list, ET):
+def plotvsET(L, lam, g2, g4list, ET, idx):
 
     xlist = g4list
 
@@ -76,7 +87,10 @@ def plotvsET(L, lam, g2, g4list, ET):
         for i in range(1):
             data = spectrum[k][:,i]/L
             label = r"$\Lambda$={}".format(lam,g4)
-            plt.plot(xlist, data, label=label, marker=marker, markersize=markersize, color=color[k])
+            plt.plot(xlist, data, label=label, color=color[k],
+                    marker=d['marker'][idx], markersize=d['markersize'][idx],
+                    linestyle=d['linestyle'][idx])
+
 
     # MASS
     plt.figure(2)
@@ -86,7 +100,9 @@ def plotvsET(L, lam, g2, g4list, ET):
         for i in range(1):
             data = masses[k][:,i]
             label = r"$\Lambda$={}, $k$={}".format(lam,k)
-            plt.plot(xlist, data, label=label, markersize=markersize, marker=marker, color=color[k])
+            plt.plot(xlist, data, label=label, color=color[k],
+                    marker=d['marker'][idx], markersize=d['markersize'][idx],
+                    linestyle=d['linestyle'][idx])
 
 argv = sys.argv
 
@@ -103,15 +119,11 @@ g2 = float(argv[4])
 lamlist = np.linspace(lammin, Lambdamax, nlam)
 ETlist = np.linspace(ETmin, ETmax, nET)
 
-params = {'legend.fontsize': 8}
-plt.rcParams.update(params)
 
-plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y']) +
-    cycler('linestyle', ['-', '--', ':', '-.'])))
 
 for ET in ETlist:
-    for lam in lamlist:
-        plotvsET(L=L, lam=lam, g2=g2, ET=ET, g4list=g4list)
+    for idx, lam in enumerate(lamlist):
+        plotvsET(L=L, lam=lam, g2=g2, ET=ET, g4list=g4list, idx=idx)
 
     title = r"g2={}, ET={}, L={}".format(g2, ET, L)
     fname = r"g2={}, ET={}, L={}".format(g2, ET, L)
