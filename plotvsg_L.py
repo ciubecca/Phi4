@@ -66,7 +66,7 @@ def plotvsg(L, lam, g2, g4list, ET):
         # for i in range(neigs):
         for i in range(1):
             data = spectrum[k][:,i]/L
-            label = r"$\Lambda$={}, $L$={}".format(lam,L)
+            label = r"$E_T$={}, $L$={}".format(ET,L)
             plt.plot(xlist, data, label=label, color=color[k])
 
 
@@ -77,7 +77,7 @@ def plotvsg(L, lam, g2, g4list, ET):
         # for i in range(neigs-int((1+k)/2)):
         for i in range(1):
             data = masses[k][:,i]
-            label = r"$\Lambda$={}, $L$={}".format(lam,L)
+            label = r"$E_T$={}, $L$={}".format(ET,L)
             plt.plot(xlist, data, label=label, color=color[k])
 
 argv = sys.argv
@@ -95,8 +95,8 @@ for idx, (L, ET) in enumerate(zip(Llist,ETlist)):
     setparams(idx)
     plotvsg(L=L, lam=Lambda, g2=g2, ET=ET, g4list=g4list)
 
-title = r"g2={}, ET={}, L={}".format(g2, ET, L)
-fname = r"g2={}, ET={}, L={}".format(g2, ET, L)
+title = r"$g_2$={}, $\Lambda$={}".format(g2, Lambda)
+fname = r"g2={}, Lambda={}".format(g2, Lambda)
 loc = "upper right"
 
 # Vacuum
