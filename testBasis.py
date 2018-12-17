@@ -2,6 +2,47 @@ import pytest
 import random
 from phi4 import *
 
+def test_quartic_spec_Lambda():
+    # Emax = 20
+    # L = 5
+    # Lambda = 4
+    # g2 = 1
+    # g4 = 1
+    # vac = -0.5295731837073776
+    # spece =  [3.175658197972555, 4.109748621728565, 4.82300785286307 ]
+    # speco =  [1.573039725189444, 4.808045486867983, 5.772302004044659, 6.453921709948212]
+
+    Emax = 15
+    L = 5
+    Lambda = 4
+    g2 = 0
+    g4 = 1
+    vac = -0.115185001425405
+    spece = [1.903760713068681, 3.247950933646434, 4.081462591400829]
+    speco = [0.91567578388474,  2.958422505762713, 4.336228677868323,
+            5.167300737731443]
+
+    Vlist = None
+    V22 = None
+
+    bases = Basis.fromScratch(m=1, L=L, Emax=Emax, Lambda=Lambda)
+    eigs = {}
+
+    for k in (-1,1):
+        a = Phi4(bases[k])
+        Vlist, V22 = a.computePotential(Vlist, V22)
+
+        a.setg(0, g2, g4, ct=False)
+        a.setmatrix()
+
+        a.computeEigval(neigs=len(speco))
+        eigs[k] = a.eigval
+
+    assert abs(eigs[1][0]-vac) < tol
+    np.testing.assert_array_almost_equal(eigs[1][1:]-eigs[1][0], spece)
+    np.testing.assert_array_almost_equal(eigs[-1]-eigs[1][0], speco)
+
+
 def test_spec_Lambda():
     Elist1 = [14]
     Elist2 = [12]
@@ -142,3 +183,6 @@ def test_quartic_spec():
         assert abs(eigs[1][0]-e0) < tol
         np.testing.assert_array_almost_equal(eigs[1][1:]-eigs[1][0], se)
         np.testing.assert_array_almost_equal(eigs[-1]-eigs[1][0], so)
+
+
+
