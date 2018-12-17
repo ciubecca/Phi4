@@ -32,9 +32,12 @@ def test_spec_Lambda():
             a1.setg(0, g2, g4/(factorial(4)))
             a2.setg(0, g2, g4/(factorial(4)))
 
-            a1.computeEigval(Emax=Emax2)
-            a2.computeEigval()
 
+            a1.setmatrix(Emax=Emax2)
+            a2.setmatrix()
+
+            a1.computeEigval()
+            a2.computeEigval()
             eigs1 = a1.eigval
             eigs2 = a2.eigval
 
@@ -150,7 +153,8 @@ def test_quartic_spec():
             a = Phi4(bases[k])
             Vlist, V22 = a.computePotential(Vlist, V22)
 
-            a.setg(0, g2, g4/(factorial(4)))
+            a.setg(0, g2, g4/(factorial(4)), ct=False)
+            a.setmatrix()
 
             a.computeEigval(neigs=len(so))
             eigs[k] = a.eigval
