@@ -45,9 +45,12 @@ class Database():
 
         for e in self.db.query(query):
 
-            if obj=='eigv':
-                listRes.append(scipy.fromstring(e[obj]).reshape(
-                    e['neigs'], e['basisSize']))
+            if obj=='eigv' and e[obj]!=None:
+                # listRes.append(scipy.fromstring(e[obj]).reshape(
+                    # e['neigs'], e['basisSize']))
+# XXX Only vacuum state
+                listRes.append(scipy.fromstring(e[obj]))
+
             elif obj=='spec':
                 listRes.append(sorted(scipy.fromstring(e[obj])))
             else:

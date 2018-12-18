@@ -22,7 +22,7 @@ if savedb:
 m = 1
 neigs = 4
 
-g4list = np.linspace(1,1,1)
+g4list = np.linspace(0,30,3)
 print("g4 ;", g4list)
 
 lammin = 4
