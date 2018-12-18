@@ -8,14 +8,10 @@ from sys import exit, argv
 from time import time
 from paramplots import *
 
-form  = "png"
+form  = "pdf"
 
 ct = True
 
-g4max = 30
-
-g4list = np.linspace(2,g4max,8)
-print("g4:{}".format(g4list))
 
 lammin = 4
 ETmin = 10
@@ -83,45 +79,43 @@ def plotvsET(L, lam, g2, g4, ETlist):
 argv = sys.argv
 
 
-if len(argv) < 5:
-    print("{} <L> <ETmax> <Lambdamax> <g2>".format(argv[0]))
+if len(argv) < 6:
+    print("{} <L> <ETmax> <Lambdamax> <g4> <g2>".format(argv[0]))
     sys.exit(-1)
 
 L = float(argv[1])
 ETmax = float(argv[2])
 Lambdamax  = float(argv[3])
-g2  = float(argv[4])
+g4  = float(argv[4])
+g2  = float(argv[5])
 
 lamlist = np.linspace(lammin, Lambdamax, nlam)
 ETlist = np.linspace(ETmin, ETmax, nET)
 
 
-for g4 in g4list:
-    for i,lam in enumerate(lamlist):
-        setparams(i)
-        plotvsET(L=L, lam=lam, g2=g2, g4=g4, ETlist=ETlist)
+for i,lam in enumerate(lamlist):
+    setparams(i)
+    plotvsET(L=L, lam=lam, g2=g2, g4=g4, ETlist=ETlist)
 
-    title = r"g2={}, g4={}, L={}".format(g2, g4, L)
-    fname = r"g2={}, g4={}, L={}".format(g2, g4, L)
-    loc = "upper right"
+title = r"g2={}, g4={}, L={}".format(g2, g4, L)
+fname = r"g2={}, g4={}, L={}".format(g2, g4, L)
+loc = "upper right"
 
 # Vacuum
-    plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title(title)
-    plt.xlabel(r"$E_T$")
-    plt.ylabel(r"$\mathcal{E}_0/L$")
-    plt.legend(loc=loc)
-    plt.savefig("plots/vacvsET_{}.{}".format(fname,form))
-    plt.clf()
+plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_T$")
+plt.ylabel(r"$\mathcal{E}_0/L$")
+plt.legend(loc=loc)
+plt.savefig("plots/vacvsET_{}.{}".format(fname,form))
+plt.clf()
 
 
 # Mass
-    plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title(title)
-    plt.xlabel(r"$E_T$")
-    plt.ylabel(r"$m_{\rm ph}$")
-    plt.legend(loc=loc)
-    plt.savefig("plots/massvsET_{}.{}".format(fname,form))
-    plt.clf()
-
-    # plt.gca().set_prop_cycle(None)
+plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$E_T$")
+plt.ylabel(r"$m_{\rm ph}$")
+plt.legend(loc=loc)
+plt.savefig("plots/massvsET_{}.{}".format(fname,form))
+plt.clf()

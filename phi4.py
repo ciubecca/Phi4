@@ -86,9 +86,10 @@ class Phi4():
             self.h0comp = self.h0
 
 
-    def computeEigval(self, neigs=6):
+    def computeEigval(self, neigs=6, eigv=False):
         """ Compute the eigenvalues for sharp cutoff ET
         neigs: number of eigenvalues to compute
+        eigv: return eigenvectors
         """
 
         compH = self.h0comp + sum([self.g[n]*self.Vcomp[n] for n in (0,2,4)])
@@ -97,7 +98,12 @@ class Phi4():
         v0 = scipy.zeros(compH.shape[0])
         v0[:10] = 1
 
-        self.eigval = scipy.sort(scipy.sparse.linalg.eigsh(compH, neigs, v0=v0,
-                            which='SA', return_eigenvectors=False))
+        if eigv:
+# XXX Check this returns them sorted
+            self.eigval, self.eigv = scipy.sparse.linalg.eigsh(compH,
+                neigs, v0=v0, which='SA', return_eigenvectors=True)
+        else:
+            self.eigval = scipy.sort(scipy.sparse.linalg.eigsh(compH,
+                neigs, v0=v0, which='SA', return_eigenvectors=False))
 
         gc.collect()

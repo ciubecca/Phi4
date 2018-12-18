@@ -7,7 +7,7 @@ import database
 from paramplots import *
 from sys import exit, argv
 
-form  = "png"
+form  = "pdf"
 
 g4max = 30
 
@@ -15,9 +15,9 @@ Llist = [5, 6, 7]
 ETlist = [24, 20, 18]
 
 Llist = [5, 7]
-ETlist = [24, 18]
+ETlist = [24, 19]
 
-g4list = np.linspace(2, g4max, 15)
+g4list = np.linspace(1, g4max, 30)
 print("g4: ", g4list)
 
 

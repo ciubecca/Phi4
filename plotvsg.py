@@ -1,32 +1,21 @@
 import sys
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import math
 from scipy import pi, log, log10, array, sqrt, stats
-from matplotlib import rc
-from cycler import cycler
+from paramplots import *
 import database
 from sys import exit, argv
 
-form  = "png"
-
-# rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-rc('text', usetex=True)
-# plt.rc('axes', prop_cycle=(cycler('linestyle', ['-', '--', ':', '-.']) +
-        # cycler('marker', ['o','v','.','-']) +
-        # cycler('markersize', [1,2,1,1])))
-d = {'linestyle': ['-', '--', ':', '-.'],
-        'marker': ['o','v','.','-'],
-        'markersize': [1,2,1,1]}
+form  = "pdf"
 
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
 
-g4max = 60
+g4max = 30
 
-g4list = np.linspace(2,g4max,30)
+g4list = np.linspace(1,g4max,30)
 print("g4: ", g4list)
 
 
@@ -47,7 +36,7 @@ color = {1:"b", -1:"r"}
 db = database.Database()
 
 
-def plotvsET(L, lam, g2, g4list, ET, idx):
+def plotvsg(L, lam, g2, g4list, ET):
 
     xlist = g4list
 
@@ -87,9 +76,7 @@ def plotvsET(L, lam, g2, g4list, ET, idx):
         for i in range(1):
             data = spectrum[k][:,i]/L
             label = r"$\Lambda$={}".format(lam,g4)
-            plt.plot(xlist, data, label=label, color=color[k],
-                    marker=d['marker'][idx], markersize=d['markersize'][idx],
-                    linestyle=d['linestyle'][idx])
+            plt.plot(xlist, data, label=label, color=color[k])
 
 
     # MASS
@@ -100,52 +87,50 @@ def plotvsET(L, lam, g2, g4list, ET, idx):
         for i in range(1):
             data = masses[k][:,i]
             label = r"$\Lambda$={}, $k$={}".format(lam,k)
-            plt.plot(xlist, data, label=label, color=color[k],
-                    marker=d['marker'][idx], markersize=d['markersize'][idx],
-                    linestyle=d['linestyle'][idx])
+            plt.plot(xlist, data, label=label, color=color[k])
 
 argv = sys.argv
 
 
-if len(argv) < 5:
-    print("{} <L> <ETmax> <Lambdamax> <g2>".format(argv[0]))
+if len(argv) < 4:
+    print("{} <L> <ET> <Lambdamax> <g2>".format(argv[0]))
     sys.exit(-1)
 
 L = float(argv[1])
-ETmax = float(argv[2])
+ET = float(argv[2])
 Lambdamax  = float(argv[3])
 g2 = float(argv[4])
 
 lamlist = np.linspace(lammin, Lambdamax, nlam)
-ETlist = np.linspace(ETmin, ETmax, nET)
+# ETlist = np.linspace(ETmin, ETmax, nET)
 
 
 
-for ET in ETlist:
-    for idx, lam in enumerate(lamlist):
-        plotvsET(L=L, lam=lam, g2=g2, ET=ET, g4list=g4list, idx=idx)
+for idx, lam in enumerate(lamlist):
+    setparams(idx)
+    plotvsg(L=L, lam=lam, g2=g2, ET=ET, g4list=g4list)
 
-    title = r"g2={}, ET={}, L={}".format(g2, ET, L)
-    fname = r"g2={}, ET={}, L={}".format(g2, ET, L)
-    loc = "upper right"
+title = r"g2={}, ET={}, L={}".format(g2, ET, L)
+fname = r"g2={}, ET={}, L={}".format(g2, ET, L)
+loc = "upper right"
 
 # Vacuum
-    plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title(title)
-    plt.xlabel(r"$g_4$")
-    plt.ylabel(r"$\mathcal{E}_0/L$")
-    plt.legend(loc=loc)
-    plt.savefig("plots/vacvsg_{}.{}".format(fname,form))
-    plt.clf()
+plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$g_4$")
+plt.ylabel(r"$\mathcal{E}_0/L$")
+plt.legend(loc=loc)
+plt.savefig("plots/vacvsg_{}.{}".format(fname,form))
+plt.clf()
 
 
 # Mass
-    plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-    plt.title(title)
-    plt.xlabel(r"$g_4$")
-    plt.ylabel(r"$m_{\rm ph}$")
-    plt.legend(loc=loc)
-    plt.savefig("plots/massvsg_{}.{}".format(fname,form))
-    plt.clf()
+plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+plt.title(title)
+plt.xlabel(r"$g_4$")
+plt.ylabel(r"$m_{\rm ph}$")
+plt.legend(loc=loc)
+plt.savefig("plots/massvsg_{}.{}".format(fname,form))
+plt.clf()
 
-    plt.gca().set_prop_cycle(None)
+plt.gca().set_prop_cycle(None)
