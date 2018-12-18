@@ -49,6 +49,7 @@ for k in klist:
             exit(-1)
 
 
+print("Computing basis...")
 bases = Basis.fromScratch(m, L, ET, Lambda)
 k = 1
 maxmom = bases[k].helper.maxmom
@@ -61,13 +62,16 @@ for j,g4 in enumerate(g4list):
 
 print(zovlp)
 
-exit(0)
+plt.figure(1)
+plt.plot(g4list, zovlp)
 
-# Mass
+title = r"$g_2$={}, $L$={}, $E_T$={}, $\Lambda$={}".format(g2, L, ET, Lambda)
+fname = "g2={}_L={}_ET={}_Lambda={}".format(g2, L, ET, Lambda)
+
+
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
-plt.xlabel(r"$E_T$")
-plt.ylabel(r"$m_{\rm ph}$")
-plt.legend(loc=loc)
-plt.savefig("plots/massvsET_{}.{}".format(fname,form))
+plt.xlabel(r"$g$")
+plt.ylabel(r"$\sum_{n_0} \mid \langle \psi \mid n_0 \rangle \mid^2$")
+plt.savefig("zmodeovlp_{}.{}".format(fname,form))
 plt.clf()

@@ -12,7 +12,7 @@ savedb = True
 # Add counterterms
 ct = True
 # Save lowest eigenvector
-eigv = True
+eigv = False
 
 print("ct = {}, eigv={}".format(ct, eigv))
 
