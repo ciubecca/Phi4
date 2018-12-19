@@ -134,6 +134,7 @@ class Helper():
             return 0.
         return max(sqrt(self.kSq(n)) for n,_ in s)
 
+# TODO Inspect: is it more efficient to transform states to Repr 1 and back, instead?
     def _genTransfMatrix(self):
         """ Generate transformation matrix for all 8 symmetry elements
         for states in representation 2 """
