@@ -4,8 +4,11 @@ import os
 from numpy import log, e
 from integrator import *
 
-nitn = 16
-neval = 50000
+nitn = 20
+neval = 1000000
+
+# nitn = 10
+# neval = 20000
 
 
 # print("Computing O(VV) vacuum diagram...")
@@ -15,18 +18,14 @@ print("nitn={}, neval={}".format(nitn, neval))
 
 start = time()
 
-lamlist = np.linspace(10,200,30)
-reslist = []
+# It's the only scale
+lam = 1
 
 integ = Phi0_1_m0(nitn, neval)
 
-for lam in lamlist:
-    print("Integrating for lambda={}".format(lam))
-    res = integ.do(lam)
-    print("Result: {}".format(res))
-    reslist.append(res.mean)
+norm = 1/(48*(4*pi)**3)
+res = integ.do(lam)
+print("Result: {}, res/norm: {}".format(res,res/norm))
 
 end = time()
 print("Time passed: {}".format(end-start))
-
-np.savetxt("Vac.txt", np.array(reslist))
