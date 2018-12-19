@@ -81,7 +81,6 @@ class Helper():
                         self.normFactors[c,d,n] = scipy.nan
 
     def torepr2(self, s):
-        # XXX Represent the state as numpy array? Or matrix? Or sparse vector?
         ret = [0]*len(self.allowedWn)
         for n,Zn in s:
             ret[self.allowedWn[tuple(n)]] = Zn
@@ -91,7 +90,7 @@ class Helper():
         """ Energy of an oscillator (ordered tuple of momenta) """
         return sum(self.omega(n) for n in wnlist)
 
-    # XXX This is slow
+    # This is slow
     def energy(self, state):
         """ Computes energy of state in Repr1 """
         return sum(Zn*self.omega(n) for n,Zn in state)
@@ -134,6 +133,24 @@ class Helper():
         if s == []:
             return 0.
         return max(sqrt(self.kSq(n)) for n,_ in s)
+
+    def _genTransfMatrix(self):
+        """ Generate transformation matrix for all 8 symmetry elements
+        for states in representation 2 """
+
+        allowedWn = self.allowedWn
+        l = len(allowedWn)
+        ret = []
+
+        for op in enumerate((I, S, S2, S3, X, Y, XS, YS)):
+            mat = np.zeros(shape=(l,l))
+
+            for wn,i in allowedWn.items():
+                j = allowedWn[tuple(np.dot(op,array(wn)))]
+                mat[i, j] = 1
+
+            ret.append(mat)
+        return ret
 
 
 class Basis():

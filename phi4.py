@@ -60,6 +60,7 @@ class Phi4():
 
 
     def setg(self, g0, g2, g4, ct=True):
+        """ ct: add logarithmic mass counterterm """
         self.g = {}
         Lambda = self.basis.Lambda
         m = self.m
@@ -67,6 +68,7 @@ class Phi4():
         if ct:
 # The counterterm was computed by defining the Hamiltonian as g2 V2  + g4/(4 !) V4.
 # Instead in the code g4 is not divided by 4!
+# XXX The o(1) term is not correct
             dg2 = -(g4*factorial(4))**2*1/(12*(4*pi)**2)*log(Lambda/m)
         else:
             dg2 = 0
