@@ -33,7 +33,38 @@ class Integrator():
 
         return ret
 
+class Phi0_1_m0(Integrator):
+    """ O(g^2) vacuum diagram with m = 0 """
+    # Total factor. g is normalized so it is divided by 4! in the Lagrangian
+    factor = 1/factorial(4)*1/(2**4*(2*pi)**6)
 
+    def __init__(self, *args, **kwargs):
+        super(Phi0_1_m0, self).__init__(*args, **kwargs)
+
+    def interval(self, lam):
+        return [[0,lam], [0,lam], [0,lam], [0,2*pi], [0,2*pi]]
+
+    def integrand(self, x, lam):
+        """ x: vector of momenta
+            lam: momentum cutoff
+            """
+        th = x[3:]
+        r = x[:3]
+        # Radial momentum of 4th particle
+        r3 = sqrt((r[0]+r[1]*cos(th[0])+r[2]*cos(th[1]))**2 + (r[1]*sin(th[0])+r[2]*sin(th[1]))**2)
+        # Energy of four particles
+        e0 = r[0]
+        e1 = r[1]
+        e2 = r[2]
+        e3 = r3
+        # Non-relativistic propagator
+        prop = -1/(e0+e1+e2+e3)
+        # 2 pi is to account for the omitted angle
+        return (2*pi) * self.factor * prop * HT(lam-r3) * 1/(e3)
+
+    def counterterm(self, lam):
+        # XXX This is wrong
+        return -1/(48*(4*pi)**3)*lam
 
 class Phi0_1(Integrator):
     """ O(g^2) vacuum diagram """
@@ -49,10 +80,8 @@ class Phi0_1(Integrator):
     def integrand(self, x, lam):
         """ x: vector of momenta
             lam: momentum cutoff
-            the variable s is [arctan(r0), arctan(r1), arctan(r2), theta1, theta2]
             """
         th = x[3:]
-        # Change of variables
         r = x[:3]
         jacobian = r[0]*r[1]*r[2]
         # Radial momentum of 4th particle
