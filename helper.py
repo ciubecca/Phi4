@@ -97,6 +97,10 @@ class Helper():
 
         self.transfMat = self._genTransfMatrix()
 
+    def torepr1(self, s):
+# XXX Should I sort this
+        return [(wn,s[i]) for wn,i in self.allowedWn.items()]
+
     def torepr2(self, s):
         ret = [0]*len(self.allowedWn)
         for n,Zn in s:
@@ -114,13 +118,13 @@ class Helper():
 
     def totwn2(self, state):
         """ Computes total momentum for state in representation 2 """
-        kx = sum(wn[0]*state[i] for wn,i in self.allowedWn)
-        ky = sum(wn[1]*state[i] for wn,i in self.allowedWn)
-        return (kx,ky)
+        kx = sum(wn[0]*state[i] for wn,i in self.allowedWn.items())
+        ky = sum(wn[1]*state[i] for wn,i in self.allowedWn.items())
+        return array([kx,ky])
 
     def energy2(self, state):
         """ Computes total energy for state in representation 2 """
-        return sum(self.omega(wn)*state[i] for wn,i in self.allowedWn)
+        return sum(self.omega(wn)*state[i] for wn,i in self.allowedWn.items())
 
     def _omega(self, n):
         """ Energy corresponding to wavenumber n"""
@@ -152,7 +156,7 @@ class Helper():
 
     def maxmom2(self, s):
         """ Maximum squared momentum in repr 2 """
-        return max(self.kSq(wn) for wn,i in self.allowedWn if s[i]>0)
+        return max(self.kSq(wn) for wn,i in self.allowedWn.items() if s[i]>0)
 
     def maxmom(self, s):
         """ Maximum squared momentum """

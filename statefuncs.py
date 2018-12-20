@@ -65,10 +65,12 @@ class Basis():
 
         # Convert some states to representation 1
         if self.repr1==False and self.repr1Emax!=None:
+            print(self.stateList)
+
             self.stateList2 = self.stateList[:]
             self.stateList = []
-            for i,e in enumerate(self.stateList2):
-                if e>Emax+tol:
+            for i,e in enumerate(self.energyList):
+                if e>self.Emax+tol:
                     break
                 self.stateList.append(helper.torepr1(self.stateList2[i]))
 
