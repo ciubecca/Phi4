@@ -111,21 +111,10 @@ def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
 
     elif nc==3:
         (k1,) = dlist
-        for k2 in range(-nmax,nmax+1):
-            for k3 in range(max(-nmax+k1-k2,k2),
-                           min(int(floor((k1-k2)/2)),nmax)+1):
-
-                k4 = k1-k2-k3
-                clists.append((k2,k3,k4))
+        clist = helper.genMomenta3sets(k1):
 
     elif nc==4:
         clists = []
-        for k1 in range(-nmax,nmax+1):
-            for k2 in range(k1,nmax+1):
-                # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
-                for k3 in range(max(-nmax-k1-k2,k2),
-                        min(int(floor((-k1-k2)/2)),nmax)+1):
-                    k4 = -k1-k2-k3
-                    clists.append((k1,k2,k3,k4))
+        clists =  helper.genMomenta4sets(self)
 
     return clists
