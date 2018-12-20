@@ -211,82 +211,93 @@ def V4OpsHalf(helper):
 
     dlist = ()
 # The list of annihilation momenta is empty
-    V40 = [(dlist, [])]
+    # V40 = [(dlist, [])]
 
-    for i1 in range(l):
-        k1 = allowedWnList[i1]
-        e1 = elist[i1]
+    # for i1 in range(l):
+        # k1 = allowedWnList[i1]
+        # e1 = elist[i1]
 
-        for i2 in range(i1, l):
-            k2 = allowedWnList[i2]
-            e2 = elist[i2]
+        # for i2 in range(i1, l):
+            # k2 = allowedWnList[i2]
+            # e2 = elist[i2]
 
-            # XXX Check
-            if e1+e2+minEnergy(k1+k2, 2) > Emax+tol:
-                continue
+            # # XXX Check
+            # if e1+e2+minEnergy(k1+k2, 2) > Emax+tol:
+                # continue
 
-            for i3 in range(i2,l):
-                k3 = allowedWnList[i3]
-                e3 = elist[i3]
+            # for i3 in range(i2,l):
+                # k3 = allowedWnList[i3]
+                # e3 = elist[i3]
 
-                k4 = -k1-k2-k3
+                # k4 = -k1-k2-k3
 
-                if tuple(k4) not in allowedWn:
-                    continue
+                # if tuple(k4) not in allowedWn:
+                    # continue
 
-                i4 = allowedWnIdx[tuple(k4)]
-                if i4 < i3:
-                    continue
+                # i4 = allowedWnIdx[tuple(k4)]
+                # if i4 < i3:
+                    # continue
 
-                e4 = elist[i4]
-                if e1+e2+e3+e4 > Emax+tol:
-                    continue
+                # e4 = elist[i4]
+                # if e1+e2+e3+e4 > Emax+tol:
+                    # continue
 
-                clist = (tuple(k1),tuple(k2),tuple(k3),tuple(k4))
-                V40[-1][1].append(clist)
+                # clist = (tuple(k1),tuple(k2),tuple(k3),tuple(k4))
+                # V40[-1][1].append(clist)
+
+    V40 = [(dlist, helper.genMomenta4sets())]
 
 # Generate a LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
+
+
+    # V31 = []
+    # for k1 in allowedWnList:
+# # The set of annihilation momenta contains just one momentum
+        # dlist = (tuple(k1),)
+        # # The state must have at least another particle if k1 != 0
+        # e1 = minEnergy(k1)
+        # V31.append((dlist,[]))
+
+        # for i2 in range(l):
+            # k2 = allowedWnList[i2]
+            # e2 = elist[i2]
+
+            # # XXX Check
+            # if e1+e2+minEnergy(k1-k2,2) > Emax+tol:
+                # continue
+
+            # for i3 in range(i2, l):
+                # k3 = allowedWnList[i3]
+
+                # k4 = k1-k2-k3
+
+                # if tuple(k4) not in allowedWn:
+                    # continue
+
+                # i4 = allowedWnIdx[tuple(k4)]
+
+                # if i4 < i3:
+                    # continue
+
+                # e3 = elist[i3]
+                # e4 = elist[i4]
+
+                # # XXX Check
+                # if e1+e2+e3+e4 > Emax+tol:
+                    # continue
+
+                # clist = (tuple(k2),tuple(k3),tuple(k4))
+                # V31[-1][1].append(clist)
 
 
     V31 = []
     for k1 in allowedWnList:
 # The set of annihilation momenta contains just one momentum
         dlist = (tuple(k1),)
-        # The state must have at least another particle if k1 != 0
-        e1 = minEnergy(k1)
-        V31.append((dlist,[]))
 
-        for i2 in range(l):
-            k2 = allowedWnList[i2]
-            e2 = elist[i2]
+        V31.append((dlist,helper.genMomenta3sets(k1)))
 
-            # XXX Check
-            if e1+e2+minEnergy(k1-k2,2) > Emax+tol:
-                continue
-
-            for i3 in range(i2, l):
-                k3 = allowedWnList[i3]
-
-                k4 = k1-k2-k3
-
-                if tuple(k4) not in allowedWn:
-                    continue
-
-                i4 = allowedWnIdx[tuple(k4)]
-
-                if i4 < i3:
-                    continue
-
-                e3 = elist[i3]
-                e4 = elist[i4]
-
-                # XXX Check
-                if e1+e2+e3+e4 > Emax+tol:
-                    continue
-
-                clist = (tuple(k2),tuple(k3),tuple(k4))
-                V31[-1][1].append(clist)
 
     V31 = LocOperator(V31, 1, 3, helper)
 

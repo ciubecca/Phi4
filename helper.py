@@ -54,6 +54,14 @@ class Helper():
                     idx += 1
 
 
+        # XXX Sort wavenumbers lexicographically, and convert to arrays
+        # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+        self.allowedWnList = list(map(lambda x:np.array(x), self.allowedWn))
+        l = len(self.allowedWnList)
+        # (wn -> idx) where idx is the position in the ordered list
+        self.allowedWnIdx = {tuple(wn):i for i,wn in enumerate(self.allowedWnList)}
+        self.elist = [self.omega(wn) for wn in self.allowedWnList]
+
         # Set of allowed momenta in first and second quadrants, plus zero momentum
         self.allowedWn12 = set()
         for nx in range(-nmax, nmax+1):
@@ -158,8 +166,8 @@ class Helper():
         ordered lexicographically, and indexed by total momentum.
         The list of total momenta is
         This is a subroutine used to construct the V22 matrix.
-        ksqmax: if we generate oscillators between two bases b1, b2 such that
-        E1 < E2, not all pairs of momenta for the annihilation operators are allowed.
+        totpairsmomenta: if we generate oscillators between two bases b1, b2
+        such that E1 < E2, not all pairs of momenta for the annihilation operators are allowed.
             """
 
         omega = self.omega
@@ -209,3 +217,102 @@ class Helper():
             # allowedWnPairs[k12] = list(sorted(allowedWnPairs[k12]))
 
         return allowedWnPairs
+
+
+
+    def genMomenta4sets(self):
+
+        allowedWnList = self.allowedWnList
+        elist = self.elist
+        minEnergy = self.minEnergy
+        allowedWn = self.allowedWn
+        l = len(allowedWnList)
+        Emax = self.Emax
+        allowedWnIdx = self.allowedWnIdx
+
+        ret = []
+
+        for i1 in range(l):
+            k1 = allowedWnList[i1]
+            e1 = elist[i1]
+
+            for i2 in range(i1, l):
+                k2 = allowedWnList[i2]
+                e2 = elist[i2]
+
+                # XXX Check
+                if e1+e2+minEnergy(k1+k2, 2) > Emax+tol:
+                    continue
+
+                for i3 in range(i2,l):
+                    k3 = allowedWnList[i3]
+                    e3 = elist[i3]
+
+                    k4 = -k1-k2-k3
+
+                    if tuple(k4) not in allowedWn:
+                        continue
+
+                    i4 = allowedWnIdx[tuple(k4)]
+                    if i4 < i3:
+                        continue
+
+                    e4 = elist[i4]
+                    if e1+e2+e3+e4 > Emax+tol:
+                        continue
+
+                    clist = (tuple(k1),tuple(k2),tuple(k3),tuple(k4))
+                    ret.append(clist)
+
+        return ret
+
+
+
+    def genMomenta3sets(self, k1):
+
+        allowedWnList = self.allowedWnList
+        elist = self.elist
+        minEnergy = self.minEnergy
+        allowedWn = self.allowedWn
+        l = len(allowedWnList)
+        Emax = self.Emax
+        allowedWnIdx = self.allowedWnIdx
+
+        ret = []
+
+        # The state must have at least another particle if k1 != 0
+        e1 = minEnergy(k1)
+
+        for i2 in range(l):
+            k2 = allowedWnList[i2]
+            e2 = elist[i2]
+
+            # XXX Check
+            if e1+e2+minEnergy(k1-k2,2) > Emax+tol:
+                continue
+
+            for i3 in range(i2, l):
+                k3 = allowedWnList[i3]
+
+                k4 = k1-k2-k3
+
+                if tuple(k4) not in allowedWn:
+                    continue
+
+                i4 = allowedWnIdx[tuple(k4)]
+
+                if i4 < i3:
+                    continue
+
+                e3 = elist[i3]
+                e4 = elist[i4]
+
+                # XXX Check
+                if e1+e2+e3+e4 > Emax+tol:
+                    continue
+
+                clist = (tuple(k2),tuple(k3),tuple(k4))
+                ret.append(clist)
+
+        return ret
+
