@@ -1,8 +1,6 @@
 from profile_support import *
 from operator import mul
 from functools import reduce
-import gc
-from sys import getsizeof as sizeof
 import scipy
 from math import factorial, floor, sqrt
 import statefuncs

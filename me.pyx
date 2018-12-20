@@ -9,7 +9,7 @@ import itertools
 from itertools import combinations, islice, permutations
 from scipy import exp, pi
 import bisect
-from oscillators import *
+# from oscillators import *
 cimport cython
 from cpython cimport array as array
 import array
