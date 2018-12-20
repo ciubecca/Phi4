@@ -12,9 +12,9 @@ from itertools import groupby
 from scipy import exp, pi
 from scipy.special import binom
 import bisect
-import me
 import numpy as np
-from me import *
+import me
+from operators import *
 
 
 def bose(x):
@@ -30,7 +30,6 @@ class LocOperator():
     from a set of tails
     """
 
-    # @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of

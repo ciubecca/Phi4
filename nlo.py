@@ -72,6 +72,8 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
         dlists = gendlistsfromBasis(basis, idxList, helper, 2, 4)
         oscList = []
 
+        print("nd = {}, dlists={}".format(nd, dlists))
+
         if nd==2:
             totpairsmomenta = set((k1[0]+k2[0],k1[1]+k2[1]) for k1,k2 in dlists)
             allowedWnPairs = helper.genMomentaPairs(totpairsmomenta)
@@ -92,7 +94,9 @@ def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
 
     for i in idxList:
         state = basis.stateList[i]
+        print("state", state)
         ret.update(gendlists(state=state, nd=nd, ntot=ntot, helper=helper))
+    print("ret", ret)
     return ret
 
 

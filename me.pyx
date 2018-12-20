@@ -9,10 +9,10 @@ import itertools
 from itertools import combinations, islice, permutations
 from scipy import exp, pi
 import bisect
-# from oscillators import *
 cimport cython
 from cpython cimport array as array
 import array
+from operators import *
 
 # XXX Warning usign exponential notation sets this to zero!
 cdef double tol = 0.00000001
@@ -21,31 +21,6 @@ symFactors = [[0. for _ in range(9)] for _ in range(9)]
 for ncomp1 in (1,2,4,8):
     for ncomp2 in (1,2,4,8):
         symFactors[ncomp1][ncomp2] = sqrt(ncomp1/ncomp2)
-
-
-# XXX Review this function, to take Lambda into account?
-def filterDlist(dlist, nd, ntot, helper):
-    if nd==ntot:
-        return tuple(sum([np.array(d) for d in dlist])) == (0,0)
-    elif nd==ntot-1:
-        return tuple(sum([np.array(d) for d in dlist])) in helper.allowedWn
-    else:
-        return True
-
-
-def gendlists(state, nd, ntot, helper):
-    """ Generates a list of all the possible combinations of momenta in the state that
-    can be annihilated
-    state: input state in representation 1
-    nd: number of annihilation operators (number of modes to annihilate)
-    ntot: total number of annihilation and creation operators
-    allowedWn: all the allowed wave numbers in the basis
-    """
-
-    x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
-    dlists = set(tuple(y) for y in combinations(x,nd))
-
-    return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, helper))
 
 
 # @cython.binding(True)
