@@ -80,7 +80,6 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
             except KeyError as err:
                 raise err
 
-
 # Only select the oscillators such that the sum of the state and oscillator energies
 # lies within the bounds of the lookupbasis energies
             imin = bisect.bisect_left(oscEnergies[k], 0-e-tol)

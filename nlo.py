@@ -29,14 +29,16 @@ def genHEBasis(basis, subidx, EL, ELp):
 
         statePos = {}
         stateList = []
+        ncomp = []
 
         i = 0
         for V in Vlist:
             for v in V.yieldBasis(basis, subidx, Emax):
-                if v not in statePos:
+                if bytes(v) not in statePos:
 
-                    transStates = {tuple(np.dot(m, v)) for m in helper.transfMat}
-                    stateList.append(v)
+                    transStates = {bytes(np.dot(m, np.array(v)))
+                            for m in helper.transfMat}
+                    stateList.append(bytes(v))
                     ncomp.append(len(transStates))
 
                     for s in transStates:
@@ -47,7 +49,7 @@ def genHEBasis(basis, subidx, EL, ELp):
 # Basis of selected states with energy <= Emax. We only need to save
 # states in the type 1 representation (most memory consuming) for states
 # with energy <= ELp, or ET when ELp=None
-        self.basisH = Basis(self.k, stateList, helper, statePos, ncomp, repr1=False,
+        return Basis(basis.k, stateList, helper, statePos, ncomp, repr1=False,
                 repr1Emax=max(ELp or 0, basis.Emax))
 
 
@@ -59,6 +61,7 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
     """
 
     oscEnergy = helper.oscEnergy
+    Emax = helper.Emax
 
     if idxList == None:
         idxList = range(basis.size)
@@ -69,7 +72,7 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
     for nd in (0,1,2,3,4):
         nc = 4-nd
 
-        dlists = gendlistsfromBasis(basis, idxList, helper, 2, 4)
+        dlists = gendlistsfromBasis(basis, idxList, helper, nd, 4)
         oscList = []
 
         print("nd = {}, dlists={}".format(nd, dlists))
@@ -92,11 +95,15 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
 def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
     ret = set()
 
+    print("Entering gendlistsfromBasis")
+
     for i in idxList:
         state = basis.stateList[i]
-        print("state", state)
         ret.update(gendlists(state=state, nd=nd, ntot=ntot, helper=helper))
-    print("ret", ret)
+        if state==[] and nd==0:
+            print("ret:", ret)
+
+
     return ret
 
 
@@ -127,6 +134,6 @@ def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
 
     elif nc==4:
         clists = []
-        clists =  helper.genMomenta4sets(self)
+        clists =  helper.genMomenta4sets()
 
     return clists

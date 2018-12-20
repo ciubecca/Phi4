@@ -14,6 +14,17 @@ def occn(s):
     """ Occupation number of state """
     return sum([Zn for n,Zn in s])
 
+def occn2(s):
+    """ Occupation number of state in repr 2 """
+    return sum(s)
+
+
+def totwn(state):
+    if state==[]:
+        return array([0,0])
+    return sum([Zn*np.array(n) for n,Zn in state])
+
+
 # XXX Is this necessary?
 def toCanonical(state):
     """ Transorm the state in representation 1 to canonical ordering of the momenta """
@@ -101,10 +112,15 @@ class Helper():
         """ Computes energy of state in Repr1 """
         return sum(Zn*self.omega(n) for n,Zn in state)
 
-    def totwn(self, state):
-        if state==[]:
-            return array([0,0])
-        return sum([Zn*np.array(n) for n,Zn in state])
+    def totwn2(self, state):
+        """ Computes total momentum for state in representation 2 """
+        kx = sum(wn[0]*state[i] for wn,i in self.allowedWn)
+        ky = sum(wn[1]*state[i] for wn,i in self.allowedWn)
+        return (kx,ky)
+
+    def energy2(self, state):
+        """ Computes total energy for state in representation 2 """
+        return sum(self.omega(wn)*state[i] for wn,i in self.allowedWn)
 
     def _omega(self, n):
         """ Energy corresponding to wavenumber n"""
@@ -134,11 +150,16 @@ class Helper():
         L = self.L
         return (2*pi/L)**2*(n[0]**2+n[1]**2)
 
+    def maxmom2(self, s):
+        """ Maximum squared momentum in repr 2 """
+        return max(self.kSq(wn) for wn,i in self.allowedWn if s[i]>0)
+
     def maxmom(self, s):
-        """ Occupation number of state """
+        """ Maximum squared momentum """
         if s == []:
             return 0.
         return max(sqrt(self.kSq(n)) for n,_ in s)
+
 
 # TODO Inspect: is it more efficient to transform states to Repr 1 and back, instead?
     def _genTransfMatrix(self):

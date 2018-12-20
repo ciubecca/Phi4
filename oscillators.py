@@ -129,19 +129,32 @@ class LocOperator():
         EL: maximal energy of the generated high-energy states
         """
 
+        allowedWn = self.helper.allowedWn
+
         for idx in subidx:
             state = basis.stateList[idx]
             statevec = self.helper.torepr2(state)
             e = basis.energyList[idx]
 
             for dlist in gendlists(state, self.nd, self.nd+self.nc, self.helper):
-                k = self.dlistPos[dlist]
+                try:
+                    k = self.dlistPos[dlist]
+                except KeyError as e:
+                    print("dlist", dlist)
+                    print("self.nd", self.nd)
+                    raise e
+
                 imax = bisect.bisect_left(self.oscEnergies[k], EL-e+tol)
 
                 for i, osc in enumerate(self.oscList[k][:imax]):
                     newstatevec = statevec[:]
-                    for n,Zc,Zd in osc:
-                        newstatevec[n+nmax] += Zc-Zd
+
+                    for ii in range(osc.shape[0]):
+                        jj = allowedWn[(osc[ii, 0],osc[ii, 1])]
+                        Zc = osc[ii, 2]
+                        Zd = osc[ii, 3]
+                        newstatevec[jj] += Zc-Zd
+
                     yield newstatevec
 
 

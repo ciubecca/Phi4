@@ -27,13 +27,13 @@ class Basis():
         self.size = len(stateList)
 
         if repr1==False:
-            totwn = helper.totwn2
+            self.totwn = helper.totwn2
             energy = helper.energy2
             maxmom = helper.maxmom2
             self.occn = occn2
             self.repr1Emax = repr1Emax
         else:
-            totwn = helper.totwn
+            self.totwn = totwn
             energy = helper.energy
             maxmom = helper.maxmom
             self.occn = occn
@@ -60,7 +60,7 @@ class Basis():
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
         assert (max(el) <= self.Emax+tol)
         assert (max(self.maxmom) <= self.Lambda+tol)
-        assert all(sum(totwn(s)**2)==0 for s in self.stateList)
+        assert all(sum(self.totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(self.occn(state)%2)==k for state in self.stateList)
 
         # Convert some states to representation 1
@@ -146,7 +146,6 @@ class Basis():
         omega = helper.omega
         allowedWn = helper.allowedWn
         energy = helper.energy
-        totwn = helper.totwn
         minEnergy = helper.minEnergy
 
         if idx == len(self.NEwnlist):
@@ -190,7 +189,6 @@ class Basis():
 
         m = helper.m
         energy = helper.energy
-        totwn = helper.totwn
         Emax = helper.Emax
         Lambda = helper.Lambda
         allowedWn = helper.allowedWn
