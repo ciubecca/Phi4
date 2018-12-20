@@ -202,7 +202,8 @@ def V4OpsHalf(helper):
     oscEnergy = helper.oscEnergy
 
     # Sort wavenumbers lexicographically, and convert to arrays
-    allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+    # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+    allowedWnList = list(map(lambda x:np.array(x), allowedWn))
     l = len(allowedWnList)
     # (wn -> idx) where idx is the position in the ordered list
     allowedWnIdx = {tuple(wn):i for i,wn in enumerate(allowedWnList)}
@@ -304,7 +305,6 @@ def V4Ops22(helper):
 
     V22 = []
 
-    # allowedWnPairs = _genMomentaPairs(helper)
     allowedWnPairs = list(helper.genMomentaPairs().values())
 
     elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWnPairs]

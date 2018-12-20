@@ -56,16 +56,22 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
         idxList = range(basis.size)
 
     opsList = []
+    allowedWnPairs = None
 
     for nd in (0,1,2,3,4):
         nc = 4-nd
 
-        dlists = gendlistsfromBasis(basis, idxList, nmax, nd, 4)
+        dlists = gendlistsfromBasis(basis, idxList, helper, 2, 4)
         oscList = []
 
+        if nd==2:
+            totpairsmomenta = set((k1[0]+k2[0],k1[1]+k2[1]) for k1,k2 in dlists)
+            allowedWnPairs = helper.genMomentaPairs(totpairsmomenta)
+
         for dlist in dlists:
-            clists = [clist for clist in createClistsV4(nmax, dlist, nc) if
-                    oscEnergy(clist) <= Emax+tol]
+            clists = [clist for clist in
+                        createClistsV4(helper, dlist, nc, allowedWnPairs) if
+                        oscEnergy(clist) <= Emax+tol]
             oscList.append((dlist, clists))
 
         opsList.append(LocOperator(oscList,nd,nc,helper=helper))
@@ -83,7 +89,7 @@ def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
 
 
 
-def createClistsV4(helper, dlist, nc):
+def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
 
     if len(dlist) != 4-nc:
         raise ValueError
@@ -93,15 +99,14 @@ def createClistsV4(helper, dlist, nc):
         clists.append(())
 
     elif nc==1:
+# XXX Fixme
         clists.append((sum(dlist),))
 
     elif nc==2:
         k1,k2 = dlist
         k12 = (k1[0]+k2[0],k1[1]+k2[1])
 
-        allowedWn12 = helper.momentaPairs
-
-        for k3,k4 in allowedWn12[k12]:
+        for k3,k4 in allowedWnPairs[k12]:
             clists.append((k3,k4))
 
     elif nc==3:

@@ -153,7 +153,7 @@ class Helper():
         return ret
 
 
-    def genMomentaPairs(self, ksqmax=None):
+    def genMomentaPairs(self, totpairsmomenta=None):
         """ Generate sets of all inequivalent pairs of momenta,
         ordered lexicographically, and indexed by total momentum.
         The list of total momenta is
@@ -169,6 +169,7 @@ class Helper():
 
         # Sort 2d momenta lexicographically
         allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+
         l = len(allowedWnList)
         elist = [omega(wn) for wn in allowedWnList]
 
@@ -182,12 +183,13 @@ class Helper():
                 k2 = allowedWnList[i2]
                 k12 = k1+k2
 
+                k12 = tuple(k12)
+
                 # ksqmax is the maximum total momentum of pairs of momenta
                 # that can be annihilated
-                if ksqmax!=None and k12[0]**2+k12[1]**2 > kmaxsq+tol:
+                if totpairsmomenta!=None and k12 not in totpairsmomenta:
                     continue
 
-                k12 = tuple(k12)
                 e12 = e1+elist[i2]
 
                 # XXX CHECK if I can comment this
@@ -202,10 +204,8 @@ class Helper():
 
                 allowedWnPairs[k12].append((tuple(k1),tuple(k2)))
 
-        for k12 in allowedWnPairs.keys():
-# XXX Do I really need to sort them explicitly ???
-            allowedWnPairs[k12] = list(sorted(allowedWnPairs[k12]))
-        return allowedWnPairs
+# Sort lexicographically
+        # for k12 in allowedWnPairs.keys():
+            # allowedWnPairs[k12] = list(sorted(allowedWnPairs[k12]))
 
-        # Sort 2d momenta pairs lexicographically
-        # return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
+        return allowedWnPairs
