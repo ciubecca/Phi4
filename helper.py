@@ -184,7 +184,7 @@ class Helper():
 
                 # ksqmax is the maximum total momentum of pairs of momenta
                 # that can be annihilated
-                if kmaxsq!=None and k12[0]**2+k12[1]**2 > kmaxsq+tol:
+                if ksqmax!=None and k12[0]**2+k12[1]**2 > kmaxsq+tol:
                     continue
 
                 k12 = tuple(k12)
@@ -197,12 +197,12 @@ class Helper():
                 if e12+minEnergy(k12) > Emax+tol:
                     continue
 
-                if k12 not in allowedWn12:
+                if k12 not in allowedWnPairs:
                     allowedWnPairs[k12] = []
 
                 allowedWnPairs[k12].append((tuple(k1),tuple(k2)))
 
-        for k12 in allowedWn12.keys():
+        for k12 in allowedWnPairs.keys():
 # XXX Do I really need to sort them explicitly ???
             allowedWnPairs[k12] = list(sorted(allowedWnPairs[k12]))
         return allowedWnPairs

@@ -192,7 +192,6 @@ def _genMomentaPairs(helper):
     return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
 
 
-# @profile
 def V4OpsHalf(helper):
     """ Generate half of the oscillators of the V4 operator """
 
@@ -292,7 +291,7 @@ def V4OpsHalf(helper):
 
     return V40, V31
 
-# @profile
+
 def V4Ops22(helper):
     # XXX Temporary fix
     """ Do not symmetrize for the moment! """
@@ -305,15 +304,16 @@ def V4Ops22(helper):
 
     V22 = []
 
-    # TODO Change name for this !!
-    allowedWn12 = _genMomentaPairs(helper)
-    elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWn12]
+    # allowedWnPairs = _genMomentaPairs(helper)
+    allowedWnPairs = list(helper.genMomentaPairs().values())
+
+    elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWnPairs]
 
 
     # Cycle over total momentum of annihilation operators
-    for wnIdx in range(len(allowedWn12)):
+    for wnIdx in range(len(allowedWnPairs)):
 
-        kpairlist = allowedWn12[wnIdx]
+        kpairlist = allowedWnPairs[wnIdx]
 
         for i in range(len(kpairlist)):
             kpair = kpairlist[i]
