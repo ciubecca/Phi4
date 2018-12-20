@@ -79,7 +79,6 @@ class LocOperator():
             dlist_e = oscEnergy(dlist)
             dlist_count = Counter(dlist)
 
-            # XXX Use global variables for this?
             for clist in clists:
                 if clist not in clist_pref:
                     clist_pref[clist] = bose(clist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in clist])
@@ -124,6 +123,30 @@ class LocOperator():
 
         return me.computeME(basis, i, statePos,
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList, self.oscEnergies)
+
+
+    def yieldBasis(self, basis, subidx, EL):
+        """ Yields a sequence of representation 2 states, by acting with oscillators
+        on a subset of states.
+        subidx: subset of indices of basis on which to act
+        EL: maximal energy of the generated high-energy states
+        """
+
+        for idx in subidx:
+            state = basis.stateList[idx]
+            statevec = self.helper.torepr2(state)
+            e = basis.energyList[idx]
+
+            for dlist in gendlists(state, self.nd, self.nd+self.nc, self.helper):
+                k = self.dlistPos[dlist]
+                imax = bisect.bisect_left(self.oscEnergies[k], EL-e+tol)
+
+                for i, osc in enumerate(self.oscList[k][:imax]):
+                    newstatevec = statevec[:]
+                    for n,Zc,Zd in osc:
+                        newstatevec[n+nmax] += Zc-Zd
+                    yield newstatevec
+
 
 
 def _genMomentaPairs(helper):
@@ -225,20 +248,7 @@ def V4OpsHalf(helper):
 # Generate a LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
 
-    # Pre-compute sorted V13 indices for the creation operators
-    # V13indices = []
-    # for i2 in range(l):
-        # V13indices.append([])
-        # k2 = allowedWnList[i2]
-        # for i3 in range(i2, l):
-            # k3 = allowedWnList[i3]
-            # k4 = tuple(k1-k2-k3)
-            # if k4 in allowedWn and allowedWnIdx[k4]>=i3:
-                # V13indices[i2].append(i3)
 
-
-
-#######################################################
     V31 = []
     for k1 in allowedWnList:
 # The set of annihilation momenta contains just one momentum
@@ -359,3 +369,84 @@ def V2OpsHalf(helper):
     V11 = LocOperator(V11, 1, 1, helper)
 
     return V20, V11
+
+
+
+def V4OpsSelectedFull(basis, helper, idxList=None):
+    """ Selected set of oscillators of the full V4 operator between some selected states
+    basis: basis which is acted upon
+    subidx: subset of indices of states which are acted upon
+    helper: contains the Emax of states to be generated
+    """
+
+    oscEnergy = helper.oscEnergy
+
+    if idxList == None:
+        idxList = range(basis.size)
+
+    opsList = []
+
+    for nd in (0,1,2,3,4):
+        nc = 4-nd
+
+        dlists = gendlistsfromBasis(basis, idxList, nmax, nd, 4)
+        oscList = []
+
+        for dlist in dlists:
+            clists = [clist for clist in createClistsV4(nmax, dlist, nc) if
+                    oscEnergy(clist) <= Emax+tol]
+            oscList.append((dlist, clists))
+
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
+
+def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
+    ret = set()
+
+    for i in idxList:
+        state = basis.stateList[i]
+        ret.update(gendlists(state=state, nd=nd, ntot=ntot, helper=helper))
+    return ret
+
+
+
+def createClistsV4(nmax, dlist, nc):
+
+    if len(dlist) != 4-nc:
+        raise ValueError
+    clists = []
+
+    if nc==0:
+        clists.append(())
+    elif nc==1:
+        clists.append((sum(dlist),))
+    elif nc==2:
+        k1,k2 = dlist
+        for k3 in range(max(-nmax+k1+k2,-nmax),
+                min(int(floor((k1+k2)/2)),nmax)+1):
+
+            k4 = k1+k2-k3
+            clists.append((k3,k4))
+
+    elif nc==3:
+        (k1,) = dlist
+        for k2 in range(-nmax,nmax+1):
+            for k3 in range(max(-nmax+k1-k2,k2),
+                           min(int(floor((k1-k2)/2)),nmax)+1):
+
+                k4 = k1-k2-k3
+                clists.append((k2,k3,k4))
+
+    elif nc==4:
+        clists = []
+        for k1 in range(-nmax,nmax+1):
+            for k2 in range(k1,nmax+1):
+                # NOTE the boundaries for k3 ensure that k3<=k4<=nmax
+                for k3 in range(max(-nmax-k1-k2,k2),
+                        min(int(floor((-k1-k2)/2)),nmax)+1):
+                    k4 = -k1-k2-k3
+                    clists.append((k1,k2,k3,k4))
+
+    return clists

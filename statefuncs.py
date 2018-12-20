@@ -80,6 +80,8 @@ class Helper():
                     else:
                         self.normFactors[c,d,n] = scipy.nan
 
+        self.transfMat = self._genTransfMatrix()
+
     def torepr2(self, s):
         ret = [0]*len(self.allowedWn)
         for n,Zn in s:
@@ -158,7 +160,8 @@ class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateList, helper, statePos=None, ncomp=None):
+    def __init__(self, k, stateList, helper, statePos, ncomp,
+            repr1=True, repr1Emax=None):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
@@ -167,33 +170,34 @@ class Basis():
         """
         self.k = k
         self.helper = helper
-        totwn = helper.totwn
-        energy = helper.energy
-        maxmom = helper.maxmom
         self.Emax = helper.Emax
         self.Lambda = helper.Lambda
-
+        self.repr1 = repr1
         self.size = len(stateList)
 
-        if statePos != None:
-            # Retrieve the transformation of the indices to get lists sorted in energy
-            energyList = [energy(state) for state in stateList]
-            idx = np.argsort(np.array(energyList))
-            # Reverse indices
-            idx2 = {j:i for i,j in enumerate(idx) }
-            # Remap the indices
-            self.stateList = [stateList[idx[i]] for i in range(self.size)]
-            self.energyList = [energyList[idx[i]] for i in range(self.size)]
-            self.statePos = {state: idx2[i] for state,i in statePos.items()}
-
-            # Symmetry types
-            self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
-
-        # Assume that stateList is already sorted in energy. Need to construct statePos
-        # XXX Do we need to construct the subbasis if we just need the submatrix?
+        if repr1==False:
+            totwn = helper.totwn2
+            energy = helper.energy2
+            maxmom = helper.maxmom2
+            occn = occn2
+            self.repr1Emax = repr1Emax
         else:
-            raise RuntimeError("Not implemented")
+            totwn = helper.totwn
+            energy = helper.energy
+            maxmom = helper.maxmom
 
+        # Retrieve the transformation of the indices to get lists sorted in energy
+        energyList = [energy(state) for state in stateList]
+        idx = np.argsort(np.array(energyList))
+        # Reverse indices
+        idx2 = {j:i for i,j in enumerate(idx)}
+        # Remap the indices
+        self.stateList = [stateList[idx[i]] for i in range(self.size)]
+        self.energyList = [energyList[idx[i]] for i in range(self.size)]
+        self.statePos = {state: idx2[i] for state,i in statePos.items()}
+
+        # Symmetry types
+        self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
 
         self.occnList = [occn(state) for state in self.stateList]
         # Maximal single particle momentum in each state
@@ -206,6 +210,16 @@ class Basis():
         assert (max(self.maxmom) <= self.Lambda+tol)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(occn(state)%2)==k for state in self.stateList)
+
+        # Convert some states to representation 1
+        if self.repr1==False and self.repr1Emax!=None:
+            self.stateList2 = self.stateList[:]
+            self.stateList = []
+            for i,e in enumerate(self.stateList2):
+                if e>Emax+tol:
+                    break
+                self.stateList.append(helper.torepr1(self.stateList2[i]))
+
 
 
     def subidxlist(self, Emax, Lambda=np.inf):
