@@ -53,6 +53,7 @@ class Helper():
                     self.allowedWn[(nx,ny)] = idx
                     idx += 1
 
+
         # Set of allowed momenta in first and second quadrants, plus zero momentum
         self.allowedWn12 = set()
         for nx in range(-nmax, nmax+1):
@@ -76,8 +77,6 @@ class Helper():
                         self.normFactors[c,d,n] = scipy.nan
 
         self.transfMat = self._genTransfMatrix()
-        self.momentaPairs = self._genMomentaPairs()
-        self.momenta3sets = self._genmomenta3sets()
 
     def torepr2(self, s):
         ret = [0]*len(self.allowedWn)
@@ -142,10 +141,11 @@ class Helper():
         l = len(allowedWn)
         ret = []
 
-        for op in enumerate((I, S, S2, S3, X, Y, XS, YS)):
+        for op in ((Id, rot, rot2, rot3, refly, reflx, xs, ys)):
             mat = np.zeros(shape=(l,l))
 
             for wn,i in allowedWn.items():
+                # wn = array(wn)
                 j = allowedWn[tuple(np.dot(op,array(wn)))]
                 mat[i, j] = 1
 
@@ -153,10 +153,14 @@ class Helper():
         return ret
 
 
-    def _genMomentaPairs(self):
+    def genMomentaPairs(self, ksqmax=None):
         """ Generate sets of all inequivalent pairs of momenta,
         ordered lexicographically, and indexed by total momentum.
-        This is a subroutine used to construct the V22 matrix """
+        The list of total momenta is
+        This is a subroutine used to construct the V22 matrix.
+        ksqmax: if we generate oscillators between two bases b1, b2 such that
+        E1 < E2, not all pairs of momenta for the annihilation operators are allowed.
+            """
 
         omega = self.omega
         minEnergy = self.minEnergy
@@ -164,12 +168,11 @@ class Helper():
         Emax = self.Emax
 
         # Sort 2d momenta lexicographically
-        # XXX Should I sort in energy so that I can break the cycles ?
         allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
         l = len(allowedWnList)
         elist = [omega(wn) for wn in allowedWnList]
 
-        allowedWn12 = {}
+        allowedWnPairs = {}
 
         for i1 in range(l):
             k1 = allowedWnList[i1]
@@ -177,7 +180,14 @@ class Helper():
 
             for i2 in range(i1,l):
                 k2 = allowedWnList[i2]
-                k12 = tuple(k1+k2)
+                k12 = k1+k2
+
+                # ksqmax is the maximum total momentum of pairs of momenta
+                # that can be annihilated
+                if kmaxsq!=None and k12[0]**2+k12[1]**2 > kmaxsq+tol:
+                    continue
+
+                k12 = tuple(k12)
                 e12 = e1+elist[i2]
 
                 # XXX CHECK if I can comment this
@@ -188,58 +198,14 @@ class Helper():
                     continue
 
                 if k12 not in allowedWn12:
-                    allowedWn12[k12] = []
+                    allowedWnPairs[k12] = []
 
-                allowedWn12[k12].append((tuple(k1),tuple(k2)))
+                allowedWnPairs[k12].append((tuple(k1),tuple(k2)))
+
+        for k12 in allowedWn12.keys():
+# XXX Do I really need to sort them explicitly ???
+            allowedWnPairs[k12] = list(sorted(allowedWnPairs[k12]))
+        return allowedWnPairs
 
         # Sort 2d momenta pairs lexicographically
-        return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
-
-
-    def _genmomenta3sets(self):
-
-        minEnergy = self.minEnergy
-        allowedWn = self.allowedWn
-        Emax = self.Emax
-
-        ret = {}
-
-        allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
-
-        for k1 in allowedWnList:
-            k1t = tuple(k1)
-            ret[k1t] = []
-            # The state must have at least another particle if k1 != 0
-            e1 = minEnergy(k1)
-
-            for i2 in range(l):
-                k2 = allowedWnList[i2]
-                e2 = elist[i2]
-
-                # XXX Check
-                if e1+e2+minEnergy(k1-k2,2) > Emax+tol:
-                    continue
-
-                for i3 in range(i2, l):
-                    k3 = allowedWnList[i3]
-
-                    k4 = k1-k2-k3
-
-                    if tuple(k4) not in allowedWn:
-                        continue
-
-                    i4 = allowedWnIdx[tuple(k4)]
-
-                    if i4 < i3:
-                        continue
-
-                    e3 = elist[i3]
-                    e4 = elist[i4]
-
-                    # XXX Check
-                    if e1+e2+e3+e4 > Emax+tol:
-                        continue
-
-                   ret[k1t].append((tuple(k2),tuple(k3),tuple(k4)))
-
-        return ret
+        # return list(map(lambda x: list(sorted(x)), allowedWn12.values()))

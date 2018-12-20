@@ -4,6 +4,7 @@ from math import floor, factorial
 import numpy as np
 from symmetry import *
 from helper import *
+import itertools
 
 
 class Basis():
@@ -29,12 +30,13 @@ class Basis():
             totwn = helper.totwn2
             energy = helper.energy2
             maxmom = helper.maxmom2
-            occn = occn2
+            self.occn = occn2
             self.repr1Emax = repr1Emax
         else:
             totwn = helper.totwn
             energy = helper.energy
             maxmom = helper.maxmom
+            self.occn = occn
 
         # Retrieve the transformation of the indices to get lists sorted in energy
         energyList = [energy(state) for state in stateList]
@@ -49,7 +51,7 @@ class Basis():
         # Symmetry types
         self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
 
-        self.occnList = [occn(state) for state in self.stateList]
+        self.occnList = [self.occn(state) for state in self.stateList]
         # Maximal single particle momentum in each state
         self.maxmom = [maxmom(s) for s in self.stateList]
 
@@ -59,7 +61,7 @@ class Basis():
         assert (max(el) <= self.Emax+tol)
         assert (max(self.maxmom) <= self.Lambda+tol)
         assert all(sum(totwn(s)**2)==0 for s in self.stateList)
-        assert all(1-2*(occn(state)%2)==k for state in self.stateList)
+        assert all(1-2*(self.occn(state)%2)==k for state in self.stateList)
 
         # Convert some states to representation 1
         if self.repr1==False and self.repr1Emax!=None:
