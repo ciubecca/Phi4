@@ -99,7 +99,7 @@ class Helper():
 
     def torepr1(self, s):
 # XXX Should I sort this
-        return [(wn,s[i]) for wn,i in self.allowedWn.items()]
+        return [(wn,s[i]) for wn,i in self.allowedWn.items() if s[i]>0]
 
     def torepr2(self, s):
         ret = [0]*len(self.allowedWn)
@@ -155,11 +155,11 @@ class Helper():
         return (2*pi/L)**2*(n[0]**2+n[1]**2)
 
     def maxmom2(self, s):
-        """ Maximum squared momentum in repr 2 """
-        return max(self.kSq(wn) for wn,i in self.allowedWn.items() if s[i]>0)
+        """ Maximum sqrt squared momentum in repr 2 """
+        return max(sqrt(self.kSq(wn)) for wn,i in self.allowedWn.items() if s[i]>0)
 
     def maxmom(self, s):
-        """ Maximum squared momentum """
+        """ Maximum sqrt squared momentum """
         if s == []:
             return 0.
         return max(sqrt(self.kSq(n)) for n,_ in s)

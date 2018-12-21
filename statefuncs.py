@@ -59,13 +59,12 @@ class Basis():
         el = self.energyList
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
         assert (max(el) <= self.Emax+tol)
-        assert (max(self.maxmom) <= self.Lambda+tol)
         assert all(sum(self.totwn(s)**2)==0 for s in self.stateList)
         assert all(1-2*(self.occn(state)%2)==k for state in self.stateList)
+        assert (max(self.maxmom) <= self.Lambda+tol)
 
         # Convert some states to representation 1
         if self.repr1==False and self.repr1Emax!=None:
-            print(self.stateList)
 
             self.stateList2 = self.stateList[:]
             self.stateList = []
