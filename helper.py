@@ -175,7 +175,7 @@ class Helper():
         ret = []
 
         for op in ((Id, rot, rot2, rot3, refly, reflx, xs, ys)):
-            mat = np.zeros(shape=(l,l))
+            mat = np.zeros(shape=(l,l), dtype=np.int32)
 
             for wn,i in allowedWn.items():
                 # wn = array(wn)

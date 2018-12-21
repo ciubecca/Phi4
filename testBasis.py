@@ -1,6 +1,35 @@
 import pytest
 import random
 from phi4 import *
+from nlo import *
+
+
+def test_genbasis():
+    """ Test the generated basis from the vacuum """
+
+    m = 1
+    L = 5
+    Lambda = 5
+    ET = 6
+    EL = 3*ET
+    ELp = EL
+
+    bases = Basis.fromScratch(m, L, ET, Lambda)
+    bases2 = Basis.fromScratch(m, L, EL, Lambda)
+
+    for k in (-1,1):
+        subidx = [0]
+        basis1 = genHEBasis(bases[k], subidx, EL, ELp)
+
+        if k==1:
+            sl2 = [s for s in bases2[k].stateList if occn(s)==4]
+        else:
+            helper = bases2[k].helper
+            sl2 = [s for s in bases2[k].stateList if occn(s)==3 or
+                    (occn(s)==5 and helper.torepr2(s)[helper.allowedWn[(0,0)]]>0)]
+
+        assert basis1.size == len(sl2)
+
 
 def test_quartic_spec_Lambda():
     # Emax = 20

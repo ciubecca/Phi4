@@ -34,11 +34,11 @@ def genHEBasis(basis, subidx, EL, ELp):
         i = 0
         for V in Vlist:
             for v in V.yieldBasis(basis, subidx, Emax):
-                if bytes(v) not in statePos:
+                if bytes(tuple(v)) not in statePos:
 
-                    transStates = {bytes(np.dot(m, np.array(v)))
+                    transStates = {bytes(tuple(np.dot(m, np.array(v))))
                             for m in helper.transfMat}
-                    stateList.append(bytes(v))
+                    stateList.append(bytes(tuple(v)))
                     ncomp.append(len(transStates))
 
                     for s in transStates:
@@ -73,14 +73,12 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
         nc = 4-nd
 
         dlists = gendlistsfromBasis(basis, idxList, helper, nd, 4)
-        oscList = []
-
-        # print("nd = {}, dlists={}".format(nd, dlists))
 
         if nd==2:
             totpairsmomenta = set((k1[0]+k2[0],k1[1]+k2[1]) for k1,k2 in dlists)
             allowedWnPairs = helper.genMomentaPairs(totpairsmomenta)
 
+        oscList = []
         for dlist in dlists:
             clists = [clist for clist in
                         createClistsV4(helper, dlist, nc, allowedWnPairs) if
@@ -95,13 +93,9 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
 def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
     ret = set()
 
-    # print("Entering gendlistsfromBasis")
-
     for i in idxList:
         state = basis.stateList[i]
         ret.update(gendlists(state=state, nd=nd, ntot=ntot, helper=helper))
-        # if state==[] and nd==0:
-            # print("ret:", ret)
 
 
     return ret
@@ -130,7 +124,7 @@ def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
 
     elif nc==3:
         (k1,) = dlist
-        clist = helper.genMomenta3sets(k1)
+        clists = helper.genMomenta3sets(k1)
 
     elif nc==4:
         clists = []
