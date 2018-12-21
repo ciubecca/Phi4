@@ -105,7 +105,7 @@ class LocOperator():
         return scipy.array([[n[0],n[1],ccount.get(n,0),dcount.get(n,0)] for n in wnlist], dtype=scipy.int8)
 
 
-    def computeMatrixElements(self, basis, i, statePos, ignKeyErr=False):
+    def computeMatrixElements(self, basis, i, destbasis, ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -118,8 +118,9 @@ class LocOperator():
         Otherwise it should be set to False
         """
 
-        return me.computeME(basis, i, statePos,
-                ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList, self.oscEnergies)
+        return me.computeME(basis, i, destbasis,
+                ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors,
+                self.oscList, self.oscEnergies)
 
 
     def yieldBasis(self, basis, subidx, EL):

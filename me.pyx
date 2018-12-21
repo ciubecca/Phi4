@@ -1,5 +1,3 @@
-# cython: linetrace=False
-
 import scipy
 import numpy as np
 from math import factorial, floor, sqrt
@@ -23,9 +21,8 @@ for ncomp1 in (1,2,4,8):
         symFactors[ncomp1][ncomp2] = sqrt(ncomp1/ncomp2)
 
 
-# @cython.binding(True)
-# @profile
-def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscList, oscEnergies):
+def computeME(basis, i, destbasis, ignKeyErr, nd, nc, dlistPos, 
+        oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -49,7 +46,8 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         cdef int z, ii, jj
         cdef double[:,:,:] normFactors
 
-        helper = basis.helper
+        helper = destbasis.helper
+        statePos = destbasis.statePos
 
         oscEnergy = helper.oscEnergy
 
@@ -61,13 +59,13 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         # I define these local variables outside the loops for performance reasons
         e = basis.energyList[i]
         # Number of components in symmetry representation of state
-        ncomp = basis.ncomp
+        destncomp = destbasis.ncomp
         ncompi = basis.ncomp[i]
         state = basis.stateList[i]
 
         statevec = array.array('b', helper.torepr2(state))
         cstatevec = statevec.data.as_chars
-        
+ 
         allowedWn = helper.allowedWn
         normFactors = helper.normFactors
         Emax = helper.Emax
@@ -109,7 +107,6 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                     cnewstatevec[jj] += Zc-Zd
                     x *= normFactors[Zc, Zd, cstatevec[jj]]
 
-
                 if ignKeyErr:
                     try:
                         j = statePos[bytes(newstatevec)]
@@ -118,7 +115,7 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 else:
                     j = statePos[bytes(newstatevec)]
 
-                x *= symFactors[ncompi][ncomp[j]]
+                x *= symFactors[ncompi][destncomp[j]]
 
                 data.append(x)
                 col.append(j)

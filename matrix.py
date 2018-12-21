@@ -9,15 +9,19 @@ def submatrix(V, subidx):
 
 
 class MatrixConstructor():
-    def __init__(self, basis):
+    def __init__(self, basis, destbasis=None):
         """
-        basis: basis for the row and column elements
+        basis: basis for the row elements
+        destbasis: destination basis
         """
         self.basis = basis
-        self.statePos = basis.statePos
+        if destbasis==None:
+            self.destbasis = basis
+        else:
+            self.destbasis = destbasis
 
-    # @profile
-    def buildMatrix(self, Vlist, ignKeyErr=False, sumTranspose=True):
+
+    def buildMatrix(self, Vlist, idxList=None, ignKeyErr=False, sumTranspose=True):
         """
         Vlist: list of oscillators
         ignKeyErr: whether LookupError when generating a state should be ignored (to be used
@@ -28,10 +32,10 @@ class MatrixConstructor():
         """
 
         basis = self.basis
-        statePos = self.statePos
-        helper = self.basis.helper
+        destbasis = self.destbasis
 
-        idxList = range(basis.size)
+        if idxList==None:
+            idxList = range(basis.size)
 
         # Will construct the sparse matrix in the COO format and then convert it to CSC
         data = []
@@ -41,20 +45,21 @@ class MatrixConstructor():
         for V in Vlist:
             for i in idxList:
                 colpart, datapart = \
-                    V.computeMatrixElements(basis, i, statePos=statePos, ignKeyErr=ignKeyErr)
+                    V.computeMatrixElements(basis, i, destbasis, ignKeyErr=ignKeyErr)
+                    # statePos=statePos, ignKeyErr=ignKeyErr)
                 data += datapart
                 col += colpart
                 row += [i]*len(colpart)
 
         # XXX Does this sum duplicate entries?
-        V = scipy.sparse.coo_matrix((data,(row,col)), shape=(basis.size,basis.size))
+        # XXX Check
+        V = scipy.sparse.coo_matrix((data,(row,col)),
+                shape=(basis.size,destbasis.size))
 
         if sumTranspose:
             # Add the matrix to its transpose and subtract the diagonal
-            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,basis.size).tocsc()
+            diag_V = scipy.sparse.spdiags(V.diagonal(),0,basis.size,
+                    basis.size).tocsc()
             return (V+V.transpose()-diag_V).tocsc()
         else:
             return V.tocsc()
-
-    def __del__(self):
-        del self.statePos

@@ -5,6 +5,15 @@ import me
 from me import *
 from oscillators import *
 
+def genVHl(basis, subidx, basisH):
+
+        Emax = lookupbasis.Emax
+
+        c = MatrixConstructor(basis, lookupbasis)
+
+        Vlist = V4OpsSelectedFull(basis, Emax)
+        self.VHl[4] = c.buildMatrix(Vlist)*self.L
+
 def genHEBasis(basis, subidx, EL, ELp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -53,11 +62,12 @@ def genHEBasis(basis, subidx, EL, ELp):
                 repr1Emax=max(ELp or 0, basis.Emax))
 
 
+
 def V4OpsSelectedFull(basis, helper, idxList=None):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
-    subidx: subset of indices of states which are acted upon
-    helper: contains the Emax of states to be generated
+    idxList: subset of indices of states which are acted upon
+    helper: Helper object of the destination basis
     """
 
     oscEnergy = helper.oscEnergy
