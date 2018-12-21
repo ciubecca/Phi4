@@ -28,34 +28,37 @@ t0 = time()
 print("Computing basis...")
 bases = Basis.fromScratch(m, L, ET, Lambda)
 bases2 = Basis.fromScratch(m, L, EL, Lambda)
-t1 = time()
-print("Elapsed: ",t1-t0)
 
 
+subidx = [0]
 Vlist = None
 V22 = None
 
+E0 = {1:0, -1:m}
+
 for k in (-1,1):
-    subidx = [0]
-    basis1 = genHEBasis(bases[k], subidx, EL, ELp)
+    basisH = genHEBasis(bases[k], subidx, EL, ELp)
 
     if k==1:
-        sl2 = [s for s in bases2[k].stateList if occn(s)==4]
+        idxlist = [i for i,s in enumerate(bases2[k].stateList) if occn(s)==4]
     else:
         helper = bases2[k].helper
-        sl2 = [s for s in bases2[k].stateList if occn(s)==3 or
+        idxlist = [i for i,s in enumerate(bases2[k].stateList) if occn(s)==3 or
                 (occn(s)==5 and helper.torepr2(s)[helper.allowedWn[(0,0)]]>0)]
 
+    assert basisH.size == len(idxlist)
 
+    V = genVHl(bases[k], subidx, basisH, L)
 
-    assert basis1.size == len(sl2)
-
-exit(0)
-
-for k in (-1,1):
-    t0 = time()
-    print("Computing k={} matrices...".format(k))
     a = Phi4(bases2[k])
     Vlist, V22 = a.computePotential(Vlist, V22)
-    t1 = time()
-    print("Elapsed: ",t1-t0)
+
+    V2 = subcolumns(subrows(a.V[4], subidx), idxlist)
+
+    prop = 1/(E0[k]-array(basisH.energyList))
+
+    # deltaE = np.dot(np.dot(V2.transpose(), prop), V2)
+    deltaE = np.einsum("ij,j,kj", V2.todense(), prop, V2.todense())[0][0]
+    deltaE2 = np.einsum("ij,j,kj", V.todense(), prop, V.todense())[0][0]
+
+    assert abs(deltaE-deltaE2)<tol

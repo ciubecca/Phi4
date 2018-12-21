@@ -6,29 +6,47 @@ from nlo import *
 
 def test_genbasis():
     """ Test the generated basis from the vacuum """
-
     m = 1
     L = 5
     Lambda = 5
-    ET = 6
+    ET = 5
     EL = 3*ET
     ELp = EL
 
     bases = Basis.fromScratch(m, L, ET, Lambda)
     bases2 = Basis.fromScratch(m, L, EL, Lambda)
 
+    subidx = [0]
+    Vlist = None
+    V22 = None
+
+    E0 = {1:0, -1:m}
+
     for k in (-1,1):
-        subidx = [0]
-        basis1 = genHEBasis(bases[k], subidx, EL, ELp)
+        basisH = genHEBasis(bases[k], subidx, EL, ELp)
 
         if k==1:
-            sl2 = [s for s in bases2[k].stateList if occn(s)==4]
+            idxlist = [i for i,s in enumerate(bases2[k].stateList) if occn(s)==4]
         else:
             helper = bases2[k].helper
-            sl2 = [s for s in bases2[k].stateList if occn(s)==3 or
+            idxlist = [i for i,s in enumerate(bases2[k].stateList) if occn(s)==3 or
                     (occn(s)==5 and helper.torepr2(s)[helper.allowedWn[(0,0)]]>0)]
 
-        assert basis1.size == len(sl2)
+        assert basisH.size == len(idxlist)
+
+        V = genVHl(bases[k], subidx, basisH, L)
+
+        a = Phi4(bases2[k])
+        Vlist, V22 = a.computePotential(Vlist, V22)
+
+        V2 = subcolumns(subrows(a.V[4], subidx), idxlist)
+
+        prop = 1/(E0[k]-np.array(basisH.energyList))
+
+        deltaE = np.einsum("ij,j,kj", V2.todense(), prop, V2.todense())[0][0]
+        deltaE2 = np.einsum("ij,j,kj", V.todense(), prop, V.todense())[0][0]
+
+        assert abs(deltaE-deltaE2)<tol
 
 
 def test_quartic_spec_Lambda():

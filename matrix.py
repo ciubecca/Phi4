@@ -7,6 +7,13 @@ def submatrix(V, subidx):
     """ Return the submatrix for states within smaller cutoffs """
     return (V.tocsc()[:,subidx]).tocsr()[subidx,]
 
+def subrows(V, subidx):
+    return V.tocsr()[subidx,]
+
+def subcolumns(V, subidx):
+    return V.tocsc()[:,subidx]
+
+
 
 class MatrixConstructor():
     def __init__(self, basis, destbasis=None):
@@ -43,9 +50,9 @@ class MatrixConstructor():
         col = []
 
         for V in Vlist:
-            for i in idxList:
+            for i,idx in enumerate(idxList):
                 colpart, datapart = \
-                    V.computeMatrixElements(basis, i, destbasis, ignKeyErr=ignKeyErr)
+                    V.computeMatrixElements(basis, idx, destbasis, ignKeyErr=ignKeyErr)
                     # statePos=statePos, ignKeyErr=ignKeyErr)
                 data += datapart
                 col += colpart
@@ -54,7 +61,7 @@ class MatrixConstructor():
         # XXX Does this sum duplicate entries?
         # XXX Check
         V = scipy.sparse.coo_matrix((data,(row,col)),
-                shape=(basis.size,destbasis.size))
+                shape=(len(idxList), destbasis.size))
 
         if sumTranspose:
             # Add the matrix to its transpose and subtract the diagonal

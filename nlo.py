@@ -4,15 +4,16 @@ from profile_support import *
 import me
 from me import *
 from oscillators import *
+from matrix import *
 
-def genVHl(basis, subidx, basisH):
 
-        Emax = lookupbasis.Emax
+def genVHl(basis, subidx, basisH, L):
 
-        c = MatrixConstructor(basis, lookupbasis)
+        Vlist = V4OpsSelectedFull(basis, basisH.helper, subidx)
 
-        Vlist = V4OpsSelectedFull(basis, Emax)
-        self.VHl[4] = c.buildMatrix(Vlist)*self.L
+        c = MatrixConstructor(basis, basisH)
+        return c.buildMatrix(Vlist, subidx, sumTranspose=False)*L**2
+
 
 def genHEBasis(basis, subidx, EL, ELp):
         """ Generate a high-energy basis from a set of tails
