@@ -42,6 +42,7 @@ class Helper():
         self.m = m
         self.Emax = Emax
         self.Lambda = Lambda
+        self.momenta4sets = None
 
         # Maximum of sqrt(nx^2 + ny^2)
         self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))+tol
@@ -177,12 +178,17 @@ class Helper():
         for op in ((Id, rot, rot2, rot3, refly, reflx, xs, ys)):
             mat = np.zeros(shape=(l,l), dtype=np.int32)
 
+            data = []
+            row = []
+            col = []
             for wn,i in allowedWn.items():
-                # wn = array(wn)
                 j = allowedWn[tuple(np.dot(op,array(wn)))]
-                mat[i, j] = 1
+                data.append(1)
+                row.append(i)
+                col.append(j)
 
-            ret.append(mat)
+            ret.append(scipy.sparse.coo_matrix((data,(row,col))
+                    , shape=(l,l)).tocsc())
         return ret
 
 
@@ -244,8 +250,11 @@ class Helper():
         return allowedWnPairs
 
 
-
+    # @profile
     def genMomenta4sets(self):
+
+        if self.momenta4sets != None:
+            return self.momenta4sets
 
         allowedWnList = self.allowedWnList
         elist = self.elist
@@ -271,17 +280,16 @@ class Helper():
 
                 for i3 in range(i2,l):
                     k3 = allowedWnList[i3]
+
+                    k4 = (-k1[0]-k2[0]-k3[0], -k1[1]-k2[1]-k3[1])
+                    try:
+                        i4 = allowedWnIdx[k4]
+                        if i4 < i3:
+                            continue
+                    except KeyError:
+                        continue
+
                     e3 = elist[i3]
-
-                    k4 = -k1-k2-k3
-
-                    if tuple(k4) not in allowedWn:
-                        continue
-
-                    i4 = allowedWnIdx[tuple(k4)]
-                    if i4 < i3:
-                        continue
-
                     e4 = elist[i4]
                     if e1+e2+e3+e4 > Emax+tol:
                         continue
@@ -289,6 +297,7 @@ class Helper():
                     clist = (tuple(k1),tuple(k2),tuple(k3),tuple(k4))
                     ret.append(clist)
 
+        self.momenta4sets = ret
         return ret
 
 

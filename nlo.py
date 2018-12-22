@@ -14,7 +14,7 @@ def genVHl(basis, subidx, basisH, L):
         c = MatrixConstructor(basis, basisH)
         return c.buildMatrix(Vlist, subidx, sumTranspose=False)*L**2
 
-
+# @profile
 def genHEBasis(basis, subidx, EL, ELp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -46,14 +46,14 @@ def genHEBasis(basis, subidx, EL, ELp):
             for v in V.yieldBasis(basis, subidx, Emax):
                 if bytes(tuple(v)) not in statePos:
 
-                    transStates = {bytes(tuple(np.dot(m, np.array(v))))
-                            for m in helper.transfMat}
+                    va = np.array(v)
+                    transStates = {bytes(tuple(m.dot(va))) for m in helper.transfMat}
+
                     stateList.append(bytes(tuple(v)))
                     ncomp.append(len(transStates))
 
                     for s in transStates:
                         statePos[s] = i
-# Add number of components
                     i += 1
 
 # Basis of selected states with energy <= Emax. We only need to save
@@ -63,7 +63,7 @@ def genHEBasis(basis, subidx, EL, ELp):
                 repr1Emax=max(ELp or 0, basis.Emax))
 
 
-
+# @profile
 def V4OpsSelectedFull(basis, helper, idxList=None):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
@@ -108,11 +108,10 @@ def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
         state = basis.stateList[i]
         ret.update(gendlists(state=state, nd=nd, ntot=ntot, helper=helper))
 
-
     return ret
 
 
-
+# @profile
 def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
 
     if len(dlist) != 4-nc:

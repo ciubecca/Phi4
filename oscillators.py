@@ -122,7 +122,7 @@ class LocOperator():
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors,
                 self.oscList, self.oscEnergies)
 
-
+    # @profile
     def yieldBasis(self, basis, subidx, EL):
         """ Yields a sequence of representation 2 states, by acting with oscillators
         on a subset of states.
@@ -138,12 +138,8 @@ class LocOperator():
             e = basis.energyList[idx]
 
             for dlist in gendlists(state, self.nd, self.nd+self.nc, self.helper):
-                try:
-                    k = self.dlistPos[dlist]
-                except KeyError as e:
-                    print("dlist", dlist)
-                    print("self.nd", self.nd)
-                    raise e
+
+                k = self.dlistPos[dlist]
 
                 imax = bisect.bisect_left(self.oscEnergies[k], EL-e+tol)
 
