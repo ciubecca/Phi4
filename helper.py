@@ -251,6 +251,7 @@ class Helper():
 
 
     # @profile
+# XXX Move this to Cython module ?
     def genMomenta4sets(self):
 
         if self.momenta4sets != None:
