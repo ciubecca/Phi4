@@ -33,6 +33,41 @@ class Integrator():
 
         return ret
 
+class Phi0_1_m0_ET(Integrator):
+    """ O(g^2) vacuum diagram with m = 0 and ET cutoff """
+    # Total factor. g is normalized so it is divided by 4! in the Lagrangian
+    factor = 1/factorial(4)*1/(2**4*(2*pi)**6)
+
+    def __init__(self, *args, **kwargs):
+        super(Phi0_1_m0_ET, self).__init__(*args, **kwargs)
+
+    def interval(self, ET):
+        lam = ET/2
+        return [[0,lam], [0,lam], [0,lam], [0,2*pi], [0,2*pi]]
+
+    def integrand(self, x, ET):
+        """ x: vector of momenta
+            lam: momentum cutoff
+            """
+        th = x[3:]
+        r = x[:3]
+        # Radial momentum of 4th particle
+        r3 = sqrt((r[0]+r[1]*cos(th[0])+r[2]*cos(th[1]))**2 + (r[1]*sin(th[0])+r[2]*sin(th[1]))**2)
+        # Energy of four particles
+        e0 = r[0]
+        e1 = r[1]
+        e2 = r[2]
+        e3 = r3
+        # Non-relativistic propagator
+        prop = -1/(e0+e1+e2+e3)
+        # 2 pi is to account for the omitted angle
+        return (2*pi) * self.factor * prop * HT(ET-(e0+e1+e2+e3)) * 1/(e3)
+
+    def counterterm(self, lam):
+        # XXX This is wrong
+        return -1/(48*(4*pi)**3)*lam
+
+
 class Phi0_1_m0(Integrator):
     """ O(g^2) vacuum diagram with m = 0 """
     # Total factor. g is normalized so it is divided by 4! in the Lagrangian
