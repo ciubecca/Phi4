@@ -3,6 +3,54 @@ import random
 from phi4 import *
 from nlo import *
 
+def test_genbasis2():
+    """ Test the generated basis from the vacuum with momentum cutoff """
+    m = 1
+    L = 5
+    Lambda = 5
+    ET = 2
+    EL = 3*Lambda
+    ELp = EL
+
+    bases = Basis.fromScratch(m, L, ET, Lambda)
+    bases2 = Basis.fromScratch(m, L, EL, np.inf)
+
+    subidx = [0]
+    Vlist = None
+    V22 = None
+
+    E0 = {1:0, -1:m}
+
+    for k in (-1,1):
+        basisH = genHEBasis(bases[k], subidx, EL, ELp)
+
+        maxmom = bases2[k].helper.maxmom
+
+        if k==1:
+            idxlist = [i for i,s in enumerate(bases2[k].stateList) if occn(s)==4
+                    and maxmom(s)<Lambda+tol]
+        else:
+            helper = bases2[k].helper
+            idxlist = [i for i,s in enumerate(bases2[k].stateList) if
+                    maxmom(s)<Lambda+tol and (occn(s)==3 or
+                    (occn(s)==5 and helper.torepr2(s)[helper.allowedWn[(0,0)]]>0))]
+
+        assert basisH.size == len(idxlist)
+
+        V = genVHl(bases[k], subidx, basisH, L)
+
+        a = Phi4(bases2[k])
+        Vlist, V22 = a.computePotential(Vlist, V22)
+
+        V2 = subcolumns(subrows(a.V[4], subidx), idxlist)
+
+        prop = 1/(E0[k]-np.array(basisH.energyList))
+
+        deltaE = np.einsum("ij,j,kj", V2.todense(), prop, V2.todense())[0][0]
+        deltaE2 = np.einsum("ij,j,kj", V.todense(), prop, V.todense())[0][0]
+
+        assert abs(deltaE-deltaE2)<tol
+
 
 def test_genbasis():
     """ Test the generated basis from the vacuum """
