@@ -19,8 +19,14 @@ if len(argv) < 4:
 def ct0(ET, En=0):
     return -24**2*1/(96*(4*pi)**3)*((ET-En)-8*log((ET-En)/4)-16/(ET-En))
 
+# def ct2(ET):
+    # return -((24)**2)*1/(12*(4*pi)**2)*(log(ET/4)-3/4 +3/ET)
+
 def ct2(ET):
-    return -((24)**2)*1/(12*(4*pi)**2)*(log(ET/4)-3/4 +3/ET)
+    """ Including both diagrams """
+    return -((24)**2)*1/(12*(4*pi)**2)*\
+            (3*log(ET)+2*log(ET-1)-3*log(ET-2)-log(64))*0.5
+
 
 L = float(argv[1])
 ELmax = float(argv[2])
