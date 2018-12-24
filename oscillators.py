@@ -16,15 +16,11 @@ import numpy as np
 import me
 from operators import *
 
+# XXX Need to reset them when changing volume or mass
 clist_pref = {}
 clist_e = {}
 clist_count = {}
 
-
-# def bose(x):
-    # """ computes the Bose factor of a product of oscillators  """
-    # return factorial(len(x))/reduce(mul,(factorial(sum(1 for _ in group))
-        # for key, group in groupby(x)), 1)
 
 class LocOperator():
     """
@@ -130,13 +126,20 @@ class LocOperator():
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors,
                 self.oscList, self.oscEnergies)
 
-    @profile
     def yieldBasis(self, basis, subidx, EL):
         """ Yields a sequence of representation 2 states, by acting with oscillators
         on a subset of states.
         subidx: subset of indices of basis on which to act
         EL: maximal energy of the generated high-energy states
         """
+
+
+        for idx in subidx:
+            for s in me.yieldBasis(basis,idx,EL,self.helper,self.nd,self.nc,\
+                    self.dlistPos, self.oscEnergies,self.oscList):
+                yield s
+
+    def yieldBasis2(self, basis, subidx, EL):
 
         allowedWn = self.helper.allowedWn
 
@@ -160,6 +163,7 @@ class LocOperator():
                         Zd = osc[ii, 3]
                         newstatevec[jj] += Zc-Zd
 
+                    print("newstatevec", newstatevec)
                     yield newstatevec
 
 

@@ -21,6 +21,54 @@ for ncomp1 in (1,2,4,8):
         symFactors[ncomp1][ncomp2] = sqrt(ncomp1/ncomp2)
 
 
+
+def yieldBasis(basis, idx, EL, helper, nd, nc, dlistPos, oscEnergies, oscList):
+    
+    stateList = basis.stateList
+    torepr2 = helper.torepr2
+    allowedWn = helper.allowedWn
+    energyList = basis.energyList
+
+    state = stateList[idx]
+    e = energyList[idx]
+    
+    cdef char[:,:] osc
+    cdef array.array statevec, newstatevec
+    cdef char *cstatevec
+    cdef char *cnewstatevec
+
+    statevec = array.array('b', torepr2(state))
+    cstatevec = statevec.data.as_chars
+
+    ret = []
+    
+    for dlist in gendlists(state, nd, nd+nc, helper):
+
+        k =dlistPos[dlist]
+
+        imin = bisect.bisect_left(oscEnergies[k], 0-e-tol)
+        imax = bisect.bisect_left(oscEnergies[k], EL-e+tol)
+
+        oscListSub = oscList[k][imin:imax]
+
+        for z in range(len(oscListSub)):
+
+            osc = oscListSub[z]
+
+            newstatevec = array.copy(statevec)
+            cnewstatevec = newstatevec.data.as_chars
+
+            for ii in range(osc.shape[0]):
+                jj = allowedWn[(osc[ii, 0],osc[ii, 1])]
+                Zc = osc[ii, 2]
+                Zd = osc[ii, 3]
+                cnewstatevec[jj] += Zc-Zd
+            
+            ret.append(newstatevec)
+    return ret
+
+
+
 def computeME(basis, i, destbasis, ignKeyErr, nd, nc, dlistPos, 
         oscFactors, oscList, oscEnergies):
         """ Compute the matrix elements by applying all the oscillators in the operator
@@ -40,7 +88,6 @@ def computeME(basis, i, destbasis, ignKeyErr, nd, nc, dlistPos,
         cdef char *cstatevec
         cdef char *cnewstatevec
         cdef char[:,:] osc
-        # cdef char[:,:,:] oscListSub
         cdef float[:] oscFactorsSub
         cdef char Zc, Zd, nmax
         cdef int z, ii, jj
@@ -87,7 +134,6 @@ def computeME(basis, i, destbasis, ignKeyErr, nd, nc, dlistPos,
 
             oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
-            # oscListSub = np.array(oscList[k][imin:imax])
 
             for z in range(len(oscListSub)):
 
