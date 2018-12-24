@@ -128,34 +128,6 @@ class LocOperator():
                     self.dlistPos, self.oscEnergies,self.oscList):
                 yield s
 
-    def yieldBasis2(self, basis, subidx, EL):
-
-        allowedWn = self.helper.allowedWn
-
-        for idx in subidx:
-            state = basis.stateList[idx]
-            statevec = self.helper.torepr2(state)
-            e = basis.energyList[idx]
-
-            for dlist in gendlists(state, self.nd, self.nd+self.nc, self.helper):
-
-                k = self.dlistPos[dlist]
-
-                imax = bisect.bisect_left(self.oscEnergies[k], EL-e+tol)
-
-                for i, osc in enumerate(self.oscList[k][:imax]):
-                    newstatevec = statevec[:]
-
-                    for ii in range(osc.shape[0]):
-                        jj = allowedWn[(osc[ii, 0],osc[ii, 1])]
-                        Zc = osc[ii, 2]
-                        Zd = osc[ii, 3]
-                        newstatevec[jj] += Zc-Zd
-
-                    print("newstatevec", newstatevec)
-                    yield newstatevec
-
-
 
 def _genMomentaPairs(helper):
     """ Generate sets of all inequivalent pairs of momenta,
