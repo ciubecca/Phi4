@@ -1,25 +1,25 @@
 import numpy as np
 from time import time
-from numpy import exp
+from numpy import exp, e
 import os
 from integrator import *
 import matplotlib.pyplot as plt
 from matplotlib import rc
+from paramplots import *
 import scipy
 
-x = np.linspace(1,8,20)
+# Need to fit m/Lambda corrections
+x = np.linspace(0.01, 0.1, 20)
+reslist = []
+
 y = np.loadtxt("g2.txt")
 
-print(y)
-
-imin = 5
-m, b = np.polyfit(x[imin:], y[imin:], deg=1)
+m, b = np.polyfit(x, y, deg=1)
 
 norm = 1/(12*(4*pi)**2)
+# b = e**((res+coef*log(lam))/coef)
 
-print("norm = {}, m/norm = {}, m = {}, b= {}, b/norm ={},\
-        e^(b/norm) = {}".format(norm,m/norm,m,b,
-    b/norm, exp(b/norm)))
+print("m={}, b={}, m/norm={}, e**(b/norm)={}".format(m,b,m/norm,e**(b/norm)))
 
 plt.scatter(x, y)
 
@@ -28,6 +28,7 @@ plt.plot(xx, b + m*xx)
 
 plt.ylim(min(y), max(y))
 
-plt.xlabel(r"$\log \Lambda$")
-plt.ylabel(r"$g_2$")
-plt.savefig("g2.pdf")
+plt.xlabel(r"$1/\Lambda$")
+plt.title(r"$a = \frac{1}{12 (4 \pi)^2}$")
+plt.ylabel(r"$g_2 - a \log (\Lambda)$")
+plt.savefig("g2fitLambda.pdf")

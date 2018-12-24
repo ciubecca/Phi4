@@ -14,6 +14,7 @@ print("Computing O(g^2) correction to g2...")
 print("nitn={}, neval={}".format(nitn, neval))
 
 start = time()
+coef = 1/(12*(4*pi)**2)
 
 loglamlist = np.linspace(1,8,20)
 reslist = []
