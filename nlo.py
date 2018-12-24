@@ -122,8 +122,7 @@ def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
         clists.append(())
 
     elif nc==1:
-# XXX Fixme
-        clists.append((sum(dlist),))
+        clists.append((sum(map(np.array, dlist)),))
 
     elif nc==2:
         k1,k2 = dlist
