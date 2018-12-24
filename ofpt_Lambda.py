@@ -11,39 +11,35 @@ from phi4 import *
 from paramplots import *
 m = 1
 
-if len(argv) < 4:
-    print("{} <L> <EL> <Lambda>".format(argv[0]))
+if len(argv) < 3:
+    print("{} <L> <Lambdamax>".format(argv[0]))
     exit(1)
 
 
-def ct0(Lambda, En=0):
-    coeff =
-    return -24**2*1/(96*(4*pi)**3)*((ET-En)-8*log((ET-En)/4)-16/(ET-En))
+# def ct0(Lambda, En=0):
+    # coeff =
+    # return -24**2*1/(96*(4*pi)**3)*((ET-En)-8*log((ET-En)/4)-16/(ET-En))
 
-# def ct2(ET):
-    # return -((24)**2)*1/(12*(4*pi)**2)*(log(ET/4)-3/4 +3/ET)
 
-def ct2(ET):
-    """ Including both diagrams """
-    return -((24)**2)*1/(12*(4*pi)**2)*\
-            (3*log(ET)+2*log(ET-1)-3*log(ET-2)-log(64))*0.5
+def ct2(Lambda):
+    a = 1/(12*(4*pi)**2)
+    b = 3.736124473715983
+    c = -a * 1.5848415795962967
+    return (24**2)*(-a*log(Lambda/(b*m)) + c*m/Lambda)
 
 
 L = float(argv[1])
-ELmax = float(argv[2])
-Lambda = float(argv[3])
+Lambdamax  = float(argv[2])
 
-ET = 2
-ELmin = 5
+Lambdamin = 4
+# This is enough to reproduce the full mass and vacuum corrections
+ET = 4*Lambdamax+4
 
+lamlist = np.linspace(Lambdamin, Lambdamax, 10)
 
-ELlist = np.linspace(ELmin, ELmax, 10)
+print("L={}, Lambdamax={}, ET={}".format(L, Lambdamax, ET))
 
-print("L={}, Lambda={}, ELmax={}".format(L, Lambda, ELmax))
-print("ELlist: ", ELlist)
-
-bases = Basis.fromScratch(m, L, ET, Lambda)
-
+bases = Basis.fromScratch(m, L, Emax=2, Lambda=Lambdamax)
 
 subidx = [0]
 
@@ -54,15 +50,15 @@ res = {k:[] for k in (-1,1)}
 for k in (-1,1):
 # for k in (1,):
     print("Computing basis...")
-    basisH = genHEBasis(bases[k], subidx, ELmax, ELmax)
+    basisH = genHEBasis(bases[k], subidx, ET, ET)
     print("k={} basis size={}".format(k, basisH.size))
     print("Computing matrix...")
     V = genVHl(bases[k], subidx, basisH, L)
     print("Done")
     prop = 1/(E0[k]-array(basisH.energyList))
 
-    for EL in ELlist:
-        idxlist = basisH.subidxlist(EL, Lambda)
+    for lam in lamlist:
+        idxlist = basisH.subidxlist(ET, lam)
         Vsub = subcolumns(V, idxlist)
         propsub = prop[idxlist]
 
@@ -71,29 +67,26 @@ for k in (-1,1):
 
 
 
-vac = array(res[1])/(L**2)-ct0(ELlist)
-plt.figure(1)
-plt.plot(ELlist, vac)
-plt.title("L={}".format(L))
-plt.tight_layout()
-plt.xlabel(r"$E_T$")
-plt.ylabel(r"$\Delta E_0 - c_0(E_T)$")
-plt.savefig("vacpert_L={}.pdf".format(L))
+# vac = array(res[1])/(L**2)-ct0(ELlist)
+# plt.figure(1)
+# plt.plot(ELlist, vac)
+# plt.title("L={}".format(L))
+# plt.tight_layout()
+# plt.xlabel(r"$E_T$")
+# plt.ylabel(r"$\Delta E_0 - c_0(E_T)$")
+# plt.savefig("vacpert_L={}.pdf".format(L))
 
 # mass = array(res[-1])-(L**2)*ct0(ELlist, m) - ct2(ELlist)
-mass = array(res[-1])-array(res[1]) - ct2(ELlist)
-massnlo = mass - (L**2)*(ct0(ELlist,1)- ct0(ELlist))
+mass = array(res[-1])-array(res[1]) - ct2(lamlist)
 plt.figure(2)
-plt.plot(ELlist, mass, label="loc")
-plt.plot(ELlist, massnlo, label="nlo")
+plt.plot(lamlist, mass)
 plt.tight_layout()
-plt.title("L={}".format(L))
-plt.legend()
-plt.xlabel(r"$E_T$")
-plt.ylabel(r"$\Delta (E_1-E_0) - c_2(E_T)$")
-plt.savefig("masspert_L={}.pdf".format(L))
+plt.title("L={}, ET={}".format(L, ET))
+plt.xlabel(r"$\Lambda$")
+plt.ylabel(r"$\Delta (E_1-E_0) - c_2(\Lambda)$")
+plt.savefig("masspertvsLam_L={}.pdf".format(L))
 
 
-print(vac)
+# print(vac)
 print(mass)
 

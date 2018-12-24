@@ -14,7 +14,7 @@ def genVHl(basis, subidx, basisH, L):
         c = MatrixConstructor(basis, basisH)
         return c.buildMatrix(Vlist, subidx, sumTranspose=False)*L**2
 
-# @profile
+@profile
 def genHEBasis(basis, subidx, EL, ELp):
         """ Generate a high-energy basis from a set of tails
         k: parity quantum number
@@ -63,7 +63,7 @@ def genHEBasis(basis, subidx, EL, ELp):
                 repr1Emax=max(ELp or 0, basis.Emax))
 
 
-# @profile
+@profile
 def V4OpsSelectedFull(basis, helper, idxList=None):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
@@ -111,7 +111,7 @@ def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
     return ret
 
 
-# @profile
+@profile
 def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
 
     if len(dlist) != 4-nc:

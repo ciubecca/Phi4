@@ -16,12 +16,15 @@ import numpy as np
 import me
 from operators import *
 
+clist_pref = {}
+clist_e = {}
+clist_count = {}
 
-def bose(x):
-    """ computes the Bose factor of a product of oscillators  """
-    return factorial(len(x))/scipy.prod(
-        [factorial(sum(1 for _ in group)) for key, group in groupby(x)]
-        )
+
+# def bose(x):
+    # """ computes the Bose factor of a product of oscillators  """
+    # return factorial(len(x))/reduce(mul,(factorial(sum(1 for _ in group))
+        # for key, group in groupby(x)), 1)
 
 class LocOperator():
     """
@@ -29,7 +32,7 @@ class LocOperator():
     This is convenient to compute matrix elements and generate the high-energy basis
     from a set of tails
     """
-
+    @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -66,21 +69,26 @@ class LocOperator():
         pref = binom(nc+nd,nc)
 
 
-        clist_pref = {}
-        clist_e = {}
-        clist_count = {}
+        # clist_pref = {}
+        # clist_e = {}
+        # clist_count = {}
+
+        global clist_pref
+        global clist_e
+        global clist_count
 
         for i, (dlist,clists) in enumerate(oscillators):
 
-            dlist_pref = pref*bose(dlist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in dlist],1)
             dlist_e = oscEnergy(dlist)
             dlist_count = Counter(dlist)
+            dlist_pref = pref*factorial(nd)/\
+                        reduce(mul, (factorial(c)*sqrt(2*omega(n)*L**2)**c for n,c in dlist_count.items()), 1)
 
             for clist in clists:
                 if clist not in clist_pref:
-                    clist_pref[clist] = bose(clist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in clist])
                     clist_e[clist] = oscEnergy(clist)
                     clist_count[clist] = Counter(clist)
+                    clist_pref[clist] = factorial(nc)/reduce(mul, (factorial(c)*sqrt(2*omega(n)*L**2)**c for n,c in clist_count[clist].items()), 1)
 
             clists = list(sorted(clists, key=helper.oscEnergy))
 
@@ -122,7 +130,7 @@ class LocOperator():
                 ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors,
                 self.oscList, self.oscEnergies)
 
-    # @profile
+    @profile
     def yieldBasis(self, basis, subidx, EL):
         """ Yields a sequence of representation 2 states, by acting with oscillators
         on a subset of states.
