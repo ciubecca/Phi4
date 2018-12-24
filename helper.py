@@ -98,8 +98,13 @@ class Helper():
 
         self.transfMat = self._genTransfMatrix()
 
+        self.clist_pref = {}
+        self.clist_e = {}
+        self.clist_count = {}
+
+
     def torepr1(self, s):
-# XXX Should I sort this
+# XXX Should I sort this?
         return [(wn,s[i]) for wn,i in self.allowedWn.items() if s[i]>0]
 
     def torepr2(self, s):

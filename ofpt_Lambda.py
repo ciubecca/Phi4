@@ -47,10 +47,14 @@ E0 = {1:0, -1:m}
 
 res = {k:[] for k in (-1,1)}
 
+helper = None
+
 for k in (-1,1):
 # for k in (1,):
     print("Computing basis...")
-    basisH = genHEBasis(bases[k], subidx, ET, ET)
+    basisH = genHEBasis(bases[k], subidx, ET, ET, helper)
+    helper = basisH.helper
+
     print("k={} basis size={}".format(k, basisH.size))
     print("Computing matrix...")
     V = genVHl(bases[k], subidx, basisH, L)

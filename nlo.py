@@ -14,23 +14,25 @@ def genVHl(basis, subidx, basisH, L):
         c = MatrixConstructor(basis, basisH)
         return c.buildMatrix(Vlist, subidx, sumTranspose=False)*L**2
 
-@profile
-def genHEBasis(basis, subidx, EL, ELp):
+def genHEBasis(basis, subidx, EL, ELp, helper=None):
         """ Generate a high-energy basis from a set of tails
-        k: parity quantum number
         basis: Basis containing the set of tail states
         EL: maximal energy of the generated basis for DH2
         ELp: maximal energy of the generated basis for DH3. Only these states
         will be stored in representation 1
         """
 
-        m = basis.helper.m
-        Lambda = basis.helper.Lambda
-
 # Usually EL > ELp
         Emax = max(EL, ELp)
+
 # Helper function of the new basis
-        helper = Helper(L=basis.helper.L, Emax=Emax, Lambda=Lambda, m=m)
+        if helper==None:
+            helper = Helper(L=basis.helper.L, Emax=Emax,
+                    Lambda=basis.helper.Lambda, m=basis.helper.m)
+        elif helper.L != basis.helper.L or helper.Emax!=Emax or\
+                helper.Lambda!=basis.helper.Lambda or basis.helper.m!=helper.m:
+            raise ValueError("Helper object with wrong parameters")
+
 
         # Generate all the operators between the selected states and the states
         # in the range [0, Emax]
@@ -63,7 +65,6 @@ def genHEBasis(basis, subidx, EL, ELp):
                 repr1Emax=max(ELp or 0, basis.Emax))
 
 
-@profile
 def V4OpsSelectedFull(basis, helper, idxList=None):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
@@ -111,7 +112,6 @@ def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
     return ret
 
 
-@profile
 def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
 
     if len(dlist) != 4-nc:

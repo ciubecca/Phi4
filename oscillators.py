@@ -16,11 +16,6 @@ import numpy as np
 import me
 from operators import *
 
-# XXX Need to reset them when changing volume or mass
-clist_pref = {}
-clist_e = {}
-clist_count = {}
-
 
 class LocOperator():
     """
@@ -28,7 +23,6 @@ class LocOperator():
     This is convenient to compute matrix elements and generate the high-energy basis
     from a set of tails
     """
-    @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -64,14 +58,9 @@ class LocOperator():
 # Overall prefactor
         pref = binom(nc+nd,nc)
 
-
-        # clist_pref = {}
-        # clist_e = {}
-        # clist_count = {}
-
-        global clist_pref
-        global clist_e
-        global clist_count
+        clist_pref = helper.clist_pref
+        clist_e = helper.clist_e
+        clist_count = helper.clist_count
 
         for i, (dlist,clists) in enumerate(oscillators):
 
