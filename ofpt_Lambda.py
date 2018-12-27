@@ -49,11 +49,14 @@ res = {k:[] for k in (-1,1)}
 
 helper = None
 
+print("Computing basis...")
+basesH = genHEBases(bases, subidx, ET, ET)
+
 for k in (-1,1):
-# for k in (1,):
-    print("Computing basis...")
-    basisH = genHEBasis(bases[k], subidx, ET, ET, helper)
-    helper = basisH.helper
+    # basisH = genHEBasis(bases[k], subidx, ET, ET, helper)
+    # helper = basisH.helper
+
+    basisH = basesH[k]
 
     print("k={} basis size={}".format(k, basisH.size))
     print("Computing matrix...")

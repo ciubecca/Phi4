@@ -40,23 +40,87 @@ class Phi4():
 
         self.V = {}
 
-        c = MatrixConstructor(basis)
-
         if Vlist == None:
             Vlist = {2:V2OpsHalf(helper), 4:V4OpsHalf(helper)}
             V22 = V4Ops22(helper)
 
         for n in (2,4):
-            self.V[n] = c.buildMatrix(Vlist[n])*self.L**2
+            self.V[n] = buildMatrix(basis, Vlist[n])*self.L**2
             # XXX Temporary fix
             if n == 4:
-                self.V[n] += c.buildMatrix(V22, sumTranspose=False)*self.L**2
-        del c
+                self.V[n] += buildMatrix(basis, V22, sumTranspose=False)*self.L**2
 
         self.V[0] = scipy.sparse.eye(basis.size)*self.L**2
 
         return Vlist, V22
 
+
+    def genHEBases(self, tailidx, EL, ELp):
+
+        self.EL = EL
+        self.ELp = ELp
+        self.tailidx = tailidx
+        self.basisH = genHEBasis(self.basis, tailidx, EL, ELp)
+
+
+
+    def genVHl(self, k, subidx):
+
+        V = genVHl(bases[k], subidx, basisH, L)
+
+
+    def computeHEVs(self, k):
+        """
+        Compute the matrices involving the high-energy states below EL
+        """
+
+        # Matrix subscript notation:
+        # "l": selected low-energy state with energy <= ET
+        # "L": generic low-energy state with energy <= ET
+        # "h": selected high-energy state with energy <= EL'
+        # "H": selected high-energy states with energy <= EL
+
+        basis = self.basis[k]
+        subidx = self.tailidx[k]
+        basisH = self.basisH[k]
+        helperH = basisH.helper
+
+        #################################
+        # Generate the VlH matrices
+        #################################
+
+        print("Computing VHl...")
+
+        self.VHl[k] = {}
+
+        for (n,Vops) in ((2,V2OpsSelectedFull(basis,helperH)),
+                        (4,V4OpsSelectedFull(basis,helperH))):
+### TODO pass energy max(ELp, EL) ?
+            Vlist = VOps(basis, basisH.helper, subidx)
+            self.VHl[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
+                    idxList=subidx, sumTranspose=False)*L**2
+
+
+        ##############################
+        # Generate the VHL matrix
+        ##############################
+
+        print("Computing VHL...")
+
+        self.VHL[k] = {}
+        self.VLH[k] = {}
+
+### XXX Should I use the full V operator instead of generating it from
+### the basis?
+        # for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
+
+
+        for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
+### TODO pass energy EL
+            Vlist = VOps(basis, basisH.helper)
+            self.VHL[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
+                    ignKeyErr=True, sumTranspose=False)*L**2
+            self.VLH[k][n] = self.VHL[k][n].transpose()
 
 
     def setg(self, g0, g2, g4, ct=True):

@@ -11,10 +11,11 @@ def genVHl(basis, subidx, basisH, L):
 
         Vlist = V4OpsSelectedFull(basis, basisH.helper, subidx)
 
-        c = MatrixConstructor(basis, basisH)
-        return c.buildMatrix(Vlist, subidx, sumTranspose=False)*L**2
+        return buildMatrix(basis, Vlist, idxList=subidx,
+                destbasis=basisH, sumTranspose=False)*L**2
 
-def genHEBasis(basis, subidx, EL, ELp, helper=None):
+
+def genHEBases(bases, tailidx, EL, ELp):
         """ Generate a high-energy basis from a set of tails
         basis: Basis containing the set of tail states
         EL: maximal energy of the generated basis for DH2
@@ -25,44 +26,47 @@ def genHEBasis(basis, subidx, EL, ELp, helper=None):
 # Usually EL > ELp
         Emax = max(EL, ELp)
 
-# Helper function of the new basis
-        if helper==None:
-            helper = Helper(L=basis.helper.L, Emax=Emax,
-                    Lambda=basis.helper.Lambda, m=basis.helper.m)
-        elif helper.L != basis.helper.L or helper.Emax!=Emax or\
-                helper.Lambda!=basis.helper.Lambda or basis.helper.m!=helper.m:
-            raise ValueError("Helper object with wrong parameters")
+        helper = Helper(L=bases[1].helper.L, Emax=Emax,
+                    Lambda=bases[1].helper.Lambda, m=bases[1].helper.m)
 
 
-        # Generate all the operators between the selected states and the states
-        # in the range [0, Emax]
-        # XXX Assuming that V2 does not generate different states
-        Vlist = V4OpsSelectedFull(basis, helper, subidx)
+        ret = {}
+        for k in (-1,1):
+            basis = bases[k]
+            subidx = tailidx[k]
 
-        statePos = {}
-        stateList = []
-        ncomp = []
+            # Generate all the operators between the selected states and the states
+            # in the range [0, Emax]
+            # XXX Assuming that V2 does not generate different states
+            Vlist = V4OpsSelectedFull(basis, helper, subidx)
 
-        i = 0
-        for V in Vlist:
-            for v in V.yieldBasis(basis, subidx, Emax):
-                if bytes(tuple(v)) not in statePos:
+            statePos = {}
+            stateList = []
+            ncomp = []
 
-                    va = np.array(v)
-                    transStates = {bytes(tuple(m.dot(va))) for m in helper.transfMat}
+            i = 0
+            for V in Vlist:
+                for v in V.yieldBasis(basis, subidx, Emax):
+                    if bytes(tuple(v)) not in statePos:
 
-                    stateList.append(bytes(tuple(v)))
-                    ncomp.append(len(transStates))
+                        va = np.array(v)
+                        transStates = {bytes(tuple(m.dot(va))) for m in helper.transfMat}
 
-                    for s in transStates:
-                        statePos[s] = i
-                    i += 1
+                        stateList.append(bytes(tuple(v)))
+                        ncomp.append(len(transStates))
+
+                        for s in transStates:
+                            statePos[s] = i
+                        i += 1
 
 # Basis of selected states with energy <= Emax. We only need to save
 # states in the type 1 representation (most memory consuming) for states
 # with energy <= ELp, or ET when ELp=None
-        return Basis(basis.k, stateList, helper, statePos, ncomp, repr1=False,
-                repr1Emax=max(ELp or 0, basis.Emax))
+            ret[k] = Basis(k, stateList, helper, statePos, ncomp, repr1=False,
+                    repr1Emax=max(ELp or 0, basis.Emax))
+
+        return ret
+
 
 
 def V4OpsSelectedFull(basis, helper, idxList=None):

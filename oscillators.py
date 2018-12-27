@@ -172,34 +172,44 @@ def _genMomentaPairs(helper):
     return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
 
 
-def V4OpsHalf(helper):
-    """ Generate half of the oscillators of the V4 operator """
+def V4OpsHalf(helper, basis=None):
+    """ Generate half of the oscillators of the V4 operator
+    basis: destination basis
+    helper: Helper function of the destination basis
+    """
 
-    omega = helper.omega
-    minEnergy = helper.minEnergy
-    allowedWn = helper.allowedWn
-    Emax = helper.Emax
-    oscEnergy = helper.oscEnergy
+    # omega = helper.omega
+    # minEnergy = helper.minEnergy
+    # Emax = helper.Emax
+    # oscEnergy = helper.oscEnergy
+
+
 
     # Sort wavenumbers lexicographically, and convert to arrays
-    # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
-    allowedWnList = list(map(lambda x:np.array(x), allowedWn))
-    l = len(allowedWnList)
+    # # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+    # allowedWnList = list(map(lambda x:np.array(x), allowedWn))
+    # l = len(allowedWnList)
     # (wn -> idx) where idx is the position in the ordered list
-    allowedWnIdx = {tuple(wn):i for i,wn in enumerate(allowedWnList)}
-    elist = [omega(wn) for wn in allowedWnList]
+    # allowedWnIdx = {tuple(wn):i for i,wn in enumerate(allowedWnList)}
+    # elist = [omega(wn) for wn in allowedWnList]
 
     dlist = ()
     V40 = [(dlist, helper.genMomenta4sets())]
 # Generate a LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
 
+    if basis==None:
+        allowedWn = helper.allowedWn
+    else:
+        allowedWn = basis.helper.allowedWn
+    # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+    allowedWnList = list(map(lambda x:np.array(x), allowedWn))
 
     V31 = []
     for k1 in allowedWnList:
 # The set of annihilation momenta contains just one momentum
         dlist = (tuple(k1),)
-        V31.append((dlist,helper.genMomenta3sets(k1)))
+        V31.append((dlist, helper.genMomenta3sets(k1)))
     V31 = LocOperator(V31, 1, 3, helper)
 
 
@@ -218,6 +228,8 @@ def V4Ops22(helper):
 
     V22 = []
 
+    # TODO Sort the pairs with minEnergy function, so that we can break
+# the cycle when we go out of the starting basis?
     allowedWnPairs = list(helper.genMomentaPairs().values())
 
     elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWnPairs]

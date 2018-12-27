@@ -15,14 +15,16 @@ def test_genbasis2():
     bases = Basis.fromScratch(m, L, ET, Lambda)
     bases2 = Basis.fromScratch(m, L, EL, np.inf)
 
-    subidx = [0]
+    subidx = {k: [0] for k in (-1,1)}
     Vlist = None
     V22 = None
 
     E0 = {1:0, -1:m}
 
+    basesH = genHEBases(bases, subidx, EL, ELp)
+
     for k in (-1,1):
-        basisH = genHEBasis(bases[k], subidx, EL, ELp)
+        basisH = basesH[k]
 
         maxmom = bases2[k].helper.maxmom
 
@@ -37,12 +39,12 @@ def test_genbasis2():
 
         assert basisH.size == len(idxlist)
 
-        V = genVHl(bases[k], subidx, basisH, L)
+        V = genVHl(bases[k], subidx[k], basisH, L)
 
         a = Phi4(bases2[k])
         Vlist, V22 = a.computePotential(Vlist, V22)
 
-        V2 = subcolumns(subrows(a.V[4], subidx), idxlist)
+        V2 = subcolumns(subrows(a.V[4], subidx[k]), idxlist)
 
         prop = 1/(E0[k]-np.array(basisH.energyList))
 
@@ -64,14 +66,16 @@ def test_genbasis():
     bases = Basis.fromScratch(m, L, ET, Lambda)
     bases2 = Basis.fromScratch(m, L, EL, Lambda)
 
-    subidx = [0]
+    subidx = {k: [0] for k in (-1,1)}
     Vlist = None
     V22 = None
 
     E0 = {1:0, -1:m}
 
+    basesH = genHEBases(bases, subidx, EL, ELp)
+
     for k in (-1,1):
-        basisH = genHEBasis(bases[k], subidx, EL, ELp)
+        basisH = basesH[k]
 
         if k==1:
             idxlist = [i for i,s in enumerate(bases2[k].stateList) if occn(s)==4]
@@ -82,12 +86,12 @@ def test_genbasis():
 
         assert basisH.size == len(idxlist)
 
-        V = genVHl(bases[k], subidx, basisH, L)
+        V = genVHl(bases[k], subidx[k], basisH, L)
 
         a = Phi4(bases2[k])
         Vlist, V22 = a.computePotential(Vlist, V22)
 
-        V2 = subcolumns(subrows(a.V[4], subidx), idxlist)
+        V2 = subcolumns(subrows(a.V[4], subidx[k]), idxlist)
 
         prop = 1/(E0[k]-np.array(basisH.energyList))
 
