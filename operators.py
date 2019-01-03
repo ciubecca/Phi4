@@ -14,7 +14,6 @@ from scipy.special import binom
 import bisect
 import numpy as np
 
-debug = False
 
 # XXX Review this function, to take Lambda into account?
 def filterDlist(dlist, nd, ntot, helper):
@@ -37,9 +36,5 @@ def gendlists(state, nd, ntot, helper):
 
     x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
     dlists = set(tuple(y) for y in combinations(x,nd))
-
-    if debug and nd==0 and state ==[]:
-        print("state 2", state)
-        print("dlists 2", dlists)
 
     return (dlist for dlist in dlists if filterDlist(dlist, nd, ntot, helper))

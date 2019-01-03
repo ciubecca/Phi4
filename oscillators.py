@@ -129,69 +129,11 @@ class LocOperator():
                 yield s
 
 
-def _genMomentaPairs(helper):
-    """ Generate sets of all inequivalent pairs of momenta,
-    ordered lexicographically, and indexed by total momentum.
-    This is a subroutine used to construct the V22 matrix """
-
-    omega = helper.omega
-    minEnergy = helper.minEnergy
-    allowedWn = helper.allowedWn
-    Emax = helper.Emax
-
-    # Sort 2d momenta lexicographically
-    # XXX Should I sort in energy so that I can break the cycles ?
-    allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
-    l = len(allowedWnList)
-    elist = [omega(wn) for wn in allowedWnList]
-
-    allowedWn12 = {}
-
-    for i1 in range(l):
-        k1 = allowedWnList[i1]
-        e1 = elist[i1]
-
-        for i2 in range(i1,l):
-            k2 = allowedWnList[i2]
-            k12 = tuple(k1+k2)
-            e12 = e1+elist[i2]
-
-            # XXX CHECK if I can comment this
-            # if k12 not in allowedWn:
-                # continue
-
-            if e12+minEnergy(k12) > Emax+tol:
-                continue
-
-            if k12 not in allowedWn12:
-                allowedWn12[k12] = []
-
-            allowedWn12[k12].append((tuple(k1),tuple(k2)))
-
-    # Sort 2d momenta pairs lexicographically
-    return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
-
-
 def V4OpsHalf(helper, basis=None):
     """ Generate half of the oscillators of the V4 operator
     basis: destination basis
     helper: Helper function of the destination basis
     """
-
-    # omega = helper.omega
-    # minEnergy = helper.minEnergy
-    # Emax = helper.Emax
-    # oscEnergy = helper.oscEnergy
-
-
-
-    # Sort wavenumbers lexicographically, and convert to arrays
-    # # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
-    # allowedWnList = list(map(lambda x:np.array(x), allowedWn))
-    # l = len(allowedWnList)
-    # (wn -> idx) where idx is the position in the ordered list
-    # allowedWnIdx = {tuple(wn):i for i,wn in enumerate(allowedWnList)}
-    # elist = [omega(wn) for wn in allowedWnList]
 
     dlist = ()
     V40 = [(dlist, helper.genMomenta4sets())]

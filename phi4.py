@@ -63,7 +63,6 @@ class Phi4():
         self.basisH = genHEBasis(self.basis, tailidx, EL, ELp)
 
 
-
     def genVHl(self, k, subidx):
 
         V = genVHl(bases[k], subidx, basisH, L)
