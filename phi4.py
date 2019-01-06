@@ -114,7 +114,9 @@ class Phi4():
         # for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
 
 
-        for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
+        for (n,Vops) in ((2,V2OpsHalf), (4,V4OpsHalf), (4,V22OpsHalf)):
+        # for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
+
 ### TODO pass energy EL
             Vlist = VOps(basis, basisH.helper)
             self.VHL[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,

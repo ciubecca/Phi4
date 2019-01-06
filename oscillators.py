@@ -131,7 +131,8 @@ class LocOperator():
 
 def V4OpsHalf(helper, basis=None):
     """ Generate half of the oscillators of the V4 operator
-    basis: destination basis
+    basis: starting basis. If None, the allowed annuhilation momenta
+    will be assumed to be the same as those of the destination basis
     helper: Helper function of the destination basis
     """
 
@@ -158,40 +159,55 @@ def V4OpsHalf(helper, basis=None):
     return V40, V31
 
 
-def V4Ops22(helper):
+def V4Ops22(helper, basis=None):
     # XXX Temporary fix
     """ Do not symmetrize for the moment! """
-
-    omega = helper.omega
-    minEnergy = helper.minEnergy
-    allowedWn = helper.allowedWn
-    Emax = helper.Emax
-    oscEnergy = helper.oscEnergy
 
     V22 = []
 
     # TODO Sort the pairs with minEnergy function, so that we can break
 # the cycle when we go out of the starting basis?
-    allowedWnPairs = list(helper.genMomentaPairs().values())
+    # allowedWnPairs = list(helper.genMomentaPairs().values())
+    allowedWnPairs = helper.genMomentaPairs()
 
-    elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWnPairs]
+    if basis==None:
+        startallowedWnPairs = allowedWnPairs
+    else:
+        startallowedWnPairs = basis.helper.genMomentaPairs()
+
+
+    # elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWnPairs]
 
 
     # Cycle over total momentum of annihilation operators
-    for wnIdx in range(len(allowedWnPairs)):
+    # for wnIdx in range(len(allowedWnPairs)):
 
-        kpairlist = allowedWnPairs[wnIdx]
+        # kpairlist = allowedWnPairs[wnIdx]
 
-        for i in range(len(kpairlist)):
-            kpair = kpairlist[i]
-            e12 = elist[wnIdx][i]
+        # for i in range(len(kpairlist)):
+            # kpair = kpairlist[i]
+            # e12 = elist[wnIdx][i]
 
-            dlist = kpair
+            # dlist = kpair
+            # V22.append((dlist,[]))
+
+            # for j in range(len(kpairlist)):
+                # # XXX Need to perforn any checks ?
+                # clist = kpairlist[j]
+                # V22[-1][1].append(clist)
+
+    for wn, kpairlist1 in startallowedWnPairs.items():
+
+        kpairlist2 = allowedWnPairs[wn]
+
+        for kpair1 in kpairlist1:
+
+            dlist = kpair1
             V22.append((dlist,[]))
 
-            for j in range(len(kpairlist)):
+            for kpair2 in kpairlist2:
                 # XXX Need to perforn any checks ?
-                clist = kpairlist[j]
+                clist = kpair2
                 V22[-1][1].append(clist)
 
     V22 = LocOperator(V22, 2, 2, helper)
@@ -204,17 +220,17 @@ def minus(t):
     return (-t[0],-t[1])
 
 
-def V2OpsHalf(helper):
-    """ Generate half of the oscillators of the V2 operator """
+def V2OpsHalf(helper, basis=None):
+    """ Generate half of the oscillators of the V2 operator
+    helper: helper function of the destination basis.
+    basis: starting basis """
 
-    nmax = helper.nmax
     Emax = helper.Emax
-    allowedWn12 = helper.allowedWn12
-    allowedWn = helper.allowedWn
 
     dlist = ()
     V20 = [(dlist, [])]
 
+    allowedWn12 = helper.allowedWn12
     # Select only in half of phase space
     for k1 in allowedWn12:
         k2 = minus(k1)
@@ -225,6 +241,10 @@ def V2OpsHalf(helper):
     V20 = LocOperator(V20, 0, 2, helper)
 
     V11 = []
+    if basis==None:
+        allowedWn = helper.allowedWn
+    else:
+        allowedWn = basis.helper.allowedWn
     # Select in all phase space
     for k1 in allowedWn:
         dlist = (k1,)
