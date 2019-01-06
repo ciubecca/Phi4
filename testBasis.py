@@ -13,15 +13,16 @@ def test_genbasis2():
     ELp = EL
 
     bases = Basis.fromScratch(m, L, ET, Lambda)
-    bases2 = Basis.fromScratch(m, L, EL, np.inf)
 
     subidx = {k: [0] for k in (-1,1)}
-    Vlist = None
-    V22 = None
 
     E0 = {1:0, -1:m}
 
     basesH = genHEBases(bases, subidx, EL, ELp)
+
+    a = Phi4(m, L, ET=EL)
+    bases2 = a.bases
+    a.computePotential()
 
     for k in (-1,1):
         basisH = basesH[k]
@@ -41,10 +42,7 @@ def test_genbasis2():
 
         V = genVHl(bases[k], subidx[k], basisH, L)
 
-        a = Phi4(bases2[k])
-        Vlist, V22 = a.computePotential(Vlist, V22)
-
-        V2 = subcolumns(subrows(a.V[4], subidx[k]), idxlist)
+        V2 = subcolumns(subrows(a.V[k][4], subidx[k]), idxlist)
 
         prop = 1/(E0[k]-np.array(basisH.energyList))
 
@@ -64,15 +62,16 @@ def test_genbasis():
     ELp = EL
 
     bases = Basis.fromScratch(m, L, ET, Lambda)
-    bases2 = Basis.fromScratch(m, L, EL, Lambda)
 
     subidx = {k: [0] for k in (-1,1)}
-    Vlist = None
-    V22 = None
 
     E0 = {1:0, -1:m}
 
     basesH = genHEBases(bases, subidx, EL, ELp)
+
+    a = Phi4(m, L, EL, Lambda)
+    a.computePotential()
+    bases2 = a.bases
 
     for k in (-1,1):
         basisH = basesH[k]
@@ -88,10 +87,7 @@ def test_genbasis():
 
         V = genVHl(bases[k], subidx[k], basisH, L)
 
-        a = Phi4(bases2[k])
-        Vlist, V22 = a.computePotential(Vlist, V22)
-
-        V2 = subcolumns(subrows(a.V[4], subidx[k]), idxlist)
+        V2 = subcolumns(subrows(a.V[k][4], subidx[k]), idxlist)
 
         prop = 1/(E0[k]-np.array(basisH.energyList))
 
@@ -112,21 +108,20 @@ def test_quartic_spec_Lambda():
     speco = [0.91567578388474,  2.958422505762713, 4.336228677868323,
             5.167300737731443]
 
-    Vlist = None
-    V22 = None
 
-    bases = Basis.fromScratch(m=1, L=L, Emax=Emax, Lambda=Lambda)
+    # bases = Basis.fromScratch(m=1, L=L, Emax=Emax, Lambda=Lambda)
     eigs = {}
 
+    a = Phi4(1, L, Emax, Lambda)
+    a.computePotential()
+
     for k in (-1,1):
-        a = Phi4(bases[k])
-        Vlist, V22 = a.computePotential(Vlist, V22)
 
         a.setg(0, g2, g4, ct=False)
-        a.setmatrix()
+        a.setmatrix(k)
 
-        a.computeEigval(neigs=len(speco))
-        eigs[k] = a.eigval
+        a.computeEigval(k, neigs=len(speco))
+        eigs[k] = a.eigval[k]
 
     assert abs(eigs[1][0]-vac) < tol
     np.testing.assert_array_almost_equal(eigs[1][1:]-eigs[1][0], spece)
@@ -145,32 +140,23 @@ def test_spec_Lambda():
 
         # Emax1 > Emax2
 
-        bases1 = Basis.fromScratch(m=1, L=L, Emax=Emax1, Lambda=lam)
-        bases2 = Basis.fromScratch(m=1, L=L, Emax=Emax2, Lambda=lam)
+        a1 = Phi4(1, L, Emax1, lam)
+        a2 = Phi4(1, L, Emax2, lam)
 
-        Vlist1 = None
-        V221 = None
-        Vlist2 = None
-        V222 = None
+        a1.computePotential()
+        a2.computePotential()
+
+        a1.setg(0, g2, g4/(factorial(4)))
+        a2.setg(0, g2, g4/(factorial(4)))
 
         for k in (-1,1):
-            a1 = Phi4(bases1[k])
-            a2 = Phi4(bases2[k])
+            a1.setmatrix(k, Emax=Emax2)
+            a2.setmatrix(k)
 
-            Vlist1, V221 = a1.computePotential(Vlist1, V221)
-            Vlist2, V222 = a2.computePotential(Vlist2, V222)
-
-            a1.setg(0, g2, g4/(factorial(4)))
-            a2.setg(0, g2, g4/(factorial(4)))
-
-
-            a1.setmatrix(Emax=Emax2)
-            a2.setmatrix()
-
-            a1.computeEigval()
-            a2.computeEigval()
-            eigs1 = a1.eigval
-            eigs2 = a2.eigval
+            a1.computeEigval(k)
+            a2.computeEigval(k)
+            eigs1 = a1.eigval[k]
+            eigs2 = a2.eigval[k]
 
             np.testing.assert_array_almost_equal(eigs1, eigs2)
 
@@ -196,7 +182,6 @@ def test_Lambda():
             maxmom = bases2[k].helper.maxmom
             sl1 = bases1[k].stateList
             sl2 = [s for s in bases2[k].stateList if maxmom(s) <= lam+tol]
-            # print(max([maxmom(s) for s in sl2]))
 
             assert len(sl1) == len(sl2)
             assert len(bases2[k].stateList) == len(bases3[k].stateList)
@@ -232,15 +217,11 @@ def test_sym():
         L = Llist[i]
         lam = lamlist[i]
 
-        bases = Basis.fromScratch(m, L, Emax, lam)
-
-        Vlist = None
-        V22 = None
+        a = Phi4(m, L, Emax, lam)
+        a.computePotential()
 
         for k in (-1,1):
-            a = Phi4(bases[k])
-            Vlist, V22 = a.computePotential(Vlist, V22)
-            assert abs(a.V[4]-a.V[4].transpose()).max() < tol
+            assert abs(a.V[k][4]-a.V[k][4].transpose()).max() < tol
 
 def test_quartic_spec():
     Elist = [12]
@@ -252,27 +233,21 @@ def test_quartic_spec():
     spece = [[1.933910936089044, 2.974636035432578, 3.677984551986206,]]
     speco = [[0.933065191544471, 2.992584298393827, 4.050544605726072, 4.715377240194771]]
 
-    Vlist = None
-    V22 = None
-
     for Emax,L,g2,g4,e0,se,so in zip(Elist,Llist,g2,g4,vac,spece,speco):
 
-        bases = Basis.fromScratch(m=1, L=L, Emax=Emax)
+        # bases = Basis.fromScratch(m=1, L=L, Emax=Emax)
         eigs = {}
+        a = Phi4(1, L, Emax)
+        a.computePotential()
 
         for k in (-1,1):
-            a = Phi4(bases[k])
-            Vlist, V22 = a.computePotential(Vlist, V22)
 
             a.setg(0, g2, g4/(factorial(4)), ct=False)
-            a.setmatrix()
+            a.setmatrix(k)
 
-            a.computeEigval(neigs=len(so))
-            eigs[k] = a.eigval
+            a.computeEigval(k, neigs=len(so))
+            eigs[k] = a.eigval[k]
 
         assert abs(eigs[1][0]-e0) < tol
         np.testing.assert_array_almost_equal(eigs[1][1:]-eigs[1][0], se)
         np.testing.assert_array_almost_equal(eigs[-1]-eigs[1][0], so)
-
-
-

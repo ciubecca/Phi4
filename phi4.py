@@ -17,42 +17,52 @@ import numpy as np
 
 class Phi4():
     """ main class """
-    def __init__(self, basis):
+    def __init__(self, m, L, ET, Lambda=np.inf):
 
-        helper = basis.helper
-        self.m = helper.m
-        self.L = helper.L
-        self.k = basis.k
-        self.basis = basis
+        self.m = m
+        self.L = L
+        self.ET = ET
+        self.Lambda = Lambda
+        self.bases = Basis.fromScratch(m, L, ET, Lambda)
+
+        self.Vcomp = {}
+        self.V = {}
+        self.h0comp = {}
+        self.h0 = {}
+        self.eigval = {}
+        self.eigv = {}
 
         scipy.set_printoptions(precision=15)
 
 
-    def computePotential(self, Vlist=None, V22=None):
+    def computePotential(self):
         """
         Builds the potential matrices and the free Hamiltonian
         If Vlist has been computed for another k, reuse it because it is expensive
         """
 
-        basis = self.basis
-        helper = basis.helper
-        self.h0 = scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size)
+        Vlist = None
+        V22 = None
 
-        self.V = {}
+        for k in (-1,1):
+            basis = self.bases[k]
+            helper = basis.helper
+            self.h0[k] = scipy.sparse.spdiags(basis.energyList,0,basis.size,basis.size)
 
-        if Vlist == None:
-            Vlist = {2:V2OpsHalf(helper), 4:V4OpsHalf(helper)}
-            V22 = V4Ops22(helper)
+            self.V[k] = {}
 
-        for n in (2,4):
-            self.V[n] = buildMatrix(basis, Vlist[n])*self.L**2
-            # XXX Temporary fix
-            if n == 4:
-                self.V[n] += buildMatrix(basis, V22, sumTranspose=False)*self.L**2
+            if Vlist == None:
+                Vlist = {2:V2OpsHalf(helper), 4:V4OpsHalf(helper)}
+                V22 = V4Ops22(helper)
 
-        self.V[0] = scipy.sparse.eye(basis.size)*self.L**2
+            for n in (2,4):
+                self.V[k][n] = buildMatrix(basis, Vlist[n])*self.L**2
+                # XXX Temporary fix
+                if n == 4:
+                    self.V[k][n] += buildMatrix(basis, V22,
+                            sumTranspose=False)*self.L**2
 
-        return Vlist, V22
+            self.V[k][0] = scipy.sparse.eye(basis.size)*self.L**2
 
 
     def genHEBases(self, tailidx, EL, ELp):
@@ -60,12 +70,10 @@ class Phi4():
         self.EL = EL
         self.ELp = ELp
         self.tailidx = tailidx
-        self.basisH = genHEBasis(self.basis, tailidx, EL, ELp)
+        self.basesH = genHEBases(self.bases, tailidx, EL, ELp)
 
-
-    def genVHl(self, k, subidx):
-
-        V = genVHl(bases[k], subidx, basisH, L)
+        self.Vcomp = {}
+        self.h0 = {}
 
 
     def computeHEVs(self, k):
@@ -79,7 +87,7 @@ class Phi4():
         # "h": selected high-energy state with energy <= EL'
         # "H": selected high-energy states with energy <= EL
 
-        basis = self.basis[k]
+        basis = self.bases[k]
         subidx = self.tailidx[k]
         basisH = self.basisH[k]
         helperH = basisH.helper
@@ -127,7 +135,7 @@ class Phi4():
     def setg(self, g0, g2, g4, ct=True):
         """ ct: add logarithmic mass counterterm """
         self.g = {}
-        Lambda = self.basis.Lambda
+        Lambda = self.Lambda
         m = self.m
 
         if ct:
@@ -142,24 +150,28 @@ class Phi4():
         self.g[2] = g2 - dg2
         self.g[4] = g4
 
-    def setmatrix(self, Emax=np.inf, Lambda=np.inf):
 
-        if Emax<self.basis.Emax-tol or Lambda<self.basis.Lambda-tol:
-            subidx = self.basis.subidxlist(Emax, Lambda)
-            self.Vcomp = {n: submatrix(self.V[n], subidx) for n in (0,2,4)}
-            self.h0comp = submatrix(self.h0, subidx)
+
+    def setmatrix(self, k, Emax=np.inf, Lambda=np.inf):
+
+        basis = self.bases[k]
+
+        if Emax<basis.Emax-tol or Lambda<basis.Lambda-tol:
+            subidx = basis.subidxlist(Emax, Lambda)
+            self.Vcomp[k] = {n: submatrix(self.V[k][n], subidx) for n in (0,2,4)}
+            self.h0comp[k] = submatrix(self.h0[k], subidx)
         else:
-            self.Vcomp = self.V
-            self.h0comp = self.h0
+            self.Vcomp[k] = self.V[k]
+            self.h0comp[k] = self.h0[k]
 
 
-    def computeEigval(self, neigs=6, eigv=False):
+    def computeEigval(self, k, neigs=6, eigv=False):
         """ Compute the eigenvalues for sharp cutoff ET
         neigs: number of eigenvalues to compute
         eigv: return eigenvectors
         """
 
-        compH = self.h0comp + sum([self.g[n]*self.Vcomp[n] for n in (0,2,4)])
+        compH = self.h0comp[k] + sum([self.g[n]*self.Vcomp[k][n] for n in (0,2,4)])
 
         # Seed vector
         v0 = scipy.zeros(compH.shape[0])
@@ -167,10 +179,10 @@ class Phi4():
 
         if eigv:
 # XXX Check this returns them sorted
-            self.eigval, self.eigv = scipy.sparse.linalg.eigsh(compH,
+            self.eigval[k], self.eigv[k] = scipy.sparse.linalg.eigsh(compH,
                 neigs, v0=v0, which='SA', return_eigenvectors=True)
         else:
-            self.eigval = scipy.sort(scipy.sparse.linalg.eigsh(compH,
+            self.eigval[k] = scipy.sort(scipy.sparse.linalg.eigsh(compH,
                 neigs, v0=v0, which='SA', return_eigenvectors=False))
 
         gc.collect()

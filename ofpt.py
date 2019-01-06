@@ -55,10 +55,15 @@ res = {k:[] for k in (-1,1)}
 
 basesH = genHEBases(bases, subidx, ELmax, ELmax)
 
+a = Phi4(bases)
+a.genHEBases(subidx, ELmax, ELmax)
+
 for k in (-1,1):
     basisH = basesH[k]
     V = genVHl(bases[k], subidx[k], basisH, L)
     prop = 1/(E0[k]-array(basisH.energyList))
+
+    a.computeHEVs(k)
 
     for EL in ELlist:
         idxlist = basisH.subidxlist(EL, Lambda)
