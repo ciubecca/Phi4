@@ -44,20 +44,20 @@ print("ELlist: ", ELlist)
 bases = Basis.fromScratch(m, L, ET, Lambda)
 
 
-subidx = [0]
+subidx = {k:[0] for k in (-1,1)}
 
 E0 = {1:0, -1:m}
 
 res = {k:[] for k in (-1,1)}
 
+# a = Phi4(bases)
+# a.genHEBases
+
+basesH = genHEBases(bases, subidx, ELmax, ELmax)
+
 for k in (-1,1):
-# for k in (1,):
-    print("Computing basis...")
-    basisH = genHEBasis(bases[k], subidx, ELmax, ELmax)
-    print("k={} basis size={}".format(k, basisH.size))
-    print("Computing matrix...")
-    V = genVHl(bases[k], subidx, basisH, L)
-    print("Done")
+    basisH = basesH[k]
+    V = genVHl(bases[k], subidx[k], basisH, L)
     prop = 1/(E0[k]-array(basisH.energyList))
 
     for EL in ELlist:

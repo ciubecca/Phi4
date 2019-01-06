@@ -118,7 +118,7 @@ class Phi4():
         # for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
 
 ### TODO pass energy EL
-            Vlist = VOps(basis, basisH.helper)
+            Vlist = VOps(basisH.helper, basis)
             self.VHL[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
                     ignKeyErr=True, sumTranspose=False)*L**2
             self.VLH[k][n] = self.VHL[k][n].transpose()
