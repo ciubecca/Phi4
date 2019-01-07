@@ -14,7 +14,6 @@ def subcolumns(V, subidx):
     return V.tocsc()[:,subidx]
 
 
-
 def buildMatrix(basis, Vlist, destbasis=None, idxList=None,
         ignKeyErr=False, sumTranspose=True):
     """
@@ -41,7 +40,6 @@ def buildMatrix(basis, Vlist, destbasis=None, idxList=None,
         for i,idx in enumerate(idxList):
             colpart, datapart = \
                 V.computeMatrixElements(basis, idx, destbasis, ignKeyErr=ignKeyErr)
-                # statePos=statePos, ignKeyErr=ignKeyErr)
             data += datapart
             col += colpart
             row += [i]*len(colpart)

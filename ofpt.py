@@ -8,6 +8,7 @@ from scipy import sparse
 from database import *
 from time import time
 from phi4 import *
+from nlo import *
 from paramplots import *
 m = 1
 
@@ -41,7 +42,6 @@ ELlist = np.linspace(ELmin, ELmax, 10)
 print("L={}, Lambda={}, ELmax={}".format(L, Lambda, ELmax))
 print("ELlist: ", ELlist)
 
-bases = Basis.fromScratch(m, L, ET, Lambda)
 
 
 subidx = {k:[0] for k in (-1,1)}
@@ -50,32 +50,30 @@ E0 = {1:0, -1:m}
 
 res = {k:[] for k in (-1,1)}
 
-# a = Phi4(bases)
-# a.genHEBases
+a = Phi4(m, L, ET, Lambda)
+bases = a.bases
+
+# a.genHEBases(subidx, ELmax, ELmax)
 
 basesH = genHEBases(bases, subidx, ELmax, ELmax)
 
-a = Phi4(bases)
-a.genHEBases(subidx, ELmax, ELmax)
-
 for k in (-1,1):
     basisH = basesH[k]
-    V = genVHl(bases[k], subidx[k], basisH, L)
-    prop = 1/(E0[k]-array(basisH.energyList))
 
-    a.computeHEVs(k)
+    V = genVHl(bases[k], subidx[k], basisH, L)
+    prop = 1/(E0[k]-np.array(basisH.energyList))
+
+    # a.computeHEVs(k)
 
     for EL in ELlist:
-        idxlist = basisH.subidxlist(EL, Lambda)
+        idxlist = basisH.subidxlist(EL, Lambda, Emin=2)
         Vsub = subcolumns(V, idxlist)
         propsub = prop[idxlist]
 
         deltaE = np.einsum("ij,j,kj", Vsub.todense(), propsub, Vsub.todense())[0][0]
         res[k].append(deltaE)
 
-
-
-vac = array(res[1])/(L**2)-ct0(ELlist)
+vac = np.array(res[1])/(L**2)-ct0(ELlist)
 plt.figure(1)
 plt.plot(ELlist, vac)
 plt.title("L={}".format(L))
@@ -84,8 +82,7 @@ plt.xlabel(r"$E_T$")
 plt.ylabel(r"$\Delta E_0 - c_0(E_T)$")
 plt.savefig("vacpert_L={}.pdf".format(L))
 
-# mass = array(res[-1])-(L**2)*ct0(ELlist, m) - ct2(ELlist)
-mass = array(res[-1])-array(res[1]) - ct2(ELlist)
+mass = np.array(res[-1])-np.array(res[1]) - ct2(ELlist)
 massnlo = mass - (L**2)*(ct0(ELlist,1)- ct0(ELlist))
 plt.figure(2)
 plt.plot(ELlist, mass, label="loc")

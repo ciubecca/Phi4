@@ -9,9 +9,9 @@ from oscillators import *
 from operator import attrgetter
 import gc
 from matrix import *
+from nlo import *
 from scipy.integrate import quad
 from scipy import exp, pi, array, e, sqrt, log
-from sys import getsizeof as sizeof
 import numpy as np
 
 
@@ -79,6 +79,7 @@ class Phi4():
     def computeHEVs(self, k):
         """
         Compute the matrices involving the high-energy states below EL
+        Emin: minimal energy of the high energy states
         """
 
         # Matrix subscript notation:
@@ -87,49 +88,54 @@ class Phi4():
         # "h": selected high-energy state with energy <= EL'
         # "H": selected high-energy states with energy <= EL
 
-        basis = self.bases[k]
-        subidx = self.tailidx[k]
-        basisH = self.basisH[k]
-        helperH = basisH.helper
+        self.VHL = {}
+        self.VLH = {}
+        self.VHl = {}
+        L = self.L
 
-        #################################
-        # Generate the VlH matrices
-        #################################
+        for k in (-1,1):
 
-        print("Computing VHl...")
+            basis = self.bases[k]
+            subidx = self.tailidx[k]
+            basisH = self.basesH[k]
+            helperH = basisH.helper
 
-        self.VHl[k] = {}
+            #################################
+            # Generate the VlH matrices
+            #################################
 
-        for (n,Vops) in ((2,V2OpsSelectedFull(basis,helperH)),
-                        (4,V4OpsSelectedFull(basis,helperH))):
+            print("Computing VHl...")
+
+            self.VHl[k] = {}
+
+            for (n,VOps) in ((2, V2OpsSelectedFull), (4, V4OpsSelectedFull)):
 ### TODO pass energy max(ELp, EL) ?
-            Vlist = VOps(basis, basisH.helper, subidx)
-            self.VHl[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
-                    idxList=subidx, sumTranspose=False)*L**2
+                Vlist = VOps(basis, basisH.helper, subidx, half=True)
+                self.VHl[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
+                        idxList=subidx, sumTranspose=False)*L**2
 
 
-        ##############################
-        # Generate the VHL matrix
-        ##############################
+            ##############################
+            # Generate the VHL matrix
+            ##############################
 
-        print("Computing VHL...")
+            print("Computing VHL...")
 
-        self.VHL[k] = {}
-        self.VLH[k] = {}
+            self.VHL[k] = {}
+            self.VLH[k] = {}
 
 ### XXX Should I use the full V operator instead of generating it from
 ### the basis?
-        # for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
+            # for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
 
-
-        for (n,Vops) in ((2,V2OpsHalf), (4,V4OpsHalf), (4,V22OpsHalf)):
-        # for (n,Vops) in ((2,V2OpsSelectedFull), (4,V4OpsSelectedFull)):
+# NOTE we only need half because we don't need the decrease the energy
+            for (n,VOps) in ((2,V2OpsHalf), (4,V4OpsHalf), (4,V4Ops22)):
 
 ### TODO pass energy EL
-            Vlist = VOps(basisH.helper, basis)
-            self.VHL[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
-                    ignKeyErr=True, sumTranspose=False)*L**2
-            self.VLH[k][n] = self.VHL[k][n].transpose()
+                Vlist = VOps(basisH.helper, basis)
+                self.VHL[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
+                        ignKeyErr=True, sumTranspose=False)*L**2
+                self.VLH[k][n] = self.VHL[k][n].transpose()
 
 
     def setg(self, g0, g2, g4, ct=True):

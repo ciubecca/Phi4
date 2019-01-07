@@ -29,7 +29,6 @@ def genHEBases(bases, tailidx, EL, ELp):
     helper = Helper(L=bases[1].helper.L, Emax=Emax,
                 Lambda=bases[1].helper.Lambda, m=bases[1].helper.m)
 
-
     ret = {}
     for k in (-1,1):
         basis = bases[k]
@@ -39,6 +38,7 @@ def genHEBases(bases, tailidx, EL, ELp):
         # in the range [0, Emax]
         # XXX Assuming that V2 does not generate different states
         Vlist = V4OpsSelectedFull(basis, helper, subidx)
+        Vlist += V2OpsSelectedFull(basis, helper, subidx)
 
         statePos = {}
         stateList = []
@@ -68,12 +68,61 @@ def genHEBases(bases, tailidx, EL, ELp):
     return ret
 
 
+def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
+    ret = set()
 
-def V4OpsSelectedFull(basis, helper, idxList=None):
+    for i in idxList:
+        state = basis.stateList[i]
+        ret.update(gendlists(state=state, nd=nd, ntot=ntot, helper=helper))
+
+    return ret
+
+
+def V2OpsSelectedFull(basis, helper, idxList=None, half=False):
+    """ Selected set of oscillators of the full V2 operator between some selected states
+    basis: basis which is acted upon
+    idxList: subset of indices of states which are acted upon
+    helper: Helper object of the destination basis
+    half: do not keep oscillators with more annihilation than creation operators
+    Emin: minimal energy of states to generate
+    """
+
+    oscEnergy = helper.oscEnergy
+    Emax = helper.Emax
+
+    if idxList == None:
+        idxList = range(basis.size)
+
+    opsList = []
+
+    if half:
+        ndlist = (0,1)
+    else:
+        ndlist= (0,1,2)
+
+    for nd in ndlist:
+        nc = 2-nd
+
+        dlists = gendlistsfromBasis(basis, idxList, helper, nd, 2)
+
+        oscList = []
+        for dlist in dlists:
+            clists = [clist for clist in
+                        createClistsV2(helper, dlist, nc) if
+                        oscEnergy(clist) <= Emax+tol]
+            oscList.append((dlist, clists))
+
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
+
+def V4OpsSelectedFull(basis, helper, idxList=None, half=False):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
     idxList: subset of indices of states which are acted upon
     helper: Helper object of the destination basis
+    half: do not keep operators with nd > nc
     """
 
     oscEnergy = helper.oscEnergy
@@ -85,7 +134,12 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
     opsList = []
     allowedWnPairs = None
 
-    for nd in (0,1,2,3,4):
+    if half:
+        ndlist = (0,1,2)
+    else:
+        ndlist = (0,1,2,3,4)
+
+    for nd in ndlist:
         nc = 4-nd
 
         dlists = gendlistsfromBasis(basis, idxList, helper, nd, 4)
@@ -106,14 +160,22 @@ def V4OpsSelectedFull(basis, helper, idxList=None):
     return opsList
 
 
-def gendlistsfromBasis(basis, idxList, helper, nd, ntot):
-    ret = set()
+def createClistsV2(helper, dlist, nc):
+# XXX Check
 
-    for i in idxList:
-        state = basis.stateList[i]
-        ret.update(gendlists(state=state, nd=nd, ntot=ntot, helper=helper))
-
-    return ret
+    if len(dlist) != 2-nc:
+        raise ValueError
+    if nc==0:
+        return [()]
+    elif nc==1:
+        return [dlist]
+    elif nc==2:
+        clists = []
+        for wn in helper.allowedWn.keys():
+            wn2 = (-wn[0], -wn[1])
+            if wn >= wn2:
+                clists.append((wn,wn2))
+        return clists
 
 
 def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
@@ -140,7 +202,6 @@ def createClistsV4(helper, dlist, nc, allowedWnPairs=None):
         clists = helper.genMomenta3sets(k1)
 
     elif nc==4:
-        clists = []
-        clists =  helper.genMomenta4sets()
+        clists = helper.genMomenta4sets()
 
     return clists

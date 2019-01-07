@@ -115,7 +115,11 @@ class Helper():
 
     def oscEnergy(self, wnlist):
         """ Energy of an oscillator (ordered tuple of momenta) """
-        return sum(self.omega(n) for n in wnlist)
+        try:
+            return sum(self.omega(n) for n in wnlist)
+        except IndexError as e:
+            print(wnlist)
+            raise(e)
 
     # This is slow
     def energy(self, state):
@@ -138,7 +142,11 @@ class Helper():
 
     def omega(self, n):
         """ Energy corresponding to wavenumber n"""
-        return self.omegaMat[n[0]][n[1]]
+        try:
+            return self.omegaMat[n[0]][n[1]]
+        except IndexError as e:
+            print("n", n)
+            raise(e)
 
     # XXX This function can be improved. Need to find the configuration of allowed momenta with minimal energy
     def minEnergy(self, wn, z0min=0):
