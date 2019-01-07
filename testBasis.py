@@ -3,6 +3,37 @@ import random
 from phi4 import *
 from nlo import *
 
+def test_ofpt2():
+    """ Test the results of the old fashioned perturbation theory from the
+    high energy matrix construction """
+    m = 1
+    ET = 2
+    L = 5
+    EL = 17
+    Lambda = np.inf
+
+    subidx = {k:[0] for k in (-1,1)}
+    E0 = {1:0, -1:m}
+
+    res = {-1:-0.56672212303518199, 1:-0.34285179282771849}
+
+    a = Phi4(m, L, ET, Lambda)
+    bases = a.bases
+    a.genHEBases(subidx, EL, EL)
+
+    for k in (-1,1):
+        basisH = a.basesH[k]
+        a.computeHEVs(k)
+        prop = 1/(E0[k]-np.array(basisH.energyList))
+
+        idxlist = basisH.subidxlist(EL, Lambda, Emin=2)
+        Vsub = subcolumns(a.VHl[k][4], idxlist)
+        propsub = prop[idxlist]
+
+        deltaE = np.einsum("ij,j,kj", Vsub.todense(), propsub, Vsub.todense())[0][0]
+        np.testing.assert_almost_equal(deltaE, res[k])
+
+
 def test_genbasis2():
     """ Test the generated basis from the vacuum with momentum cutoff """
     m = 1
@@ -18,7 +49,7 @@ def test_genbasis2():
 
     E0 = {1:0, -1:m}
 
-    basesH = genHEBases(bases, subidx, EL, ELp)
+    basesH = genHEBases(bases, subidx, EL, ELp, V2=False)
 
     a = Phi4(m, L, ET=EL)
     bases2 = a.bases
@@ -67,7 +98,7 @@ def test_genbasis():
 
     E0 = {1:0, -1:m}
 
-    basesH = genHEBases(bases, subidx, EL, ELp)
+    basesH = genHEBases(bases, subidx, EL, ELp, V2=False)
 
     a = Phi4(m, L, EL, Lambda)
     a.computePotential()
@@ -108,8 +139,6 @@ def test_quartic_spec_Lambda():
     speco = [0.91567578388474,  2.958422505762713, 4.336228677868323,
             5.167300737731443]
 
-
-    # bases = Basis.fromScratch(m=1, L=L, Emax=Emax, Lambda=Lambda)
     eigs = {}
 
     a = Phi4(1, L, Emax, Lambda)

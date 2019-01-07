@@ -42,10 +42,7 @@ ELlist = np.linspace(ELmin, ELmax, 10)
 print("L={}, Lambda={}, ELmax={}".format(L, Lambda, ELmax))
 print("ELlist: ", ELlist)
 
-
-
 subidx = {k:[0] for k in (-1,1)}
-
 E0 = {1:0, -1:m}
 
 res = {k:[] for k in (-1,1)}
@@ -53,17 +50,14 @@ res = {k:[] for k in (-1,1)}
 a = Phi4(m, L, ET, Lambda)
 bases = a.bases
 
-# a.genHEBases(subidx, ELmax, ELmax)
-
 basesH = genHEBases(bases, subidx, ELmax, ELmax)
 
 for k in (-1,1):
     basisH = basesH[k]
 
     V = genVHl(bases[k], subidx[k], basisH, L)
-    prop = 1/(E0[k]-np.array(basisH.energyList))
 
-    # a.computeHEVs(k)
+    prop = 1/(E0[k]-np.array(basisH.energyList))
 
     for EL in ELlist:
         idxlist = basisH.subidxlist(EL, Lambda, Emin=2)
@@ -71,6 +65,7 @@ for k in (-1,1):
         propsub = prop[idxlist]
 
         deltaE = np.einsum("ij,j,kj", Vsub.todense(), propsub, Vsub.todense())[0][0]
+
         res[k].append(deltaE)
 
 vac = np.array(res[1])/(L**2)-ct0(ELlist)
@@ -95,6 +90,4 @@ plt.ylabel(r"$\Delta (E_1-E_0) - c_2(E_T)$")
 plt.savefig("masspert_L={}.pdf".format(L))
 
 
-print(vac)
-print(mass)
 
