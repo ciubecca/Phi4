@@ -10,6 +10,7 @@ from operator import attrgetter
 import gc
 from matrix import *
 from nlo import *
+from counterterms import *
 from scipy.integrate import quad
 from scipy import exp, pi, array, e, sqrt, log
 import numpy as np
@@ -17,8 +18,10 @@ import numpy as np
 
 class Phi4():
     """ main class """
-    def __init__(self, m, L, ET, Lambda=np.inf):
+    def __init__(self, m, L, ET, Lambda=np.inf, momcut=True):
+        """ momcut: implement momentum cutoff """
 
+        self.momcut = momcut
         self.m = m
         self.L = L
         self.ET = ET
@@ -28,6 +31,7 @@ class Phi4():
         self.Vcomp = {}
         self.V = {}
         self.h0comp = {}
+        self.nonlocct = {}
         self.h0 = {}
         self.eigval = {}
         self.eigv = {}
@@ -138,37 +142,69 @@ class Phi4():
                 self.VLH[k][n] = self.VHL[k][n].transpose()
 
 
-    def setg(self, g0, g2, g4, ct=True):
-        """ ct: add logarithmic mass counterterm """
+    def setg(self, g0, g2, g4, ct=True, cutoff=None, impr=False):
+        """ ct: add logarithmic mass counterterm
+            impr: add improvement terms
+            cutoff: value of the cutoff (will be either Lambda or ET depending on self.momcut """
+
         self.g = {}
-        Lambda = self.Lambda
         m = self.m
 
+        if impr==True:
+            raise ValueError("Not implemented yet")
+
+        dg2 = 0
+
         if ct:
+            if self.momcut:
+                if cutoff==None:
+                    cutoff = self.Lambda
+
 # The counterterm was computed by defining the Hamiltonian as g2 V2  + g4/(4 !) V4.
 # Instead in the code g4 is not divided by 4!
-# XXX The o(1) term is not correct
-            dg2 = -(g4*factorial(4))**2*1/(12*(4*pi)**2)*log(Lambda/m)
-        else:
-            dg2 = 0
+# NOTE Cancel leading perturbative mass correction exactly
+                dg2 = -g4**2*ct2Lam(cutoff, m)
+                # XXX The o(1) term is not correct
+                # dg2 = (g4*factorial(4))**2*1/(12*(4*pi)**2)*log(Lambda/m)
+
+            else:
+                if cutoff==None:
+                    cutoff = self.ET
+
+                dg2 = -(g4)**2*c2ET(cutoff, m)
+
 
         self.g[0] = g0
-        self.g[2] = g2 - dg2
+        self.g[2] = g2 + dg2
         self.g[4] = g4
 
 
 
-    def setmatrix(self, k, Emax=np.inf, Lambda=np.inf):
+    def setmatrix(self, k, Emax=None, Lambda=None):
 
+        m = self.m
         basis = self.bases[k]
 
-        if Emax<basis.Emax-tol or Lambda<basis.Lambda-tol:
+        if Emax != None or Lambda != None:
+            if Emax==None:
+                Emax = self.Emax
+            if Lambda==None:
+                Lambda = self.Lambda
             subidx = basis.subidxlist(Emax, Lambda)
             self.Vcomp[k] = {n: submatrix(self.V[k][n], subidx) for n in (0,2,4)}
             self.h0comp[k] = submatrix(self.h0[k], subidx)
+
         else:
             self.Vcomp[k] = self.V[k]
             self.h0comp[k] = self.h0[k]
+
+        elist = self.h0comp[k].diagonal()
+        if self.momcut == False:
+            if Emax==None:
+                Emax = self.Emax
+            self.nonlocct[k] = -scipy.sparse.diags([[ct0ETnonloc(Emax,e) for e in elist]],[0])
+        else:
+            self.nonlocct[k] = scipy.sparse.diags([[0 for e in elist]],[0])
 
 
     def computeEigval(self, k, neigs=6, eigv=False):
@@ -177,7 +213,7 @@ class Phi4():
         eigv: return eigenvectors
         """
 
-        compH = self.h0comp[k] + sum([self.g[n]*self.Vcomp[k][n] for n in (0,2,4)])
+        compH = self.h0comp[k] + sum([self.g[n]*self.Vcomp[k][n] for n in (0,2,4)]) + self.L**2*self.g[4]**2*self.nonlocct[k]
 
         # Seed vector
         v0 = scipy.zeros(compH.shape[0])

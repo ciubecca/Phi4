@@ -33,7 +33,7 @@ Lambdamax  = float(argv[2])
 
 Lambdamin = 4
 # This is enough to reproduce the full mass and vacuum corrections
-ET = 4*Lambdamax+4
+ET = 4*Lambdamax+6
 
 lamlist = np.linspace(Lambdamin, Lambdamax, 10)
 
@@ -41,7 +41,7 @@ print("L={}, Lambdamax={}, ET={}".format(L, Lambdamax, ET))
 
 bases = Basis.fromScratch(m, L, Emax=2, Lambda=Lambdamax)
 
-subidx = [0]
+subidx = {k:[0] for k in (-1,1)}
 
 E0 = {1:0, -1:m}
 
@@ -83,7 +83,6 @@ for k in (-1,1):
 # plt.ylabel(r"$\Delta E_0 - c_0(E_T)$")
 # plt.savefig("vacpert_L={}.pdf".format(L))
 
-# mass = array(res[-1])-(L**2)*ct0(ELlist, m) - ct2(ELlist)
 mass = array(res[-1])-array(res[1]) - ct2(lamlist)
 plt.figure(2)
 plt.plot(lamlist, mass)

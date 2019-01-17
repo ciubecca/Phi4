@@ -81,7 +81,10 @@ for k in (-1,1):
             print("k={}, ET={}, lam={}, g2={}".format(k, ET, lam, g2))
 
             for g4 in g4list:
-                a.setg(0, g2, g4/(factorial(4)), ct=True)
+
+                # FIXME Error: I should change the renormalization constant according to Lambda!
+                a.setg(0, g2, g4/(factorial(4)), cutoff=lam, ct=True, impr=False)
+
                 # print("Diagonalizing matrix...")
                 a.computeEigval(neigs=neigs, eigv=eigv)
                 # print("Spectrum: ", a.eigval)
