@@ -52,49 +52,47 @@ ETlist = np.linspace(ETmin, Emax, nET)
 
 t0 = time()
 print("Computing basis...")
-bases = Basis.fromScratch(m, L, Emax, Lambda)
+a = Phi4(m, L, Emax, Lambda, momcut=True)
 t1 = time()
 print("Elapsed: ",t1-t0)
 
 for k in (-1,1):
-    print("k={}, size={}".format(k, len(bases[k])))
+    print("k={}, size={}".format(k, len(a.bases[k])))
+
+
+print("Computing matrices...".format(k))
+t0 = time()
+a.computePotential()
+t1 = time()
+print("Elapsed: ",t1-t0)
 
 eigs = {}
 
-Vlist = None
-V22 = None
-
 for k in (-1,1):
-    t0 = time()
-    print("Computing k={} matrices...".format(k))
-    a = Phi4(bases[k])
-    Vlist, V22 = a.computePotential(Vlist, V22)
-    t1 = time()
-    print("Elapsed: ",t1-t0)
 
-    t0 = time()
     for ET in ETlist:
         for lam in lamlist:
 
-            a.setmatrix(ET, lam)
+            a.setmatrix(k, ET, lam)
 
             print("k={}, ET={}, lam={}, g2={}".format(k, ET, lam, g2))
 
             for g4 in g4list:
 
                 # FIXME Error: I should change the renormalization constant according to Lambda!
-                a.setg(0, g2, g4/(factorial(4)), cutoff=lam, ct=True, impr=False)
+                a.setg(0, g2, g4/(factorial(4)), ct=ct, cutoff=lam, impr=False)
 
                 # print("Diagonalizing matrix...")
-                a.computeEigval(neigs=neigs, eigv=eigv)
+                a.computeEigval(k=k, neigs=neigs, eigv=eigv)
                 # print("Spectrum: ", a.eigval)
 
                 if savedb:
                     data = {"neigs":neigs, "logct":ct, "g2":g2, "g4":g4,
-                            "spec":a.eigval, "L":L, "ET":ET, "Lambda":lam, "m":m, "k":k}
+                            "spec":a.eigval[k], "L":L, "ET":ET, "Lambda":lam, "m":m, "k":k,
+                            "momcut":True, "impr":False}
                     if eigv:
                          # Save the lowest eigenvector
-                        data['eigv'] = a.eigv[:, 0]
+                        data['eigv'] = a.eigv[k][:, 0]
                     db.insert(data)
     t1 = time()
     print("Elapsed: ",t1-t0)
