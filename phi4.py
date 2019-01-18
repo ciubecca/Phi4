@@ -171,7 +171,7 @@ class Phi4():
                 if cutoff==None:
                     cutoff = self.ET
 
-                dg2 = -(g4)**2*c2ET(cutoff, m)
+                dg2 = -(g4)**2*ct2ET(cutoff, m)
 
 
         self.g[0] = g0
@@ -202,7 +202,7 @@ class Phi4():
         if self.momcut == False:
             if Emax==None:
                 Emax = self.Emax
-            self.nonlocct[k] = -scipy.sparse.diags([[ct0ETnonloc(Emax,e) for e in elist]],[0])
+            self.nonlocct[k] = -scipy.sparse.diags([[ct0ETnonloc(Emax,e,m) for e in elist]],[0])
         else:
             self.nonlocct[k] = scipy.sparse.diags([[0 for e in elist]],[0])
 
