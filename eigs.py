@@ -14,6 +14,8 @@ ct = True
 # Save lowest eigenvector
 eigv = False
 
+toy = False
+
 print("ct = {}, eigv={}".format(ct, eigv))
 
 if savedb:
@@ -28,10 +30,14 @@ print("g4 ;", g4list)
 lammin = 4
 ETmin = 10
 
+if toy:
 # Number of Lambda's
-nlam = 2
+    nlam = 2
 # Number of ET's
-nET = 2
+    nET = 2
+else:
+    nlam = 2
+    nET = 10
 
 print("nET={}, nlam={}".format(nET, nlam))
 
