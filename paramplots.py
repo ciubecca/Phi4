@@ -3,9 +3,9 @@ from matplotlib import rc
 from cycler import cycler
 import matplotlib as mpl
 
-paramd = {'lines.linestyle': ['-', '--', ':', '-.'],
-        'lines.marker': ['o','v','.','-'],
-        'lines.markersize': [1,2,1,1]}
+paramd = {'lines.linestyle': ['dashed', 'dashdot', 'solid', 'dotted'],
+        'lines.marker': ['o','v','.','x'],
+        'lines.markersize': [1,4,1,5]}
 
 # print(mpl.rcParams.keys())
 plt.style.use('ggplot')

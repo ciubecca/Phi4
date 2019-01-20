@@ -15,7 +15,7 @@ ct = True
 
 lammin = 4
 ETmin = 10
-nlam = 2
+nlam = 3
 nET = 10
 
 klist = (1,-1)
@@ -34,10 +34,16 @@ def plotvsET(L, lam, g2, g4, ETlist):
     for k in klist:
         for ET in ETlist:
 
-            approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET, "Lambda":lam}
-            exactQuery = {"k": k, "neigs":neigs, "logct":ct, "momcut":True,
-                    "impr":False}
+            approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET}
+            exactQuery = {"k": k, "neigs":neigs, "logct":ct, "impr":False}
             boundQuery = {}
+
+            if lam==np.inf:
+                exactQuery["momcut"] = False
+            else:
+                exactQuery["momcut"] = True
+                exactQuery["Lambda"] = lam
+
 
 
             try:
@@ -91,6 +97,8 @@ g4  = float(argv[4])
 g2  = float(argv[5])
 
 lamlist = np.linspace(lammin, Lambdamax, nlam)
+lamlist = np.concatenate([lamlist, [np.inf]])
+
 ETlist = np.linspace(ETmin, ETmax, nET)
 
 

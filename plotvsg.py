@@ -15,16 +15,16 @@ params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
 
-g4max = 30
+g4max = 15
 
-g4list = np.linspace(2,g4max,15)
+g4list = np.linspace(1,g4max,15)
 print("g4: ", g4list)
 
 
 lammin = 4
 ETmin = 10
 
-nlam = 2
+nlam = 3
 nET = 10
 
 klist = (1,-1)
