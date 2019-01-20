@@ -9,13 +9,15 @@ from sys import exit, argv
 
 form  = "pdf"
 
+logct = True
+
 params = {'legend.fontsize': 8}
 plt.rcParams.update(params)
 
 
 g4max = 30
 
-g4list = np.linspace(1,g4max,30)
+g4list = np.linspace(2,g4max,15)
 print("g4: ", g4list)
 
 
@@ -23,9 +25,7 @@ lammin = 4
 ETmin = 10
 
 nlam = 2
-nET = 2
-# nlam = 3
-# nET = 10
+nET = 10
 
 klist = (1,-1)
 neigs = 4
@@ -46,9 +46,15 @@ def plotvsg(L, lam, g2, g4list, ET):
     for k in klist:
         for g4 in g4list:
 
-            approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET, "Lambda":lam}
-            exactQuery = {"k": k, "neigs":neigs}
+            approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET}
+            exactQuery = {"k": k, "neigs":neigs, "logct":True, "impr":False}
             boundQuery = {}
+
+            if lam==np.inf:
+                exactQuery["momcut"] = False
+            else:
+                exactQuery["momcut"] = True
+                exactQuery["Lambda"] = lam
 
 
             try:
@@ -102,8 +108,7 @@ Lambdamax  = float(argv[3])
 g2 = float(argv[4])
 
 lamlist = np.linspace(lammin, Lambdamax, nlam)
-# ETlist = np.linspace(ETmin, ETmax, nET)
-
+lamlist = np.concatenate([lamlist, [np.inf]])
 
 
 for idx, lam in enumerate(lamlist):

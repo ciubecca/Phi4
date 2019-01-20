@@ -13,9 +13,7 @@ form  = "pdf"
 ct = True
 
 
-lammin = 4
 ETmin = 10
-nlam = 2
 nET = 10
 
 klist = (1,-1)
@@ -24,7 +22,7 @@ neigs = 4
 db = database.Database()
 
 
-def plotvsET(L, lam, g2, g4, ETlist):
+def plotvsET(L, g2, g4, ETlist):
 
     xlist = ETlist
 
@@ -34,8 +32,8 @@ def plotvsET(L, lam, g2, g4, ETlist):
     for k in klist:
         for ET in ETlist:
 
-            approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET, "Lambda":lam}
-            exactQuery = {"k": k, "neigs":neigs, "logct":ct, "momcut":True,
+            approxQuery = {"g4":g4, "g2":g2, "L":L, "ET":ET}
+            exactQuery = {"k": k, "neigs":neigs, "logct":ct, "momcut":False,
                     "impr":False}
             boundQuery = {}
 
@@ -64,7 +62,7 @@ def plotvsET(L, lam, g2, g4, ETlist):
         # for i in range(neigs):
         for i in range(1):
             data = spectrum[k][:,i]/L
-            label = r"$\Lambda$={}".format(lam,g4)
+            label = r"".format()
             plt.plot(ETlist, data, label=label, color=color[k])
 
     # MASS
@@ -74,29 +72,26 @@ def plotvsET(L, lam, g2, g4, ETlist):
         # for i in range(neigs-int((1+k)/2)):
         for i in range(1):
             data = masses[k][:,i]
-            label = r"$\Lambda$={}, $k$={}".format(lam,k)
+            label = r"$k$={}".format(k)
             plt.plot(xlist, data, label=label, color=color[k])
 
 argv = sys.argv
 
 
-if len(argv) < 6:
-    print("{} <L> <ETmax> <Lambdamax> <g4> <g2>".format(argv[0]))
+if len(argv) < 5:
+    print("{} <L> <ETmax> <g4> <g2>".format(argv[0]))
     sys.exit(-1)
 
 L = float(argv[1])
 ETmax = float(argv[2])
-Lambdamax  = float(argv[3])
-g4  = float(argv[4])
-g2  = float(argv[5])
+g4  = float(argv[3])
+g2  = float(argv[4])
 
-lamlist = np.linspace(lammin, Lambdamax, nlam)
 ETlist = np.linspace(ETmin, ETmax, nET)
 
 
-for i,lam in enumerate(lamlist):
-    setparams(i)
-    plotvsET(L=L, lam=lam, g2=g2, g4=g4, ETlist=ETlist)
+setparams(0)
+plotvsET(L=L, g2=g2, g4=g4, ETlist=ETlist)
 
 title = r"g2={}, g4={}, L={}".format(g2, g4, L)
 fname = r"g2={}, g4={}, L={}".format(g2, g4, L)
@@ -108,7 +103,7 @@ plt.title(title)
 plt.xlabel(r"$E_T$")
 plt.ylabel(r"$\mathcal{E}_0/L$")
 plt.legend(loc=loc)
-plt.savefig("plots/vacvsET_{}.{}".format(fname,form))
+plt.savefig("plots/vacvsET_ET_{}.{}".format(fname,form))
 plt.clf()
 
 
@@ -118,5 +113,5 @@ plt.title(title)
 plt.xlabel(r"$E_T$")
 plt.ylabel(r"$m_{\rm ph}$")
 plt.legend(loc=loc)
-plt.savefig("plots/massvsET_{}.{}".format(fname,form))
+plt.savefig("plots/massvsET_ET_{}.{}".format(fname,form))
 plt.clf()
