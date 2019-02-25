@@ -3,6 +3,12 @@ import scipy
 import scipy.sparse.linalg
 import scipy.sparse
 
+tol = 10**-10
+
+def testsymmetric(m):
+    assert abs(m-m.transpose()).max() < tol
+    return
+
 def submatrix(V, subidx):
     """ Return the submatrix for states within smaller cutoffs """
     return (V.tocsc()[:,subidx]).tocsr()[subidx,]

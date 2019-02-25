@@ -14,8 +14,21 @@ def genVHl(basis, subidx, basisH, L):
     return buildMatrix(basis, Vlist, idxList=subidx,
             destbasis=basisH, sumTranspose=False)*L**2
 
+def genVhh(basisH, L):
 
-def genHEBases(bases, tailidx, EL, ELp, V2=True):
+    print("Computing Vhh")
+
+    helperH = basisH.helper
+
+    Vlist = V4OpsSelectedHalf(basisH, helperH)
+    ret = buildMatrix(basisH, Vlist, ignKeyErr=True, sumTranspose=True)*L**2
+    Vlist = V4OpsSelected22(basisH, helperH)
+    ret += buildMatrix(basisH, Vlist, ignKeyErr=True, sumTranspose=False)*L**2
+
+    return ret
+
+
+def genHEBases(bases, tailidx, EL, ELp, V2=True, k=None):
     """ Generate a high-energy basis from a set of tails
     basis: Basis containing the set of tail states
     EL: maximal energy of the generated basis for DH2
@@ -29,6 +42,12 @@ def genHEBases(bases, tailidx, EL, ELp, V2=True):
 
     helper = Helper(L=bases[1].helper.L, Emax=Emax,
                 Lambda=bases[1].helper.Lambda, m=bases[1].helper.m)
+
+
+    if k!=None:
+        klist = (k,)
+    else:
+        klist = (-1,1)
 
     ret = {}
     for k in (-1,1):
@@ -118,12 +137,11 @@ def V2OpsSelectedFull(basis, helper, idxList=None, half=False):
     return opsList
 
 
-def V4OpsSelectedFull(basis, helper, idxList=None, half=False):
+def V4OpsSelectedFull(basis, helper, idxList=None):
     """ Selected set of oscillators of the full V4 operator between some selected states
     basis: basis which is acted upon
     idxList: subset of indices of states which are acted upon
     helper: Helper object of the destination basis
-    half: do not keep operators with nd > nc
     """
 
     oscEnergy = helper.oscEnergy
@@ -135,10 +153,7 @@ def V4OpsSelectedFull(basis, helper, idxList=None, half=False):
     opsList = []
     allowedWnPairs = None
 
-    if half:
-        ndlist = (0,1,2)
-    else:
-        ndlist = (0,1,2,3,4)
+    ndlist = (0,1,2,3,4)
 
     for nd in ndlist:
         nc = 4-nd
@@ -159,6 +174,78 @@ def V4OpsSelectedFull(basis, helper, idxList=None, half=False):
         opsList.append(LocOperator(oscList,nd,nc,helper=helper))
 
     return opsList
+
+### XXX Exclude 22 operators
+def V4OpsSelectedHalf(basis, helper, idxList=None):
+    """ Selected set of oscillators of part of the V4 operator between some selected states
+    basis: basis which is acted upon
+    idxList: subset of indices of states which are acted upon
+    helper: Helper object of the destination basis
+    """
+
+    oscEnergy = helper.oscEnergy
+    Emax = helper.Emax
+
+    if idxList == None:
+        idxList = range(basis.size)
+
+    opsList = []
+    allowedWnPairs = None
+
+    ndlist = (0,1)
+
+    for nd in ndlist:
+        nc = 4-nd
+
+        dlists = gendlistsfromBasis(basis, idxList, helper, nd, 4)
+
+        oscList = []
+        for dlist in dlists:
+            clists = [clist for clist in
+                        createClistsV4(helper, dlist, nc, allowedWnPairs) if
+                        oscEnergy(clist) <= Emax+tol]
+            oscList.append((dlist, clists))
+
+        opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
+# XXX Do not symmetrize, could be fixed
+def V4OpsSelected22(basis, helper, idxList=None):
+    """ Selected set of oscillators of type (a^+ a^+ a a) of the V4 operator between some selected states
+    basis: basis which is acted upon
+    idxList: subset of indices of states which are acted upon
+    helper: Helper object of the destination basis
+    """
+
+    oscEnergy = helper.oscEnergy
+    Emax = helper.Emax
+
+    if idxList == None:
+        idxList = range(basis.size)
+
+    opsList = []
+    allowedWnPairs = None
+
+    nc = 2
+    nd = 2
+
+    dlists = gendlistsfromBasis(basis, idxList, helper, nd, 4)
+
+    totpairsmomenta = set((k1[0]+k2[0],k1[1]+k2[1]) for k1,k2 in dlists)
+    allowedWnPairs = helper.genMomentaPairs(totpairsmomenta)
+
+    oscList = []
+    for dlist in dlists:
+        clists = [clist for clist in
+                    createClistsV4(helper, dlist, nc, allowedWnPairs) if
+                    oscEnergy(clist) <= Emax+tol]
+        oscList.append((dlist, clists))
+
+    opsList.append(LocOperator(oscList,nd,nc,helper=helper))
+
+    return opsList
+
 
 
 def createClistsV2(helper, dlist, nc):

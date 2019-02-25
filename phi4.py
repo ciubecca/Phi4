@@ -142,6 +142,22 @@ class Phi4():
                 self.VLH[k][n] = self.VHL[k][n].transpose()
 
 
+    # XXX Not tested
+    def computeVhh(self, k):
+
+        print("Computing Vhh")
+
+        basisH = self.basesH[k]
+        helperH = basisH.helper
+
+        for k in (1,):
+            # Add both V2 and V4 corrections
+            for (Vops,sym) in ((4,V4OpsSelectedHalf,True), (4,V4OpsSelected22,True)):
+                Vlist = VOps(basisH, helperH)
+                self.Vhh[k] = buildMatrix(basisH, Vlist, ignKeyErr=False, sumTranspose=sym)*self.L**2
+
+
+
     def setg(self, g0, g2, g4, ct=True, cutoff=None, impr=False):
         """ ct: add logarithmic mass counterterm
             impr: add improvement terms
