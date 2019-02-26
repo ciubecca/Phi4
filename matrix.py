@@ -5,12 +5,16 @@ import scipy.sparse
 
 tol = 10**-10
 
-def testzero(m):
-    assert abs(m).max() < tol
+def checkZero(M):
+    try:
+        assert abs(M).max() < tol
+    except AssertionError as e:
+        print(abs(M).max())
+        raise e
     return
 
-def testsymmetric(m):
-    testzero(m-m.transpose())
+def checkSymmetric(M):
+    checkZero(M-M.transpose())
     return
 
 def submatrix(V, subidx):

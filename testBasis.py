@@ -34,6 +34,53 @@ def test_ofpt2():
         np.testing.assert_almost_equal(deltaE, res[k])
 
 
+
+def test_ofpt3():
+    """ Check that the Vhh matrix used for the 3d order OFPT computation is correct """
+    ET = 2
+    EL = 15
+    L = 5
+    m = 1
+
+    subidx = {k:[0] for k in (1,-1)}
+
+    a = Phi4(m, L, ET)
+    basis = a.bases[1]
+    basisH = genHEBases(a.bases, subidx, EL, EL, V2=False, k=1)[1]
+    Vhh = genVhh(basisH, L)
+    VlH = genVHl(basis, subidx[1], basisH, L)
+
+    b = Phi4(m, L, EL)
+    b.computePotential()
+    idxlist = b.bases[1].subidxlist(occmin=4, occmax=4)
+    Vhh2 = submatrix(b.V[1][4], idxlist)
+    basis2 = b.bases[1]
+
+
+    # idxlist = basisH.subidxlist(EL, Emin=2)
+    # VlHsub = subcolumns(VlH, idxlist)
+    # Vhhsub = submatrix(Vhh, idxlist)
+
+    idxlist2 = basis2.subidxlist(Emax=EL, occmin=4, occmax=4)
+    VlH2 = subcolumns(subrows(b.V[1][4], [0]), idxlist2)
+    Vhh2 = submatrix(b.V[1][4], idxlist2)
+
+
+    prop = 1/(-np.array(basisH.energyList))
+    prop2 = 1/(-np.array(basis2.energyList))
+
+    proj = scipy.sparse.spdiags(prop, 0, len(prop), len(prop)).tocsc()
+
+    propsub2 = prop2[idxlist2]
+    proj2 = scipy.sparse.spdiags(propsub2, 0, len(propsub2), len(propsub2)).tocsc()
+
+    deltaE = (VlH*proj*Vhh*proj*VlH.transpose()).todense()[0,0]
+
+    deltaE2 = (VlH2*proj2*Vhh2*proj2*VlH2.transpose()).todense()[0,0]
+
+    np.testing.assert_almost_equal(deltaE, deltaE2)
+
+
 def test_genbasis2():
     """ Test the generated basis from the vacuum with momentum cutoff """
     m = 1
