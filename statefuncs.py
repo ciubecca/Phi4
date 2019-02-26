@@ -75,10 +75,11 @@ class Basis():
 
 
 
-    def subidxlist(self, Emax, Lambda=np.inf, Emin=0.):
+    def subidxlist(self, Emax=np.inf, Lambda=np.inf, Emin=0., occmax=np.inf, occmin=0):
         """ Return the indices of states within smaller cutoffs """
         return [i for i in range(self.size) if self.energyList[i]<=Emax+tol
-                and self.maxmom[i]<=Lambda+tol and self.energyList[i]>=Emin-tol]
+                and self.maxmom[i]<=Lambda+tol and self.energyList[i]>=Emin-tol
+                and self.occnList[i]>=occmin and self.occnList[i]<=occmax]
 
 
     @classmethod

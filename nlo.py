@@ -20,10 +20,11 @@ def genVhh(basisH, L):
 
     helperH = basisH.helper
 
-    Vlist = V4OpsSelectedHalf(basisH, helperH)
-    ret = buildMatrix(basisH, Vlist, ignKeyErr=True, sumTranspose=True)*L**2
     Vlist = V4OpsSelected22(basisH, helperH)
-    ret += buildMatrix(basisH, Vlist, ignKeyErr=True, sumTranspose=False)*L**2
+    ret = buildMatrix(basisH, Vlist, ignKeyErr=True, sumTranspose=False)*L**2
+# FIXME For the 3rd order OFPT computation we only need these oscillators
+    # Vlist = V4OpsSelectedHalf(basisH, helperH)
+    # ret += buildMatrix(basisH, Vlist, ignKeyErr=True, sumTranspose=True)*L**2
 
     return ret
 

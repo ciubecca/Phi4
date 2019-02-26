@@ -37,13 +37,22 @@ basis = a.bases[1]
 print("Generating high-energy basis...")
 basisH = genHEBases(a.bases, subidx, ELmax, ELmax, V2=False, k=1)[1]
 
+print("energyList: ", basisH.energyList)
+
 print("basis size = {}".format(basisH.size))
 
 print("Generating low-high matrix...")
 VlH = genVHl(basis, subidx[1], basisH, L)
 
 Vhh = genVhh(basisH, L)
+
+b = Phi4(m, L, ELmax)
+print("Computing full matrix...")
+b.computePotential()
 print("Done")
+idxlist = b.bases[1].subidxlist(occmin=4, occmax=4)
+Vhh2 = submatrix(b.V[1][4], idxlist)
+
 
 testsymmetric(Vhh)
 
