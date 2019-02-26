@@ -10,6 +10,7 @@ from statefuncs import *
 import copy
 from scipy import sparse
 from time import time
+import sys
 from phi4 import *
 
 m = 1
@@ -53,8 +54,14 @@ print("Done")
 idxlist = b.bases[1].subidxlist(occmin=4, occmax=4)
 Vhh2 = submatrix(b.V[1][4], idxlist)
 
+print(Vhh.shape)
+print(Vhh2.shape)
 
 testsymmetric(Vhh)
+testsymmetric(Vhh2)
+
+sys.exit(0)
+
 
 prop = 1/(-np.array(basisH.energyList))
 
