@@ -13,6 +13,8 @@ savedb = True
 ct = True
 # Save lowest eigenvector
 eigv = False
+# Normalization such that g is divided by 4!
+fourfacnorm = False
 
 toy = False
 
@@ -24,7 +26,7 @@ if savedb:
 m = 1
 neigs = 4
 
-g4list = np.linspace(2,30,15)
+g4list = np.linspace(0.2,6,30)
 print("g4 ;", g4list)
 
 ETmin = 10
@@ -80,7 +82,10 @@ for k in (-1,1):
 
             for g4 in g4list:
 
-                a.setg(0, g2, g4/(factorial(4)), ct=ct, cutoff=ET, impr=False)
+                if fourfacnorm:
+                    a.setg(0, g2, g4/(factorial(4)), ct=ct, cutoff=ET, impr=False)
+                else:
+                    a.setg(0, g2, g4, ct=ct, cutoff=ET, impr=False)
 
                 # print("Diagonalizing matrix...")
                 a.computeEigval(k=k, neigs=neigs, eigv=eigv)
@@ -89,7 +94,7 @@ for k in (-1,1):
                 if savedb:
                     data = {"neigs":neigs, "logct":ct, "g2":g2, "g4":g4,
                             "spec":a.eigval[k], "L":L, "ET":ET, "Lambda":np.inf, "m":m, "k":k,
-                            "momcut":False, "impr":False}
+                            "momcut":False, "impr":False, "fourfacnorm":fourfacnorm}
                     if eigv:
                          # Save the lowest eigenvector
                         data['eigv'] = a.eigv[k][:, 0]
