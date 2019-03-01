@@ -10,6 +10,7 @@ from statefuncs import *
 import copy
 from scipy import sparse
 from time import time
+import sys
 from phi4 import *
 
 m = 1
@@ -37,28 +38,18 @@ basis = a.bases[1]
 print("Generating high-energy basis...")
 basisH = genHEBases(a.bases, subidx, ELmax, ELmax, V2=False, k=1)[1]
 
-print("energyList: ", basisH.energyList)
-
 print("basis size = {}".format(basisH.size))
 
 print("Generating low-high matrix...")
 VlH = genVHl(basis, subidx[1], basisH, L)
+print("VlH.shape: ", VlH.shape)
 
 Vhh = genVhh(basisH, L)
 
-b = Phi4(m, L, ELmax)
-print("Computing full matrix...")
-b.computePotential()
-print("Done")
-idxlist = b.bases[1].subidxlist(occmin=4, occmax=4)
-Vhh2 = submatrix(b.V[1][4], idxlist)
-
-
-testsymmetric(Vhh)
+checkSymmetric(Vhh)
 
 prop = 1/(-np.array(basisH.energyList))
 
-print("VlH shape: {}".format(VlH.shape))
 
 for EL in ELlist:
     idxlist = basisH.subidxlist(EL, Emin=2)
@@ -69,7 +60,6 @@ for EL in ELlist:
     proj = scipy.sparse.spdiags(propsub, 0, len(propsub), len(propsub)).tocsc()
 
     deltaE = (VlHsub*proj*Vhhsub*proj*VlHsub.transpose()).todense()[0,0]
-    print(deltaE)
 
     res.append(deltaE)
 

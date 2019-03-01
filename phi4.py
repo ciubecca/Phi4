@@ -114,7 +114,10 @@ class Phi4():
 
             for (n,VOps) in ((2, V2OpsSelectedFull), (4, V4OpsSelectedFull)):
 ### TODO pass energy max(ELp, EL) ?
-                Vlist = VOps(basis, basisH.helper, subidx, half=True)
+                # Vlist = VOps(basis, basisH.helper, subidx, half=True)
+                # XXX Is this efficient? We are not restricting to half the matrix
+                Vlist = VOps(basis, basisH.helper, subidx)
+
                 self.VHl[k][n] = buildMatrix(basis, Vlist, destbasis=basisH,
                         idxList=subidx, sumTranspose=False)*L**2
 
