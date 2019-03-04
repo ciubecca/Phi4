@@ -96,11 +96,12 @@ def plotvsg(L, g2, g4list, ET):
     # Impose lower bound on g so that the dual g is not too large
     dualidxlist = np.array([i for i,g in enumerate(g4list) if g>1.0 and g<gstar])
     gFirstBranch = g4list[dualidxlist]
-    gDual = array([xmintomax(g) for g in gFirstBranch])
+    gDual = array([xmintomax2(g) for g in gFirstBranch])
     # Scale factor to go from first to second branch
-    factordual = array([factorToSecondBranch(g) for g in gFirstBranch])
+    factordual = array([factorToSecondBranch2(g) for g in gFirstBranch])
 
     # Dual lowest mass gap
+    # massesDual = masses[-1][dualidxlist,0]
     massesDual = masses[-1][dualidxlist,0]*factordual
 
     print("gFirstBranch:", gFirstBranch)
@@ -117,11 +118,11 @@ def plotvsg(L, g2, g4list, ET):
         for i in range(1):
             data = masses[k][:,i]
             label = r"$\Lambda$={}, $k$={}".format(lam,k)
-            plt.plot(xlist, data, label=label, color=color[k])
+            plt.plot(xlist, data, label=label, color=color[k], markersize=3)
 
             label = "Chang"
             plt.plot(gDual, massesDual, label=label, linestyle='dotted', color='b',
-                    markersize=2)
+                    markersize=3)
 
 argv = sys.argv
 
@@ -153,6 +154,9 @@ plt.clf()
 
 # Mass
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+
+plt.axvline(gstar)
+
 plt.title(title)
 plt.xlabel(r"$g_4$")
 plt.ylabel(r"$m_{\rm ph}$")
