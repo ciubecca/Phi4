@@ -96,11 +96,12 @@ def plotvsg(L, g2, g4list, ET):
     # Impose lower bound on g so that the dual g is not too large
     dualidxlist = np.array([i for i,g in enumerate(g4list) if g>1.0 and g<gstar])
     gFirstBranch = g4list[dualidxlist]
-    gDual = array([xmintomax(g) for g in gFirstBranch])
+    gDual = array([xmintomax2(g) for g in gFirstBranch])
     # Scale factor to go from first to second branch
-    factordual = array([factorToSecondBranch(g) for g in gFirstBranch])
+    factordual = array([factorToSecondBranch2(g) for g in gFirstBranch])
 
     # Dual lowest mass gap
+    # massesDual = masses[-1][dualidxlist,0]
     massesDual = masses[-1][dualidxlist,0]*factordual
 
     print("gFirstBranch:", gFirstBranch)
@@ -116,26 +117,34 @@ def plotvsg(L, g2, g4list, ET):
         # for i in range(neigs-int((1+k)/2)):
         for i in range(1):
             data = masses[k][:,i]
-            label = r"$\Lambda$={}, $k$={}".format(lam,k)
-            plt.plot(xlist, data, label=label, color=color[k])
+            label = r"$E_T={:.4f}$".format(ET)
+            plt.plot(xlist, data, label=label, color=color[k], markersize=3)
 
-            label = "Chang"
-            plt.plot(gDual, massesDual, label=label, linestyle='dotted', color='b',
-                    markersize=2)
+            label = "Chang, $E_T={:.4f}$".format(ET)
+            plt.plot(gDual, massesDual, label=label, color='b')
+            # plt.plot(gDual, massesDual, label=label, linestyle='dotted', color='b',
+                    # markersize=3)
 
 argv = sys.argv
 
 
 if len(argv) < 3:
-    print("{} <L> <ET> <g2>".format(argv[0]))
+    print("{} <L> <ETmax> <g2>".format(argv[0]))
     sys.exit(-1)
 
 L = float(argv[1])
-ET = float(argv[2])
+ETmax = float(argv[2])
 g2 = float(argv[3])
 
-setparams(0)
-plotvsg(L=L, g2=g2, ET=ET, g4list=g4list)
+
+ETlist = np.linspace(ETmin, ETmax, nET)
+print("ETlist: {}".format(ETlist))
+ETlistred = ETlist[1::4]
+print("ETlist reduced: {}".format(ETlistred))
+
+for i,ET in enumerate(ETlistred):
+    setparams(i)
+    plotvsg(L=L, g2=g2, ET=ET, g4list=g4list)
 
 title = r"g2={}, ET={}, L={}".format(g2, ET, L)
 fname = r"g2={}, ET={}, L={}".format(g2, ET, L)
@@ -153,6 +162,9 @@ plt.clf()
 
 # Mass
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+
+plt.axvline(gstar)
+
 plt.title(title)
 plt.xlabel(r"$g_4$")
 plt.ylabel(r"$m_{\rm ph}$")
