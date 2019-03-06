@@ -226,13 +226,17 @@ class Phi4():
             self.nonlocct[k] = scipy.sparse.diags([[0 for e in elist]],[0])
 
 
-    def computeEigval(self, k, neigs=6, eigv=False):
+    def computeEigval(self, k, neigs=6, eigv=False, nonlocct=True):
         """ Compute the eigenvalues for sharp cutoff ET
         neigs: number of eigenvalues to compute
         eigv: return eigenvectors
         """
 
-        compH = self.h0comp[k] + sum([self.g[n]*self.Vcomp[k][n] for n in (0,2,4)]) + self.L**2*self.g[4]**2*self.nonlocct[k]
+        compH = self.h0comp[k] + sum([self.g[n]*self.Vcomp[k][n] for n in (0,2,4)])
+
+        if nonlocct:
+            compH += self.L**2*self.g[4]**2*self.nonlocct[k]
+
 
         # Seed vector
         v0 = scipy.zeros(compH.shape[0])

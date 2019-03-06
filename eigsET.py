@@ -8,15 +8,19 @@ from database import *
 from time import time
 
 # Save results on database
-savedb = True
+# FIXME
+savedb = False
 # Add counterterms
+# FIXME
 ct = True
+nonlocct = False
 # Save lowest eigenvector
 eigv = False
 # Normalization such that g is divided by 4!
 fourfacnorm = False
 
-toy = False
+# FIXME
+toy = True
 
 print("ct = {}, eigv={}".format(ct, eigv))
 
@@ -26,7 +30,10 @@ if savedb:
 m = 1
 neigs = 4
 
-g4list = np.linspace(0.2,6,30)
+if toy:
+    g4list = array([4.])
+else:
+    g4list = np.linspace(0.2,6,30)
 print("g4 ;", g4list)
 
 ETmin = 10
@@ -34,7 +41,7 @@ ETmin = 10
 
 # Number of ET's
 if toy:
-    nET = 2
+    nET = 1
 else:
     nET = 10
 
@@ -53,6 +60,7 @@ g2 = float(argv[3])
 print("L={}, ETmax={}, g2={}".format(L, Emax, g2))
 
 ETlist = np.linspace(ETmin, Emax, nET)
+print("ETlist: ", ETlist)
 
 t0 = time()
 print("Computing basis...")
@@ -88,8 +96,10 @@ for k in (-1,1):
                     a.setg(0, g2, g4, ct=ct, cutoff=ET, impr=False)
 
                 # print("Diagonalizing matrix...")
-                a.computeEigval(k=k, neigs=neigs, eigv=eigv)
+                a.computeEigval(k=k, neigs=neigs, eigv=eigv, nonlocct=nonlocct)
                 # print("Spectrum: ", a.eigval)
+
+                print("k={}, {}".format(k,a.eigval[k]))
 
                 if savedb:
                     data = {"neigs":neigs, "logct":ct, "g2":g2, "g4":g4,
