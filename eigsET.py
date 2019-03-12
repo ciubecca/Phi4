@@ -9,7 +9,7 @@ from time import time
 
 # Save results on database
 # FIXME
-savedb = False
+savedb = True
 # Add counterterms
 ct = True
 nonlocct = True
