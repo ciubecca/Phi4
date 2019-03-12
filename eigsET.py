@@ -11,16 +11,14 @@ from time import time
 # FIXME
 savedb = False
 # Add counterterms
-# FIXME
 ct = True
-nonlocct = False
+nonlocct = True
 # Save lowest eigenvector
 eigv = False
 # Normalization such that g is divided by 4!
 fourfacnorm = False
 
-# FIXME
-toy = True
+toy = False
 
 print("ct = {}, eigv={}".format(ct, eigv))
 
@@ -30,11 +28,9 @@ if savedb:
 m = 1
 neigs = 4
 
-if toy:
-    g4list = array([4.])
-else:
-    g4list = np.linspace(0.2,6,30)
-print("g4 ;", g4list)
+
+g4list = array([5*i for i in range(1,21)])/24.
+print("g4: ", g4list)
 
 ETmin = 10
 
