@@ -65,7 +65,7 @@ def plotvsg(L, lam, g2, g4list, ET):
     for k in (1,):
         # for i in range(neigs):
         for i in range(1):
-            data = spectrum[k][:,i]/L
+            data = spectrum[k][:,i]/L**2
             label = r"$E_T$={}, $L$={}".format(ET,L)
             plt.plot(xlist, data, label=label, color=color[k])
 
@@ -103,7 +103,7 @@ loc = "upper right"
 plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 plt.title(title)
 plt.xlabel(r"$g_4$")
-plt.ylabel(r"$\mathcal{E}_0/L$")
+plt.ylabel(r"$\mathcal{E}_0/L^2$")
 plt.legend(loc=loc)
 plt.savefig("plots/vacvsgL_{}.{}".format(fname,form))
 plt.clf()

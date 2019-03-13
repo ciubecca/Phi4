@@ -5,7 +5,7 @@ from scipy import exp, pi, array, e, sqrt, log
 import numpy as np
 
 def ct0ET(ET, En, m):
-    """ Full non-local g^2 correction, from the SW formalism """
+    """ Full non-local g^2 correction to the vacuum energy density, from the SW formalism """
     if ET-En < 4*m:
         return 0
     else:
@@ -13,7 +13,8 @@ def ct0ET(ET, En, m):
         return -24**2*1/(96*(4*pi)**3)*((ET-En)-8*log((ET-En)/4)-16/(ET-En))
 
 def ct0ETnonloc(ET, En, m):
-    """ Partial non-local g^2 correction, subtracting full local g^2 energy density """
+    """ Partial non-local g^2 correction to the vacuum energy density, subtracting full local g^2 energy density """
+# NOTE This has dimension 3, like the vacuum energy density should
     return ct0ET(ET, En, m) - ct0ET(ET, 0, m)
 
 # def ct2(ET):

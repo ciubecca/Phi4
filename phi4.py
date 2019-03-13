@@ -220,6 +220,7 @@ class Phi4():
         if self.momcut == False:
             if Emax==None:
                 Emax = self.Emax
+
             self.nonlocct[k] = -scipy.sparse.diags([[ct0ETnonloc(Emax,e,m) for e in elist]],[0])
         else:
             self.nonlocct[k] = scipy.sparse.diags([[0 for e in elist]],[0])

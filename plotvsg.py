@@ -80,7 +80,7 @@ def plotvsg(L, lam, g2, g4list, ET):
     for k in (1,):
         # for i in range(neigs):
         for i in range(1):
-            data = spectrum[k][:,i]/L
+            data = spectrum[k][:,i]/L**2
             label = r"$\Lambda$={}".format(lam,g4)
             plt.plot(xlist, data, label=label, color=color[k])
 
