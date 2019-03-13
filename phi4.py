@@ -192,7 +192,6 @@ class Phi4():
 
                 dg2 = -(g4)**2*ct2ET(cutoff, m)
 
-
         self.g[0] = g0
         self.g[2] = g2 + dg2
         self.g[4] = g4

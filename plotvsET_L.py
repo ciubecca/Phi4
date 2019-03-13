@@ -7,11 +7,16 @@ import database
 from sys import exit, argv
 from time import time
 from paramplots import *
+from counterterms import *
 
 form  = "pdf"
 
 logct = True
 fourfacnorm = False
+
+# Subtract local vacuum counterterm from the plot?
+subvac = True
+# subvac = False
 
 ETmin = 10
 nET = 10
@@ -62,7 +67,14 @@ def plotvsET(L, g2, g4, ETlist):
     for k in (1,):
         # for i in range(neigs):
         for i in range(1):
-            data = spectrum[k][:,i]/L
+            # data = spectrum[k][:,i]/L
+
+            data = spectrum[k][:,i]
+
+            if subvac:
+                # data -= g4**2*array([ct0ET(ET, 0, 1) for ET in ETlist])
+                data -= L*g4**2*array([ct0ET(ET, 0, 1) for ET in ETlist])
+
             label = r"$L$={}".format(L)
             plt.plot(ETlist, data, label=label, color=color[k])
 
@@ -103,7 +115,7 @@ plt.title(title)
 plt.xlabel(r"$E_T$")
 plt.ylabel(r"$\mathcal{E}_0/L$")
 plt.legend(loc=loc)
-plt.savefig("plots/vacvsET_{}.{}".format(fname,form))
+plt.savefig("plots/vacvsET_{}_{}.{}".format(fname,form,subvac))
 plt.clf()
 
 

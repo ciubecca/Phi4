@@ -9,6 +9,7 @@ def ct0ET(ET, En, m):
     if ET-En < 4*m:
         return 0
     else:
+# FIXME Should there be a factor 1/m here?
         return -24**2*1/(96*(4*pi)**3)*((ET-En)-8*log((ET-En)/4)-16/(ET-En))
 
 def ct0ETnonloc(ET, En, m):
