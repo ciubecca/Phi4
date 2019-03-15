@@ -71,6 +71,7 @@ def plotvsET(L, g2, g4, ETlist):
 
             if subvac:
                 data -= g4**2*array([ct0ET(ET, 0, 1) for ET in ETlist])
+                data -= (24**3)*g4**3*array([ct0ET3(ET, 1) for ET in ETlist])
 
             label = r"$L$={}".format(L)
             plt.plot(ETlist, data, label=label, color=color[k])

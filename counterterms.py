@@ -9,7 +9,6 @@ def ct0ET(ET, En, m):
     if ET-En < 4*m:
         return 0
     else:
-# FIXME Should there be a factor 1/m here?
         return -24**2*1/(96*(4*pi)**3)*((ET-En)-8*log((ET-En)/4)-16/(ET-En))
 
 def ct0ETnonloc(ET, En, m):
@@ -24,6 +23,10 @@ def ct2ET(ET, m):
     """ Full g^2 mass correction, computed via phase space integral """
     return -((24)**2)*1/(12*(4*pi)**2)*\
             (3*log(ET/m)+2*log(ET/m-1)-3*log(ET/m-2)-log(64))*0.5
+
+
+def ct0ET3(ET, m):
+    return 3.47232*10**(-8)*ET
 
 
 def ct2Lam(Lambda, m):
