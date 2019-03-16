@@ -51,7 +51,7 @@ def genHEBases(bases, tailidx, EL, ELp, V2=True, k=None):
         klist = (-1,1)
 
     ret = {}
-    for k in (-1,1):
+    for k in klist:
         basis = bases[k]
         subidx = tailidx[k]
 
