@@ -3,6 +3,9 @@ import math
 from math import factorial
 from scipy import exp, pi, array, e, sqrt, log
 import numpy as np
+from phi4 import *
+
+m = 1.
 
 def ct0ET(ET, En, m):
     """ Full non-local g^2 correction to the vacuum energy density, from the SW formalism """
@@ -36,3 +39,50 @@ def ct2Lam(Lambda, m):
     c = -a * 1.5848415795962967
     return (24**2)*(-a*log(Lambda/(b*m)) + c*m/Lambda)
 
+
+
+class exactct():
+
+    def __init__(self, L, ETmax):
+        self.L = L
+        self.ETmax = ETmax
+
+        subidx = {k:[0] for k in (1,)}
+        E0 = {1:0}
+
+        a = Phi4(m, L, ETmax)
+        basis = a.bases[1]
+        self.basisH = genHEBases(a.bases, subidx, ETmax, ETmax, k=1)[1]
+
+        self.VlH = genVHl(basis, subidx[1], self.basisH, L)
+        self.prop = 1/(-np.array(self.basisH.energyList))
+
+        self.Vhh = genVhh(self.basisH, L)
+
+
+    def ct2(self, ET, En):
+
+        if ET-En<4:
+            return 0.
+
+        idxlist = self.basisH.subidxlist(ET-En, Emin=2)
+        Vsub = subcolumns(self.VlH, idxlist)
+        propsub = self.prop[idxlist]
+        proj = scipy.sparse.spdiags(propsub, 0, len(propsub), len(propsub)).tocsc()
+
+        deltaE = (Vsub*proj*Vsub.transpose()).todense()[0,0]
+        # deltaE = np.einsum("ij,j,kj", Vsub.todense(), propsub, Vsub.todense())[0][0]
+
+        return deltaE/self.L**2
+
+    def ct3(self, ET):
+
+        idxlist = self.basisH.subidxlist(ET, Emin=2)
+        VlHsub = subcolumns(self.VlH, idxlist)
+        Vhhsub = submatrix(self.Vhh, idxlist)
+
+        propsub = self.prop[idxlist]
+        proj = scipy.sparse.spdiags(propsub, 0, len(propsub), len(propsub)).tocsc()
+
+        deltaE = (VlHsub*proj*Vhhsub*proj*VlHsub.transpose()).todense()[0,0]
+        return deltaE/self.L**2

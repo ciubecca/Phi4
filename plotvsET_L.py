@@ -16,8 +16,8 @@ fourfacnorm = False
 
 # Subtract local vacuum counterterm from the plot?
 subvac = True
-useinterp = True
-# subvac = False
+useexactct = False
+cubic = True
 
 ETmin = 10
 nET = 10
@@ -27,10 +27,11 @@ neigs = 4
 
 db = database.Database()
 
+# ETmaxdict = {5:24}
 ETmaxdict = {5:24, 6:20, 7:18}
 
 
-def plotvsET(L, g2, g4, ETlist):
+def plotvsET(L, g2, g4, ETlist, ct):
 
     xlist = ETlist
 
@@ -72,12 +73,13 @@ def plotvsET(L, g2, g4, ETlist):
             data = spectrum[k][:,i]/L**2
 
             if subvac:
-                if interp!=None:
-                    data -= g4**2*array([interp.ct2(ET, 0) for ET in ETlist])
+                if ct!=None:
+                    data -= g4**2*array([ct.ct2(ET, 0) for ET in ETlist])
                 else:
                     data -= g4**2*array([ct0ET(ET, 0, 1) for ET in ETlist])
 
-                # data -= (24**3)*g4**3*array([ct0ET3(ET, 1) for ET in ETlist])
+                if cubic:
+                    data -= (24**3)*g4**3*array([ct0ET3(ET, 1) for ET in ETlist])
 
             label = r"$L$={}".format(L)
             plt.plot(ETlist, data, label=label, color=color[k])
@@ -106,14 +108,16 @@ g2 = float(argv[2])
 
 for i,(L,ETmax) in enumerate(ETmaxdict.items()):
 
-    if useinterp:
-        interp = ctinterp(L, ETmax)
+    if useexactct:
+        print("Computing matrices for exact counterterms...")
+        ct = exactct(L, ETmax)
+        print("Done")
     else:
-        interp = None
+        ct = None
 
     ETlist = np.linspace(ETmin, ETmax, nET)
     setparams(i)
-    plotvsET(L=L, g2=g2, g4=g4, ETlist=ETlist, interp)
+    plotvsET(L=L, g2=g2, g4=g4, ETlist=ETlist, ct=ct)
 
 
 title = r"g2={}, g4={}".format(g2, g4)
@@ -126,7 +130,7 @@ plt.title(title)
 plt.xlabel(r"$E_T$")
 plt.ylabel(r"$\mathcal{E}_0/L^2$")
 plt.legend(loc=loc)
-plt.savefig("plots/vacvsET_{}_{}_{}.{}".format(fname,subvac,useinterp,form))
+plt.savefig("plots/vacvsET_{}_{}_{}_{}.{}".format(fname,subvac,useexactct,cubic,form))
 plt.clf()
 
 
