@@ -11,6 +11,10 @@ from counterterms import *
 
 form  = "pdf"
 
+g2 = 0.
+g4list = array([5*i for i in range(1,21)])/24.
+print("g4: ", g4list)
+
 logct = True
 fourfacnorm = False
 
@@ -102,48 +106,46 @@ def plotvsET(L, g2, g4, ETlist, ct):
 argv = sys.argv
 
 
-if len(argv) < 3:
-    print("{} <g4> <g2>".format(argv[0]))
+if len(argv) < 1:
+    print("{}".format(argv[0]))
     sys.exit(-1)
 
-g4 = float(argv[1])
-g2 = float(argv[2])
-
-
+ct = {}
 for i,(L,ETmax) in enumerate(ETmaxdict.items()):
-
     if useexactct:
         print("Computing matrices for exact counterterms...")
-        ct = exactct(L, ETmax)
+        ct[L] = exactct(L, ETmax)
         print("Done")
     else:
-        ct = None
+        ct[L] = None
 
-    ETlist = np.linspace(ETmin, ETmax, nET)
-    setparams(i)
-    plotvsET(L=L, g2=g2, g4=g4, ETlist=ETlist, ct=ct)
+for g4 in g4list:
+    for i,(L,ETmax) in enumerate(ETmaxdict.items()):
+        ETlist = np.linspace(ETmin, ETmax, nET)
+        setparams(i)
+        plotvsET(L=L, g2=g2, g4=g4, ETlist=ETlist, ct=ct[L])
 
 
-title = r"g2={}, g4={}".format(g2, g4)
-fname = r"g2={}, g4={}".format(g2, g4)
-loc = "upper right"
+    title = r"g2={}, g4={}".format(g2, g4)
+    fname = r"g2={}, g4={}".format(g2, g4)
+    loc = "upper right"
 
 # Vacuum
-plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_T$")
-plt.ylabel(r"$\mathcal{E}_0/L^2$")
-plt.legend(loc=loc)
-plt.savefig("plots/vacvsET_{}_{}_{}_{}_{}.{}".format(fname,subvac,useexactct,
-    cubic,exactcubic,form))
-plt.clf()
+    plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_T$")
+    plt.ylabel(r"$\mathcal{E}_0/L^2$")
+    plt.legend(loc=loc)
+    plt.savefig("plots/vacvsET_{}_{}_{}_{}_{}.{}".format(fname,subvac,useexactct,
+        cubic,exactcubic,form))
+    plt.clf()
 
 
 # Mass
-plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$E_T$")
-plt.ylabel(r"$m_{\rm ph}$")
-plt.legend(loc=loc)
-plt.savefig("plots/massvsET_{}.{}".format(fname,form))
-plt.clf()
+    plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
+    plt.title(title)
+    plt.xlabel(r"$E_T$")
+    plt.ylabel(r"$m_{\rm ph}$")
+    plt.legend(loc=loc)
+    plt.savefig("plots/massvsET_{}.{}".format(fname,form))
+    plt.clf()

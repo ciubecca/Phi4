@@ -29,7 +29,7 @@ def ct2ET(ET, m):
 
 
 def ct0ET3(ET, m):
-    return 3.47232*10**(-8)*ET
+    return (24**3)*(-2.81243*10**(-7)+3.47232*10**(-8)*ET)
 
 
 def ct2Lam(Lambda, m):
