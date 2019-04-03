@@ -1,195 +1,89 @@
-import bisect
-from sys import getsizeof as sizeof
 import scipy
 from scipy import array, pi, sqrt
 from math import floor, factorial
-from collections import Counter
-from itertools import combinations
-import itertools
 import numpy as np
 from symmetry import *
-
-tol = 10**-10
-
-def sortOsc(s):
-    """ Sort modes in a state according to momenta """
-    return list(sorted(s, key=lambda x: tuple(x[0])))
-
-
-# XXX Is this necessary?
-def toCanonical(state):
-    """ Transorm the state in representation 1 to canonical ordering of the momenta """
-    return list(sorted(((tuple(n), Zn) for n,Zn in state), key=lambda x: x[0]))
-
-
-class Helper():
-    """ This is just a "helper" class used to conveniently compute energies of
-    oscillators and states and so on"""
-
-    def __init__(self, m, L, Emax, Lambda=np.inf, noscmax=8):
-        """ noscmax: max number of oscillators """
-
-        self.L = L
-        self.m = m
-        self.Emax = Emax
-        self.Lambda = Lambda
-
-        # Maximum of sqrt(nx^2 + ny^2)
-        self.nmaxFloat = L/(2*pi)*min(Lambda, sqrt((Emax/2)**2-m**2))+tol
-        # Maximum integer wave number
-        nmax = floor(self.nmaxFloat)
-        self.nmax = nmax
-
-        # Do not shift indices, but use negative indices for slight optimization, which avoids some operations in omega()
-        self.omegaMat = np.zeros(shape=(2*nmax+1,2*nmax+1))
-        for nx in range(-nmax,nmax+1):
-            for ny in range(-nmax,nmax+1):
-                self.omegaMat[nx][ny] = self._omega(array([nx,ny]))
-
-        # Dictionary of allowed momenta ((kx,ky) -> idx), where idx is used as index of states in representation 2
-        self.allowedWn = dict()
-        idx = 0
-        for nx in range(-nmax, nmax+1):
-            for ny in range(-nmax, nmax+1):
-                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
-                    self.allowedWn[(nx,ny)] = idx
-                    idx += 1
-
-        # Set of allowed momenta in first and second quadrants, plus zero momentum
-        self.allowedWn12 = set()
-        for nx in range(-nmax, nmax+1):
-            if nx < 0:
-                nymin = 1
-            else:
-                nymin = 0
-            for ny in range(nymin, nmax+1):
-                if sqrt(nx**2+ny**2) <= self.nmaxFloat:
-                    self.allowedWn12.add((nx,ny))
-
-        occmax = floor(Emax/m+tol)
-        self.normFactors = scipy.zeros(shape=(noscmax+1,noscmax+1,occmax+1))
-        for c in range(noscmax+1):
-            for d in range(noscmax+1):
-                for n in range(occmax+1):
-                    if d <= n:
-                        self.normFactors[c,d,n] = \
-                            sqrt(factorial(n)*factorial(n-d+c)/factorial(n-d)**2)
-                    else:
-                        self.normFactors[c,d,n] = scipy.nan
-
-    def torepr2(self, s):
-        # XXX Represent the state as numpy array? Or matrix? Or sparse vector?
-        ret = [0]*len(self.allowedWn)
-        for n,Zn in s:
-            ret[self.allowedWn[tuple(n)]] = Zn
-        return ret
-
-    def oscEnergy(self, wnlist):
-        """ Energy of an oscillator (ordered tuple of momenta) """
-        return sum(self.omega(n) for n in wnlist)
-
-    # XXX This is slow
-    def energy(self, state):
-        """ Computes energy of state in Repr1 """
-        return sum(Zn*self.omega(n) for n,Zn in state)
-
-    def totwn(self, state):
-        if state==[]:
-            return array([0,0])
-        return sum([Zn*np.array(n) for n,Zn in state])
-
-    def _omega(self, n):
-        """ Energy corresponding to wavenumber n"""
-        m = self.m
-        return sqrt(m**2 + self.kSq(n))
-
-    def omega(self, n):
-        """ Energy corresponding to wavenumber n"""
-        return self.omegaMat[n[0]][n[1]]
-
-    # XXX The use of this function is incorrect in presence of a momentum cutoff. Should replace by a function that
-    # finds the minimal energy of state with given total momentum, and single particle momenta smaller than the cutoff
-    # XXX Incorrect !!
-    def minEnergy(self, wn, z0min=0):
-        """ Minimal energy to add to a state with total wavenumber "wn" in order
-        to create a state with total zero momentum
-        z0min: minimum number of particles that must be added """
-
-        m = self.m
-
-        if wn[0]==0 and wn[1]==0:
-            return m*z0min
-        else:
-            # return self.omega(wn) + m*(z0min-1)
-            # XXX Bugged
-            return self.omega(wn)
-
-    def kSq(self, n):
-        """ Squared momentum corresponding to wave number n """
-        L = self.L
-        return (2*pi/L)**2*np.sum(n**2)
-
-    def occn(self, s):
-        """ Occupation number of state """
-        return sum([Zn for n,Zn in s])
+from helper import *
+import itertools
 
 
 class Basis():
     """ Class used to store and compute a basis of states"""
 
 
-    def __init__(self, k, stateList, statePos, helper, sym=False, ncomp=None):
+    def __init__(self, k, stateList, helper, statePos, ncomp,
+            repr1=True, repr1Emax=None):
         """ Standard constructor
         k: parity quantum number
         stateset: set or list of states in representation 1
         helper: Helper object
-        sym: take symmetries into account, and project out singlet states
+        ncomp: symmetry components of each state
         """
         self.k = k
         self.helper = helper
-        totwn = helper.totwn
-        energy = helper.energy
-        occn = helper.occn
         self.Emax = helper.Emax
-        self.sym = sym
-
+        self.Lambda = helper.Lambda
+        self.repr1 = repr1
         self.size = len(stateList)
+
+        if repr1==False:
+            self.totwn = helper.totwn2
+            energy = helper.energy2
+            maxmom = helper.maxmom2
+            self.occn = occn2
+            self.repr1Emax = repr1Emax
+        else:
+            self.totwn = totwn
+            energy = helper.energy
+            maxmom = helper.maxmom
+            self.occn = occn
 
         # Retrieve the transformation of the indices to get lists sorted in energy
         energyList = [energy(state) for state in stateList]
         idx = np.argsort(np.array(energyList))
         # Reverse indices
-        idx2 = {j:i for i,j in enumerate(idx) }
-
+        idx2 = {j:i for i,j in enumerate(idx)}
         # Remap the indices
         self.stateList = [stateList[idx[i]] for i in range(self.size)]
         self.energyList = [energyList[idx[i]] for i in range(self.size)]
         self.statePos = {state: idx2[i] for state,i in statePos.items()}
 
         # Symmetry types
-        if sym:
-            self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
+        self.ncomp = [ncomp[idx[i]] for i in range(self.size)]
 
-
-        self.occnList = [occn(state) for state in self.stateList]
+        self.occnList = [self.occn(state) for state in self.stateList]
+        # Maximal single particle momentum in each state
+        self.maxmom = [maxmom(s) for s in self.stateList]
 
         # Check assumptions
         el = self.energyList
         assert  all(el[i] <= el[i+1]+tol for i in range(len(el)-1))
         assert (max(el) <= self.Emax+tol)
-        assert all(sum(totwn(s)**2)==0 for s in self.stateList)
-        assert all(1-2*(occn(state)%2)==k for state in self.stateList)
+        assert all(sum(self.totwn(s)**2)==0 for s in self.stateList)
+        assert all(1-2*(self.occn(state)%2)==k for state in self.stateList)
+        assert (max(self.maxmom) <= self.Lambda+tol)
+
+        # Convert some states to representation 1
+        if self.repr1==False and self.repr1Emax!=None:
+
+            self.stateList2 = self.stateList[:]
+            self.stateList = []
+            for i,e in enumerate(self.energyList):
+                if e>self.Emax+tol:
+                    break
+                self.stateList.append(helper.torepr1(self.stateList2[i]))
 
 
-    def irange(self, Emax):
-        """ Return max index for states with energy below Emax """
-        Emax = Emax + tol
-        imax = bisect.bisect_left(self.energyList, Emax)
-        return range(imax)
+
+    def subidxlist(self, Emax=np.inf, Lambda=np.inf, Emin=0., occmax=np.inf, occmin=0):
+        """ Return the indices of states within smaller cutoffs """
+        return [i for i in range(self.size) if self.energyList[i]<=Emax+tol
+                and self.maxmom[i]<=Lambda+tol and self.energyList[i]>=Emin-tol
+                and self.occnList[i]>=occmin and self.occnList[i]<=occmax]
 
 
     @classmethod
-    def fromScratch(self, m, L, Emax, Lambda=np.inf, sym=False):
+    def fromScratch(self, m, L, Emax, Lambda=np.inf):
         """ Builds the truncated Hilbert space up to cutoff Emax from scratch, in repr1
         m: mass
         L: side of the torus
@@ -198,10 +92,8 @@ class Basis():
 
         self.helper = Helper(m, L, Emax, Lambda)
         helper = self.helper
-        occn = helper.occn
         m = helper.m
         energy = helper.energy
-        self.sym = sym
 
         self._occmax = int(floor(Emax/m)+tol)
 
@@ -210,10 +102,7 @@ class Basis():
         # Make the representation of each state unique by sorting the oscillators
         self.bases = {k: [sortOsc(s) for s in self.bases[k]] for k in (-1,1)}
 
-        if sym:
-            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym, ncomp=self.ncomp[k]) for k in (-1,1)}
-        else:
-            return {k: self(k, self.bases[k], self.statePos[k],  helper, sym=sym) for k in (-1,1)}
+        return {k: self(k, self.bases[k], helper, self.statePos[k], ncomp=self.ncomp[k]) for k in (-1,1)}
 
 
     def __len__(self):
@@ -260,7 +149,6 @@ class Basis():
         omega = helper.omega
         allowedWn = helper.allowedWn
         energy = helper.energy
-        totwn = helper.totwn
         minEnergy = helper.minEnergy
 
         if idx == len(self.NEwnlist):
@@ -286,7 +174,8 @@ class Basis():
                 WN += n
                 # We need to add at least another particle to have 0 total momentum.
                 # XXX Check
-                if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol:
+                # if tuple(WN) not in allowedWn or E+minEnergy(WN)>Emax+tol:
+                if E+minEnergy(WN)>Emax+tol:
                     break
                 newstate.append(mode)
 
@@ -295,7 +184,6 @@ class Basis():
         return ret
 
 
-    # @profile
     def _buildBasis(self):
         """ Generates the basis starting from the list of RM states, in repr1 """
 
@@ -304,12 +192,10 @@ class Basis():
 
         m = helper.m
         energy = helper.energy
-        totwn = helper.totwn
         Emax = helper.Emax
         Lambda = helper.Lambda
         allowedWn = helper.allowedWn
         minEnergy = helper.minEnergy
-        occn = helper.occn
 
         # Generate list of all NE moving momenta
         self._genNEwnlist(self, Emax, Lambda)
@@ -351,7 +237,8 @@ class Basis():
                     break
 
                 # We need to add at least another particle to have 0 total momentum.
-                if tuple(WN2) not in allowedWn or E2+minEnergy(WN2)>Emax+tol:
+                # XXX CHECK
+                if E2+minEnergy(WN2)>Emax+tol:
                     continue
 
                 s12 = s1+s2
@@ -366,10 +253,10 @@ class Basis():
         N12elist = [[energy(s) for s in states] for states in Nsl12]
         N12occlist = [[occn(s) for s in states] for states in Nsl12]
 
-        # List of states in Representation 1, which are not related by symmetries when self.sym = False
+        # List of states in Representation 1, which are not related by symmetries
         self.bases = {k:[] for k in (-1,1)}
         idx = {k:0 for k in (-1,1)}
-        # Dictionary of indices for states in Representation 2, modded by symmetry
+        # Dictionary of indices for states in Representation 2, including the "redundant" ones by symmetry
         self.statePos = {k:{} for k in (-1,1)}
         # Number of Fock states in the singlet representation of state. This is used to compute the appropriate normalization
         # factors
@@ -412,6 +299,5 @@ class Basis():
                         for s in transStates:
                             self.statePos[k][s] = idx[k]
                         idx[k] += 1
-
 
         return

@@ -1,8 +1,6 @@
 from profile_support import *
 from operator import mul
 from functools import reduce
-import gc
-from sys import getsizeof as sizeof
 import scipy
 from math import factorial, floor, sqrt
 import statefuncs
@@ -14,24 +12,10 @@ from itertools import groupby
 from scipy import exp, pi
 from scipy.special import binom
 import bisect
-import me
 import numpy as np
-from me import *
+import me
+from operators import *
 
-debug = False
-
-# XXX Beware of bugs when changing L with these global variables!
-clist_pref = {}
-clist_e = {}
-clist_count = {}
-
-
-# XXX Does this have precision issues?
-def bose(x):
-    """ computes the Bose factor of a product of oscillators  """
-    return factorial(len(x))/scipy.prod(
-        [factorial(sum(1 for _ in group)) for key, group in groupby(x)]
-        )
 
 class LocOperator():
     """
@@ -39,8 +23,6 @@ class LocOperator():
     This is convenient to compute matrix elements and generate the high-energy basis
     from a set of tails
     """
-
-    # @profile
     def __init__(self, oscillators, nd, nc, helper):
         """
         oscillators: list of tuples. The first element of the tuple is a tuple of
@@ -76,22 +58,22 @@ class LocOperator():
 # Overall prefactor
         pref = binom(nc+nd,nc)
 
-        global clist_pref
-        global clist_e
-        global clist_count
+        clist_pref = helper.clist_pref
+        clist_e = helper.clist_e
+        clist_count = helper.clist_count
 
         for i, (dlist,clists) in enumerate(oscillators):
 
-            dlist_pref = pref*bose(dlist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in dlist],1)
             dlist_e = oscEnergy(dlist)
             dlist_count = Counter(dlist)
+            dlist_pref = pref*factorial(nd)/\
+                        reduce(mul, (factorial(c)*sqrt(2*omega(n)*L**2)**c for n,c in dlist_count.items()), 1)
 
-            # XXX Use global variables for this?
             for clist in clists:
                 if clist not in clist_pref:
-                    clist_pref[clist] = bose(clist)*reduce(mul,[1/sqrt(2*omega(n)*L**2) for n in clist])
                     clist_e[clist] = oscEnergy(clist)
                     clist_count[clist] = Counter(clist)
+                    clist_pref[clist] = factorial(nc)/reduce(mul, (factorial(c)*sqrt(2*omega(n)*L**2)**c for n,c in clist_count[clist].items()), 1)
 
             clists = list(sorted(clists, key=helper.oscEnergy))
 
@@ -116,7 +98,7 @@ class LocOperator():
         return scipy.array([[n[0],n[1],ccount.get(n,0),dcount.get(n,0)] for n in wnlist], dtype=scipy.int8)
 
 
-    def computeMatrixElements(self, basis, i, statePos, ignKeyErr=False):
+    def computeMatrixElements(self, basis, i, destbasis, ignKeyErr=False):
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
@@ -129,199 +111,103 @@ class LocOperator():
         Otherwise it should be set to False
         """
 
-        return me.computeME(basis, i, statePos,
-                ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors, self.oscList, self.oscEnergies)
+        return me.computeME(basis, i, destbasis,
+                ignKeyErr, self.nd, self.nc, self.dlistPos, self.oscFactors,
+                self.oscList, self.oscEnergies)
+
+    def yieldBasis(self, basis, subidx, EL):
+        """ Yields a sequence of representation 2 states, by acting with oscillators
+        on a subset of states.
+        subidx: subset of indices of basis on which to act
+        EL: maximal energy of the generated high-energy states
+        """
 
 
-def _genMomentaPairs(helper):
-    """ Generate sets of all inequivalent pairs of momenta,
-    ordered lexicographically, and indexed by total momentum.
-    This is a subroutine used to construct the V22 matrix """
-
-    omega = helper.omega
-    minEnergy = helper.minEnergy
-    allowedWn = helper.allowedWn
-    Emax = helper.Emax
-
-    # Sort 2d momenta lexicographically
-    allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
-    l = len(allowedWnList)
-    elist = [omega(wn) for wn in allowedWnList]
-
-    allowedWn12 = {}
-
-    for i1 in range(l):
-        k1 = allowedWnList[i1]
-        e1 = elist[i1]
-
-        for i2 in range(i1,l):
-            k2 = allowedWnList[i2]
-            k12 = tuple(k1+k2)
-            e12 = e1+elist[i2]
-
-            if k12 not in allowedWn:
-                continue
-
-            if e12+minEnergy(k12) > Emax+tol:
-                continue
-
-            if k12 not in allowedWn12:
-                allowedWn12[k12] = []
-
-            allowedWn12[k12].append((tuple(k1),tuple(k2)))
-
-    # Sort 2d momenta pairs lexicographically
-    return list(map(lambda x: list(sorted(x)), allowedWn12.values()))
+        for idx in subidx:
+            for s in me.yieldBasis(basis,idx,EL,self.helper,self.nd,self.nc,\
+                    self.dlistPos, self.oscEnergies,self.oscList):
+                yield s
 
 
-# XXX This is slow
-# @profile
-def V4OpsHalf(helper):
-    """ Generate half of the oscillators of the V4 operator """
-
-    omega = helper.omega
-    minEnergy = helper.minEnergy
-    allowedWn = helper.allowedWn
-    Emax = helper.Emax
-    oscEnergy = helper.oscEnergy
-
-    # Sort wavenumbers lexicographically, and convert to arrays
-    allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
-    l = len(allowedWnList)
-    # (wn -> idx) where idx is the position in the ordered list
-    allowedWnIdx = {tuple(wn):i for i,wn in enumerate(allowedWnList)}
-    elist = [omega(wn) for wn in allowedWnList]
+def V4OpsHalf(helper, basis=None):
+    """ Generate half of the oscillators of the V4 operator
+    basis: starting basis. If None, the allowed annuhilation momenta
+    will be assumed to be the same as those of the destination basis
+    helper: Helper function of the destination basis
+    """
 
     dlist = ()
-# The list of annihilation momenta is empty
-    V40 = [(dlist, [])]
-
-    for i1 in range(l):
-        k1 = allowedWnList[i1]
-        e1 = elist[i1]
-
-        for i2 in range(i1, l):
-            k2 = allowedWnList[i2]
-            e2 = elist[i2]
-
-            # XXX Check
-            if e1+e2+minEnergy(k1+k2, 2) > Emax+tol:
-                continue
-
-            for i3 in range(i2,l):
-                k3 = allowedWnList[i3]
-                e3 = elist[i3]
-
-                k4 = -k1-k2-k3
-
-                if tuple(k4) not in allowedWn:
-                    continue
-
-                i4 = allowedWnIdx[tuple(k4)]
-                if i4 < i3:
-                    continue
-
-                e4 = elist[i4]
-                if e1+e2+e3+e4 > Emax+tol:
-                    continue
-
-                clist = (tuple(k1),tuple(k2),tuple(k3),tuple(k4))
-                V40[-1][1].append(clist)
-
+    V40 = [(dlist, helper.genMomenta4sets())]
 # Generate a LocOperator instance from the computed set of oscillators
     V40 = LocOperator(V40, 0, 4, helper)
 
-######################################################
-    # Pre-compute sorted V13 indices for the creation operators
-    # V13indices = []
-    # for i2 in range(l):
-        # V13indices.append([])
-        # k2 = allowedWnList[i2]
-        # for i3 in range(i2, l):
-            # k3 = allowedWnList[i3]
-            # k4 = tuple(k1-k2-k3)
-            # if k4 in allowedWn and allowedWnIdx[k4]>=i3:
-                # V13indices[i2].append(i3)
+    if basis==None:
+        allowedWn = helper.allowedWn
+    else:
+        allowedWn = basis.helper.allowedWn
+    # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
+    allowedWnList = list(map(lambda x:np.array(x), allowedWn))
 
-
-
-#######################################################
     V31 = []
     for k1 in allowedWnList:
 # The set of annihilation momenta contains just one momentum
         dlist = (tuple(k1),)
-        # The state must have at least another particle if k1 != 0
-        e1 = minEnergy(k1)
-        V31.append((dlist,[]))
-
-        for i2 in range(l):
-            k2 = allowedWnList[i2]
-            e2 = elist[i2]
-
-            # XXX Check
-            if e1+e2+minEnergy(k1-k2,2) > Emax+tol:
-                continue
-
-            for i3 in range(i2, l):
-                k3 = allowedWnList[i3]
-
-                k4 = k1-k2-k3
-
-                if tuple(k4) not in allowedWn:
-                    continue
-
-                i4 = allowedWnIdx[tuple(k4)]
-
-                if i4 < i3:
-                    continue
-
-                e3 = elist[i3]
-                e4 = elist[i4]
-
-                # XXX Check
-                if e1+e2+e3+e4 > Emax+tol:
-                    continue
-
-                clist = (tuple(k2),tuple(k3),tuple(k4))
-                V31[-1][1].append(clist)
-
+        V31.append((dlist, helper.genMomenta3sets(k1)))
     V31 = LocOperator(V31, 1, 3, helper)
+
 
     return V40, V31
 
-# @profile
-def V4Ops22(helper):
+
+def V4Ops22(helper, basis=None):
     # XXX Temporary fix
     """ Do not symmetrize for the moment! """
 
-    omega = helper.omega
-    minEnergy = helper.minEnergy
-    allowedWn = helper.allowedWn
-    Emax = helper.Emax
-    oscEnergy = helper.oscEnergy
-
     V22 = []
 
-    # TODO Change name for this !!
-    allowedWn12 = _genMomentaPairs(helper)
-    elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWn12]
+    # TODO Sort the pairs with minEnergy function, so that we can break
+# the cycle when we go out of the starting basis?
+    # allowedWnPairs = list(helper.genMomentaPairs().values())
+    allowedWnPairs = helper.genMomentaPairs()
+
+    if basis==None:
+        startallowedWnPairs = allowedWnPairs
+    else:
+        startallowedWnPairs = basis.helper.genMomentaPairs()
+
+
+    # elist = [list(map(oscEnergy, kpairlist)) for kpairlist in allowedWnPairs]
 
 
     # Cycle over total momentum of annihilation operators
-    for wnIdx in range(len(allowedWn12)):
+    # for wnIdx in range(len(allowedWnPairs)):
 
-        kpairlist = allowedWn12[wnIdx]
+        # kpairlist = allowedWnPairs[wnIdx]
 
-        for i in range(len(kpairlist)):
-            kpair = kpairlist[i]
-            e12 = elist[wnIdx][i]
+        # for i in range(len(kpairlist)):
+            # kpair = kpairlist[i]
+            # e12 = elist[wnIdx][i]
 
-            dlist = kpair
+            # dlist = kpair
+            # V22.append((dlist,[]))
+
+            # for j in range(len(kpairlist)):
+                # # XXX Need to perforn any checks ?
+                # clist = kpairlist[j]
+                # V22[-1][1].append(clist)
+
+    for wn, kpairlist1 in startallowedWnPairs.items():
+
+        kpairlist2 = allowedWnPairs[wn]
+
+        for kpair1 in kpairlist1:
+
+            dlist = kpair1
             V22.append((dlist,[]))
 
-            for j in range(len(kpairlist)):
+            for kpair2 in kpairlist2:
                 # XXX Need to perforn any checks ?
-                clist = kpairlist[j]
+                clist = kpair2
                 V22[-1][1].append(clist)
 
     V22 = LocOperator(V22, 2, 2, helper)
@@ -329,22 +215,22 @@ def V4Ops22(helper):
 
 
 
-
 # Takes the opposite of a tuple
 def minus(t):
     return (-t[0],-t[1])
 
-def V2OpsHalf(helper):
-    """ Generate half of the oscillators of the V2 operator """
 
-    nmax = helper.nmax
+def V2OpsHalf(helper, basis=None):
+    """ Generate half of the oscillators of the V2 operator
+    helper: helper function of the destination basis.
+    basis: starting basis """
+
     Emax = helper.Emax
-    allowedWn12 = helper.allowedWn12
-    allowedWn = helper.allowedWn
 
     dlist = ()
     V20 = [(dlist, [])]
 
+    allowedWn12 = helper.allowedWn12
     # Select only in half of phase space
     for k1 in allowedWn12:
         k2 = minus(k1)
@@ -355,6 +241,10 @@ def V2OpsHalf(helper):
     V20 = LocOperator(V20, 0, 2, helper)
 
     V11 = []
+    if basis==None:
+        allowedWn = helper.allowedWn
+    else:
+        allowedWn = basis.helper.allowedWn
     # Select in all phase space
     for k1 in allowedWn:
         dlist = (k1,)
