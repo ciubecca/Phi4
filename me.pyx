@@ -1,3 +1,8 @@
+# The function computeME is the most computationally intensive, and it has been ported to cython 
+# Before running the code, this file has to be compiled via:
+# python setup.py build_ext --inplace
+
+
 # cython: linetrace=False
 
 import scipy
@@ -25,6 +30,13 @@ for ncomp1 in (1,2,4,8):
 
 # XXX Review this function, to take Lambda into account?
 def filterDlist(dlist, nd, ntot, helper):
+    """ Return True if the list of momenta can be annihilated by any oscillators, so that 
+    the new state is in the columns basis 
+    dlist: list of potential momenta to annihilate
+    nd: number of annihilation operators
+    ntot: number of creation+annihilation operators
+    helper: Helper object
+    """
     if nd==ntot:
         return tuple(sum([np.array(d) for d in dlist])) == (0,0)
     elif nd==ntot-1:
@@ -34,12 +46,11 @@ def filterDlist(dlist, nd, ntot, helper):
 
 
 def gendlists(state, nd, ntot, helper):
-    """ Generates a list of all the possible combinations of momenta in the state that
-    can be annihilated
+    """ Generates a set of all the sublists of momenta in the state that can be annihilated 
     state: input state in representation 1
     nd: number of annihilation operators (number of modes to annihilate)
     ntot: total number of annihilation and creation operators
-    allowedWn: all the allowed wave numbers in the basis
+    helper: Helper object
     """
 
     x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
@@ -54,13 +65,17 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         """ Compute the matrix elements by applying all the oscillators in the operator
         to an element in the basis
         basis: set of states on which the operator acts
-        i: index of the state in the basis
-        helper: Helper instance
-        statePos: dictionary where the keys are states in representation 2 (in tuple form)
-            and the values are their position in the basis
+        i: index of the state in the basis (row index)
+        statePos: dictionary {state: idx} state is in representation 2 (in tuple form)
+            and idx is its position in the column basis 
         ignKeyErr: this must be set to True if the action of an oscillators on an input state
-            can generate a state not in lookupbasis. This applies only in the computation of Vhh.
-        Otherwise it should be set to False
+            can generate a state not in the columns basis (e.g. must be True for computing Vhh in the NLO formalism)
+        nd: number of annihilation operators 
+        nc: number of creation operators
+        dlistPos: dictionary {dlist: idx} for fast access of various objects related to a given list of momenta to annihilate
+        oscFactors: data structure containing various numerical factors related to the sets of oscillators
+        oscList: data structure with lists of oscillators
+        oscEnergies: data structure containing energy shifts due to action of operators
         """
 
         cdef double x
@@ -68,7 +83,6 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
         cdef char *cstatevec
         cdef char *cnewstatevec
         cdef char[:,:] osc
-        # cdef char[:,:,:] oscListSub
         cdef float[:] oscFactorsSub
         cdef char Zc, Zd, nmax
         cdef int z, ii, jj
@@ -115,7 +129,6 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
 
             oscFactorsSub = array.array('f', oscFactors[k][imin:imax])
             oscListSub = oscList[k][imin:imax]
-            # oscListSub = np.array(oscList[k][imin:imax])
 
             for z in range(len(oscListSub)):
 
@@ -150,5 +163,3 @@ def computeME(basis, i, statePos, ignKeyErr, nd, nc, dlistPos, oscFactors, oscLi
                 col.append(j)
 
         return col, data
-
-

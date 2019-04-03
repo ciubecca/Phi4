@@ -1,3 +1,7 @@
+# This file should be called with:
+# pytest testBasis.py
+
+
 import pytest
 import random
 from phi4 import *

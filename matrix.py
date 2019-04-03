@@ -5,6 +5,8 @@ import scipy.sparse
 
 
 class MatrixConstructor():
+    """ Class used to construct a matrix (or part of it) from a list of oscillators """
+
     def __init__(self, basis):
         """
         basis: basis for the row and column elements
@@ -12,15 +14,13 @@ class MatrixConstructor():
         self.basis = basis
         self.statePos = basis.statePos
 
-    # @profile
     def buildMatrix(self, Vlist, ignKeyErr=False, sumTranspose=True):
         """
         Vlist: list of oscillators
-        ignKeyErr: whether LookupError when generating a state should be ignored (to be used
-        when the lookupbasis does not contain all the states between Emin and Emax)
+        ignKeyErr: whether to ignore LookupError when generating a state which is not in the column basis (to be used
+        when the column basis does not contain all the states between Emin and Emax)
         idxList: list of the row indices to be computed
-        sumTranspose: whether the tranpose of the matrix should be added and the diagonal
-        subtracted
+        sumTranspose: whether to add to the final result the transpose minus the diagonal
         """
 
         basis = self.basis
@@ -34,7 +34,9 @@ class MatrixConstructor():
         row = []
         col = []
 
+        # Cicle over list of oscillators
         for V in Vlist:
+            # Cycle over row indices
             for i in idxList:
                 colpart, datapart = \
                     V.computeMatrixElements(basis, i, statePos=statePos, ignKeyErr=ignKeyErr)
