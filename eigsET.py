@@ -1,3 +1,5 @@
+# Compute eigenvalues for a varying range of ET and g4, for fixed L and g2
+
 from phi4 import *
 from sys import argv, exit
 from math import factorial
@@ -8,10 +10,10 @@ from database import *
 from time import time
 
 # Save results on database
-# FIXME
 savedb = True
 # Add counterterms
 ct = True
+# Add non-local counterterms
 nonlocct = True
 # Save lowest eigenvector
 eigv = False

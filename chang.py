@@ -1,3 +1,6 @@
+# File containing various utility functions related to Chang duality
+
+
 from scipy.optimize import fsolve
 import numpy as np
 from numpy import log, exp, sqrt, pi
@@ -20,6 +23,7 @@ def xsolmax(X):
     xmax = 20
     # return max(fsolve(func, x0))
     return brentq(func, a=gstar, b=xmax)
+
 
 def xmintomax(x):
     """ Find corresponding x in second branch """
@@ -47,7 +51,4 @@ def factorToSecondBranch2(x):
     return xmintomax2(x)/x
 
 
-
-
 print(xmintomax)
-

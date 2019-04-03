@@ -1,3 +1,6 @@
+# Compute eigenvalues for a varying range of Lambda, ET, g4 for fixed g2, L
+
+
 from phi4 import *
 from sys import argv, exit
 from math import factorial
@@ -14,6 +17,7 @@ ct = True
 # Save lowest eigenvector
 eigv = False
 
+# Run lightweight version for testing purpose
 toy = False
 
 print("ct = {}, eigv={}".format(ct, eigv))
@@ -88,9 +92,7 @@ for k in (-1,1):
                 # FIXME Error: I should change the renormalization constant according to Lambda!
                 a.setg(0, g2, g4/(factorial(4)), ct=ct, cutoff=lam, impr=False)
 
-                # print("Diagonalizing matrix...")
                 a.computeEigval(k=k, neigs=neigs, eigv=eigv)
-                # print("Spectrum: ", a.eigval)
 
                 if savedb:
                     data = {"neigs":neigs, "logct":ct, "g2":g2, "g4":g4,

@@ -1,3 +1,7 @@
+# This file defines the important Helper class, which defines various constants, and precomputes various data structures useful for computations
+# of the matrices
+
+
 import scipy
 from scipy import array, pi, sqrt
 from math import floor, factorial
@@ -18,8 +22,8 @@ def occn2(s):
     """ Occupation number of state in repr 2 """
     return sum(s)
 
-
 def totwn(state):
+    """ Total wavenumber of state """
     if state==[]:
         return array([0,0])
     return sum([Zn*np.array(n) for n,Zn in state])
@@ -32,7 +36,7 @@ def toCanonical(state):
 
 
 class Helper():
-    """ This is just a "helper" class used to conveniently compute energies of
+    """ Class used to conveniently compute energies of
     oscillators and states and so on"""
 
     def __init__(self, m, L, Emax, Lambda=np.inf, noscmax=8):
@@ -66,8 +70,6 @@ class Helper():
                     idx += 1
 
 
-        # XXX Sort wavenumbers lexicographically, and convert to arrays
-        # allowedWnList = list(map(lambda x:np.array(x), sorted(allowedWn)))
         self.allowedWnList = list(map(lambda x:np.array(x), self.allowedWn))
         l = len(self.allowedWnList)
         # (wn -> idx) where idx is the position in the ordered list
@@ -159,8 +161,6 @@ class Helper():
         if wn[0]==0 and wn[1]==0:
             return m*z0min
         else:
-            # XXX This cannot be used if Lambda < inf
-            # return self.omega(wn)
             return self._omega(wn)
 
     def kSq(self, n):
@@ -256,14 +256,10 @@ class Helper():
 
                 allowedWnPairs[k12].append((tuple(k1),tuple(k2)))
 
-# Sort lexicographically
-        # for k12 in allowedWnPairs.keys():
-            # allowedWnPairs[k12] = list(sorted(allowedWnPairs[k12]))
 
         return allowedWnPairs
 
 
-    # @profile
 # XXX Move this to Cython module ?
     def genMomenta4sets(self):
 
