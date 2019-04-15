@@ -39,7 +39,6 @@ def factorToSecondBranch(x):
 
 def xmintomax2(x):
     """ Direct solution """
-    """ Find X = g/M corresponding to x= g/m """
     func = lambda y: 1/x**2+3/(pi*x)-1/y**2-3/(pi*y)+6*log(x/y)/(pi**2)
     xmax = 20
     return brentq(func, a=gstar, b=xmax)

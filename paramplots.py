@@ -5,7 +5,7 @@ import matplotlib as mpl
 
 paramd = {'lines.linestyle': ['dashed', 'dashdot', 'solid', 'dotted'],
         'lines.marker': ['o','v','.','x'],
-        'lines.markersize': [1,4,1,5]}
+        'lines.markersize': [1,3,1,5]}
 
 # print(mpl.rcParams.keys())
 plt.style.use('ggplot')

@@ -13,7 +13,7 @@ import database
 from sys import exit, argv
 from chang import *
 
-form  = "png"
+form  = "pdf"
 
 logct = True
 fourfacnorm = False
@@ -24,6 +24,10 @@ plt.rcParams.update(params)
 
 g4list = np.linspace(0.2,6,30)
 print("g4: ", g4list)
+
+# Index of the value of g in glist which is closest to gstar
+istarapprox = np.argmin(abs(g4list-gstar))
+print(istarapprox)
 
 
 ETmin = 10
@@ -82,16 +86,7 @@ def plotvsg(L, g2, g4list, ET):
         masses[k] = (spectrum[k][:,imin:].transpose()-spectrum[1][:,0]).transpose()
 
 
-    # VACUUM
-    plt.figure(1)
-    for k in (1,):
-        # for i in range(neigs):
-        for i in range(1):
-            data = spectrum[k][:,i]/L**2
-            label = r"$\Lambda$={}".format(lam,g4)
-            plt.plot(xlist, data, label=label, color=color[k])
-
-    # Compute Change duality predictions
+    # Compute Chang duality predictions
 
     # Impose lower bound on g so that the dual g is not too large
     dualidxlist = np.array([i for i,g in enumerate(g4list) if g>1.0 and g<gstar])
@@ -113,17 +108,21 @@ def plotvsg(L, g2, g4list, ET):
     # MASS
     plt.figure(2)
     for k in (-1,):
-    # for k in (1, -1):
-        # for i in range(neigs-int((1+k)/2)):
         for i in range(1):
             data = masses[k][:,i]
-            label = r"$E_T={:.4f}$".format(ET)
-            plt.plot(xlist, data, label=label, color=color[k], markersize=3)
 
             label = "Chang, $E_T={:.4f}$".format(ET)
-            plt.plot(gDual, massesDual, label=label, color='b')
-            # plt.plot(gDual, massesDual, label=label, linestyle='dotted', color='b',
-                    # markersize=3)
+            plt.plot(gDual, massesDual, label=label, color='b', linewidth=1)
+
+            label = r"$E_T={:.4f}$".format(ET)
+            plt.plot(xlist, data, label=label, color='r', linewidth=1)
+
+            exstar = data[istarapprox]
+            x = np.linspace(gstar, 6, 100)
+            plt.plot(x, exstar*x/gstar, linestyle='dashed', c='g',
+                    label='analytic')
+            # plt.plot(x, exstar*(2*x-gstar)/gstar, linestyle='dashed', c='g',
+                    # label='not analytic')
 
 argv = sys.argv
 
@@ -150,26 +149,19 @@ title = r"g2={}, ET={}, L={}".format(g2, ET, L)
 fname = r"g2={}, ET={}, L={}".format(g2, ET, L)
 loc = "upper right"
 
-# Vacuum
-plt.figure(1, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
-plt.title(title)
-plt.xlabel(r"$g_4$")
-plt.ylabel(r"$\mathcal{E}_0/L$")
-plt.legend(loc=loc)
-plt.savefig("plots/vacvsg_{}.{}".format(fname,form))
-plt.clf()
-
-
 # Mass
 plt.figure(2, figsize=(4., 2.5), dpi=300, facecolor='w', edgecolor='w')
 
-plt.axvline(gstar)
+plt.axvline(gstar, c='k', linestyle='dashed', linewidth=1)
+
+plt.xlim(0,6)
+plt.ylim(0,5)
 
 plt.title(title)
 plt.xlabel(r"$g_4$")
 plt.ylabel(r"$m_{\rm ph}$")
 plt.legend(loc=loc)
-plt.savefig("plots/massvsg_{}.{}".format(fname,form))
+plt.savefig("plots/massvsgChang_{}.{}".format(fname,form))
 plt.clf()
 
 plt.gca().set_prop_cycle(None)
