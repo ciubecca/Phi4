@@ -30,6 +30,7 @@ class LocOperator():
         tuples of wavenumbers of creation operators
         nd: number of annihilation operators
         nc: number of creation operators
+        helper: Helper object
         """
 
         self.nd = nd
@@ -92,7 +93,12 @@ class LocOperator():
         tuples of the form (k1,...,kn) and (q1,...,qm), where the k's and q's are respectively
         the creation and annihilation momenta
         Zc and Zd are respectively the number of creation and annihilation operators at
-        wavenumber n """
+        wavenumber n
+        clist: list of creation momenta
+        dlist: list of annihilation momenta
+        ccount: dictionary {wn: count} where count is the number of instances of wavenumber wn in clist
+        dcount: dictionary {wn: count} where count is the number of instances of wavenumber wn in dlist
+        """
 
         wnlist = set(clist+dlist)
         return scipy.array([[n[0],n[1],ccount.get(n,0),dcount.get(n,0)] for n in wnlist], dtype=scipy.int8)
@@ -103,11 +109,9 @@ class LocOperator():
         to an element in the basis
         basis: set of states on which the operator acts
         i: index of the state in the basis
-        helper: Helper instance
-        statePos: dictionary where the keys are states in representation 2 (in tuple form)
-        and the values are their position in the basis
+        destbasis: set of states corresponding to the column indices
         ignKeyErr: this must be set to True if the action of an oscillators on an input state
-        can generate a state not in lookupbasis. This applies only in the computation of Vhh.
+        can generate a state not in destbasis. This applies in the computation of Vhh.
         Otherwise it should be set to False
         """
 
@@ -118,6 +122,7 @@ class LocOperator():
     def yieldBasis(self, basis, subidx, EL):
         """ Yields a sequence of representation 2 states, by acting with oscillators
         on a subset of states.
+        basis: basis of states which are acted upon
         subidx: subset of indices of basis on which to act
         EL: maximal energy of the generated high-energy states
         """
@@ -131,9 +136,9 @@ class LocOperator():
 
 def V4OpsHalf(helper, basis=None):
     """ Generate half of the oscillators of the V4 operator
-    basis: starting basis. If None, the allowed annuhilation momenta
-    will be assumed to be the same as those of the destination basis
     helper: Helper function of the destination basis
+    basis: starting basis. If None, the states are assumed to be all those
+    below the energy cutoff defined in helper.
     """
 
     dlist = ()
@@ -160,8 +165,12 @@ def V4OpsHalf(helper, basis=None):
 
 
 def V4Ops22(helper, basis=None):
-    # XXX Temporary fix
-    """ Do not symmetrize for the moment! """
+    # XXX Temporary fix. Do not symmetrize for the moment!
+    """ Generate the oscillators of the V4 operator with two annihilation and two creation operators.
+    helper: Helper function of the destination basis
+    basis: starting basis. If None, the states are assumed to be all those
+    below the energy cutoff defined in helper.
+    """
 
     V22 = []
 
@@ -215,8 +224,8 @@ def V4Ops22(helper, basis=None):
 
 
 
-# Takes the opposite of a tuple
 def minus(t):
+    """ Takes the opposite of a tuple """
     return (-t[0],-t[1])
 
 

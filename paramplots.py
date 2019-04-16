@@ -1,3 +1,5 @@
+# Useful constant and functions for making plots
+
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from cycler import cycler

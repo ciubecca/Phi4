@@ -15,8 +15,15 @@ import bisect
 import numpy as np
 
 
-# XXX Review this function, to take Lambda into account?
 def filterDlist(dlist, nd, ntot, helper):
+    """
+    Returns True if the given tuple of oscillators can be assigned to annihilation operators for the given type operator
+    It takes into account, for instance, the maximal energy of the basis, or whether the momenta sum up to zero
+    dlist: tuple of annihilation momenta
+    nd: number of annihilation operators
+    ntot: total number of operators in the composite operator
+    helper: Helper object
+    """
     if nd==ntot:
         return tuple(sum([np.array(d) for d in dlist])) == (0,0)
     elif nd==ntot-1:
@@ -28,10 +35,10 @@ def filterDlist(dlist, nd, ntot, helper):
 def gendlists(state, nd, ntot, helper):
     """ Generates a list of all the possible combinations of momenta in the state that
     can be annihilated
-    state: input state in representation 1
     nd: number of annihilation operators (number of modes to annihilate)
+    state: input state in representation 1
     ntot: total number of annihilation and creation operators
-    allowedWn: all the allowed wave numbers in the basis
+    helper: Helper object
     """
 
     x = itertools.chain.from_iterable(([tuple(n)]*Zn for n,Zn in state))
