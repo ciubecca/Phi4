@@ -1,3 +1,5 @@
+# Generate basis of states
+
 import scipy
 from scipy import array, pi, sqrt
 from math import floor, factorial
@@ -15,9 +17,12 @@ class Basis():
             repr1=True, repr1Emax=None):
         """ Standard constructor
         k: parity quantum number
-        stateset: set or list of states in representation 1
+        stateList: set or list of states in representation 1
         helper: Helper object
+        statePos: dictionary {state: idx} holding the position of a particular state in the basis
         ncomp: symmetry components of each state
+        repr1: whether to hold states in representation 1
+        repr1Emax: maximal energy at which states will be hold in representation 1
         """
         self.k = k
         self.helper = helper
@@ -76,7 +81,13 @@ class Basis():
 
 
     def subidxlist(self, Emax=np.inf, Lambda=np.inf, Emin=0., occmax=np.inf, occmin=0):
-        """ Return the indices of states within smaller cutoffs """
+        """ Return the indices of states within smaller cutoffs
+        Emax: new energy cutoff
+        Lambda: new momentum cutoff
+        Emin: minimal energy
+        occmax: maximal occupation number
+        occimin: minimal occupation number
+        """
         return [i for i in range(self.size) if self.energyList[i]<=Emax+tol
                 and self.maxmom[i]<=Lambda+tol and self.energyList[i]>=Emin-tol
                 and self.occnList[i]>=occmin and self.occnList[i]<=occmax]
@@ -88,6 +99,7 @@ class Basis():
         m: mass
         L: side of the torus
         Emax: maximal energy of the states
+        Lambda: momentum cutoff
         """
 
         self.helper = Helper(m, L, Emax, Lambda)

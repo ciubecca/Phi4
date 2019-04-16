@@ -1,3 +1,5 @@
+# Plot eigenvalues vs g4, at fixed L and ET, for different values of Lambda
+
 import sys
 import numpy as np
 import scipy

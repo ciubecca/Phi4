@@ -1,3 +1,5 @@
+# Auxiliary file useful for line profiling
+
 import builtins
 # from memory_profiler import memory_usage
 import warnings

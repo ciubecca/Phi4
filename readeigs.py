@@ -1,3 +1,5 @@
+# Simply print eigenvalues from the database
+
 import sys
 import numpy as np
 import scipy

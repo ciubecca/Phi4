@@ -1,3 +1,5 @@
+# Print eigenvectors from database, and make a plot of the zero mode contributions
+
 import sys
 import numpy as np
 import scipy

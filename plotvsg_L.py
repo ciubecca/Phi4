@@ -1,3 +1,6 @@
+# Plot eigenvalues as function of g, for different L
+
+
 import sys
 import numpy as np
 import scipy

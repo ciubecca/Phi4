@@ -1,3 +1,6 @@
+# Plot eigenvalues as function of ET for different volumes.
+# Repeat the plots for various values of g4
+
 import sys
 import numpy as np
 import scipy

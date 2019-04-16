@@ -1,3 +1,6 @@
+# This is a testing module used to validate changes to the code. It compares code evaluation
+# to expected output, which has been computed by previous version or by independent C++ code
+
 import pytest
 import random
 from phi4 import *
