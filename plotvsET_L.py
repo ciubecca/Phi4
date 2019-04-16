@@ -15,7 +15,7 @@ logct = True
 fourfacnorm = False
 
 # Subtract local vacuum counterterm from the plot?
-subvac = True
+subvac = False
 useexactct = True
 cubic = True
 exactcubic = True
@@ -90,8 +90,8 @@ def plotvsET(L, g2, g4, ETlist, ct):
 
     # MASS
     plt.figure(2)
-    # for k in (-1,1):
-    for k in (1, -1):
+    # for k in (1, -1):
+    for k in (-1,):
         # for i in range(neigs-int((1+k)/2)):
         for i in range(1):
             data = masses[k][:,i]
@@ -112,7 +112,7 @@ g2 = float(argv[2])
 
 for i,(L,ETmax) in enumerate(ETmaxdict.items()):
 
-    if useexactct:
+    if subvac and useexactct:
         print("Computing matrices for exact counterterms...")
         ct = exactct(L, ETmax)
         print("Done")
