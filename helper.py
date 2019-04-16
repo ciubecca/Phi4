@@ -106,10 +106,12 @@ class Helper():
 
 
     def torepr1(self, s):
+        """ Convert state from representation 2 to representation 1 """
 # XXX Should I sort this?
         return [(wn,s[i]) for wn,i in self.allowedWn.items() if s[i]>0]
 
     def torepr2(self, s):
+        """ Convert state from representation 1 to representation 2 """
         ret = [0]*len(self.allowedWn)
         for n,Zn in s:
             ret[self.allowedWn[tuple(n)]] = Zn
@@ -123,7 +125,7 @@ class Helper():
             print(wnlist)
             raise(e)
 
-    # This is slow
+    # XXX This is slow
     def energy(self, state):
         """ Computes energy of state in Repr1 """
         return sum(Zn*self.omega(n) for n,Zn in state)
@@ -139,11 +141,11 @@ class Helper():
         return sum(self.omega(wn)*state[i] for wn,i in self.allowedWn.items())
 
     def _omega(self, n):
-        """ Energy corresponding to wavenumber n"""
+        """ Energy corresponding to wavenumber n """
         return sqrt(self.m**2 + self.kSq(n))
 
     def omega(self, n):
-        """ Energy corresponding to wavenumber n"""
+        """ Energy corresponding to wavenumber n, precomputed for speed """
         try:
             return self.omegaMat[n[0]][n[1]]
         except IndexError as e:
@@ -200,19 +202,18 @@ class Helper():
                 row.append(i)
                 col.append(j)
 
-            ret.append(scipy.sparse.coo_matrix((data,(row,col))
-                    , shape=(l,l)).tocsc())
+            ret.append(scipy.sparse.coo_matrix((data,(row,col)),
+                shape=(l,l)).tocsc())
         return ret
 
 
     def genMomentaPairs(self, totpairsmomenta=None):
         """ Generate sets of all inequivalent pairs of momenta,
         ordered lexicographically, and indexed by total momentum.
-        The list of total momenta is
         This is a subroutine used to construct the V22 matrix.
         totpairsmomenta: if we generate oscillators between two bases b1, b2
         such that E1 < E2, not all pairs of momenta for the annihilation operators are allowed.
-            """
+        """
 
         omega = self.omega
         minEnergy = self.minEnergy
@@ -244,7 +245,7 @@ class Helper():
 
                 e12 = e1+elist[i2]
 
-                # XXX CHECK if I can comment this
+                # XXX Double check if I can comment this
                 # if k12 not in allowedWn:
                     # continue
 
@@ -260,8 +261,14 @@ class Helper():
         return allowedWnPairs
 
 
-# XXX Move this to Cython module ?
+# XXX This is slow. Move this to Cython module ?
     def genMomenta4sets(self):
+        """ Return a list of all the quadruples of momenta (with vanishing total momentum)
+        corresponding to the oscillators in the (a^+)^4 part of the quartic potential,
+        for the given basis.
+        There are no duplicated, and the momenta are sorted according to the order in which they
+        appear in the data structure  "allowedWnList"
+        """
 
         if self.momenta4sets != None:
             return self.momenta4sets
@@ -313,6 +320,12 @@ class Helper():
 
 
     def genMomenta3sets(self, k1):
+        """ Return a list of all the triples of momenta, such that they sum to -k1.
+        This are used to the part of the quartic potential which involves 3 creation operators
+        and 1 annihilation operator.
+        There are no duplicated, and the momenta are sorted according to the order in which they
+        appear in the data structure  "allowedWnList"
+        """
 
         allowedWnList = self.allowedWnList
         elist = self.elist

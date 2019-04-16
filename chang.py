@@ -27,7 +27,6 @@ def xsolmax(X):
 
 def xmintomax(x):
     """ Find corresponding x in second branch """
-    print("g:{}".format(x))
     return xsolmax(Xsol(x))
 
 
@@ -38,7 +37,7 @@ def factorToSecondBranch(x):
 
 
 def xmintomax2(x):
-    """ Direct solution """
+    """ Direct solution, find effective smaller g corresponding to g in first branch """
     func = lambda y: 1/x**2+3/(pi*x)-1/y**2-3/(pi*y)+6*log(x/y)/(pi**2)
     xmax = 20
     return brentq(func, a=gstar, b=xmax)
@@ -49,5 +48,3 @@ def factorToSecondBranch2(x):
     branch in order to get prediction in second branch via Chang duality """
     return xmintomax2(x)/x
 
-
-print(xmintomax)
