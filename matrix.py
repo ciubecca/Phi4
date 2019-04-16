@@ -1,3 +1,6 @@
+# Classes and functions related to matrix construction
+
+
 from profile_support import *
 import scipy
 import scipy.sparse.linalg
