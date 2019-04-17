@@ -1,3 +1,7 @@
+# This is one of the main interfaces of the program
+# Contains a class to construct the matrices and compute eigenvalues
+
+
 import scipy
 from profile_support import *
 import scipy.sparse.linalg
@@ -19,7 +23,13 @@ import numpy as np
 class Phi4():
     """ main class """
     def __init__(self, m, L, ET, Lambda=np.inf, momcut=True):
-        """ momcut: implement momentum cutoff """
+        """
+        m: mass
+        L: torus side
+        ET: energy cutoff
+        Lambda: momentum cutoff
+        momcut: wether to use the momentum cutoff
+        """
 
         self.momcut = momcut
         self.m = m
@@ -42,7 +52,6 @@ class Phi4():
     def computePotential(self):
         """
         Builds the potential matrices and the free Hamiltonian
-        If Vlist has been computed for another k, reuse it because it is expensive
         """
 
         Vlist = None
@@ -69,7 +78,14 @@ class Phi4():
             self.V[k][0] = scipy.sparse.eye(basis.size)*self.L**2
 
 
+    # NOTE Not implemented yet
     def genHEBases(self, tailidx, EL, ELp):
+        """ Generate a set of high energy states from a set of "tails". It can be used
+        both for old fashioned PT computations and for a future implementation of the NLO formalism
+        tailidx: set of indices of the tail states
+        EL: maximal energy of the high energy basis, for the VLH operator
+        ELp: maximal energy of the high energy basis, for the VlH operator
+        """
 
         self.EL = EL
         self.ELp = ELp
@@ -80,10 +96,11 @@ class Phi4():
         self.h0 = {}
 
 
+    # NOTE Not implemented yet
     def computeHEVs(self, k):
         """
         Compute the matrices involving the high-energy states below EL
-        Emin: minimal energy of the high energy states
+        k: parity quantum number
         """
 
         # Matrix subscript notation:
@@ -162,9 +179,13 @@ class Phi4():
 
 
     def setg(self, g0, g2, g4, ct=True, cutoff=None, impr=False):
-        """ ct: add logarithmic mass counterterm
-            impr: add improvement terms
-            cutoff: value of the cutoff (will be either Lambda or ET depending on self.momcut """
+        """
+        Set the values of the coupling constants
+        g0, g2, g4: Coupling constants
+        ct: add logarithmic mass counterterm
+        cutoff: value of the cutoff (will be either Lambda or ET depending on self.momcut
+        impr: add improvement terms
+        """
 
         self.g = {}
         m = self.m
@@ -199,6 +220,12 @@ class Phi4():
 
 
     def setmatrix(self, k, Emax=None, Lambda=None):
+        """ Set the matrices used in defining the Hamiltonian
+        k: parity quantum number
+        Emax: actual energy cutoff to be used in the computation. If smaller than Emax defined in this class, submatrices will be taken.
+            This option is used to save time when computing eigenvalues at different values of Emax
+        Lambda: same as above, for the momentum cutoff
+        """
 
         m = self.m
         basis = self.bases[k]
@@ -228,8 +255,10 @@ class Phi4():
 
     def computeEigval(self, k, neigs=6, eigv=False, nonlocct=True):
         """ Compute the eigenvalues for sharp cutoff ET
+        k: parity quantum number
         neigs: number of eigenvalues to compute
         eigv: return eigenvectors
+        nonlocct: add the non-local counterterm
         """
 
         compH = self.h0comp[k] + sum([self.g[n]*self.Vcomp[k][n] for n in (0,2,4)])
