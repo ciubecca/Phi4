@@ -18,8 +18,12 @@ fourfacnorm = False
 
 # Subtract local vacuum counterterm from the plot?
 subvac = False
+# Compute the g^2 corrections in finite volume instead of the approximation in
+# infinite volume
 useexactct = True
+# Subtract cubic log-divergent correction
 cubic = True
+# Compute the cubic correction exactly in finite volume
 exactcubic = True
 
 ETmin = 10
