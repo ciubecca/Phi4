@@ -20,7 +20,11 @@ pytest testBasis.py
 
 ## Run
 
-Schematically, the code is split into "core" files, "generation" files (to compute eigenvalues and store them in a sqlite database) and "plotting" files which retrieve eigenvalues from the database and plot them.
+Schematically, the code is split into "core" files, "generation" files (to compute eigenvalues and store them in a sqlite database) and "plotting" files which retrieve eigenvalues from the database and plot them. 
+First, create the "data" folder to store the database:
+```bash
+mkdir data
+```
 For example, the following sequence of commands computes eigenvalues for (L=5, ETmax=24, g2=0), (L=6, ETmax=20, g2=0), (L=7, ETmax=18, g2=0), for various values of g4, 
 ```bash
 python eigsET.py 5 24 0
